@@ -11,10 +11,13 @@ class GameMatcher : public QObject
     Q_OBJECT
 public:
     explicit GameMatcher(const QVector<GameAllocation> &pastAllocation,
-            const QVector<Member> &members,
-            const QVector<Player> &players,
-            QObject *parent = nullptr);
-    ~GameMatcher();
+                         const QVector<Member> &members,
+                         const QVector<Player> &players,
+                         const QVector<CourtId> &courts,
+                         int playerPerCourt,
+                         int seed,
+                         QObject *parent = nullptr);
+    ~GameMatcher() override;
 
 signals:
     void onFinished(QVector<GameAllocation>);

@@ -27,6 +27,7 @@ class GameStats {
 
     // Source of truth
     QVector<QSet<PlayerId>> courtPlayers;
+    int numTotalGames = 0;
 
     // Cache values
     mutable QHash<GamePair, int> numGamesByPair;
@@ -46,7 +47,11 @@ public:
                 courtPlayers.append(court);
             }
         }
+
+        numTotalGames = map.size();
     }
+
+    int numGames() const { return this->numTotalGames; }
 
     int numGamesBetween(PlayerId a, PlayerId b) const {
         GamePair pair(a, b);
