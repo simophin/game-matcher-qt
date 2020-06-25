@@ -23,9 +23,10 @@ add_executable(GameMatcher
         src/models.h
         src/gamematcher.cpp
         src/gamematcher.h
-        src/gamestats.h)
+        src/gamestats.h src/dbutils.h src/dbutils.cpp)
 
 target_compile_definitions(GameMatcher
-        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
+        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
+        -DQT_NO_CAST_FROM_ASCII=1)
 target_link_libraries(GameMatcher
         PRIVATE Qt5::Core Qt5::Quick Qt5::Sql)

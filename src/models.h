@@ -30,6 +30,17 @@ public:
 
 Q_DECLARE_METATYPE(Member);
 
+struct Session {
+    Q_GADGET
+public:
+    DECLARE_PROPERTY(SessionId, id, = 0);
+    DECLARE_PROPERTY(int, fee, = 0);
+    DECLARE_PROPERTY(QString, announcement, );
+    DECLARE_PROPERTY(QDateTime, startTime, );
+};
+
+Q_DECLARE_METATYPE(Session);
+
 struct Player {
 Q_GADGET
 public:

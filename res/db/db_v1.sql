@@ -9,7 +9,7 @@ insert into settings(name, value) values ('schema_version', 1);
 create table members
 (
     id              integer  not null primary key autoincrement,
-    register_date   datetime not null default current_date,
+    register_date   datetime not null default current_timestamp,
     first_name      text     not null,
     last_name       text     not null,
     gender          text     not null,
@@ -32,9 +32,10 @@ create index courts_sessions on courts (session_id);
 
 create table sessions
 (
-    id         integer  not null primary key autoincrement,
-    start_time datetime not null default current_date,
-    fee        integer  not null,
+    id           integer  not null primary key autoincrement,
+    start_time   datetime not null default current_timestamp,
+    fee          integer  not null,
+    announcement text
     check ( fee >= 0 )
 );
 
@@ -44,7 +45,7 @@ create table players
     session_id     integer  not null references sessions (id) on delete cascade,
     member_id      integer  not null references members (id) on delete cascade,
     payment        integer  not null,
-    check_in_time  datetime not null default current_date,
+    check_in_time  datetime not null default current_timestamp,
     check_out_time datetime,
     paused         boolean  not null default false,
     unique (session_id, member_id) on conflict fail
@@ -57,7 +58,7 @@ create table games
 (
     id         integer  not null primary key autoincrement,
     session_id integer  not null references sessions (id) on delete cascade,
-    start_time datetime not null default current_date
+    start_time datetime not null default current_timestamp
 );
 
 create index game_sessions on games (session_id);

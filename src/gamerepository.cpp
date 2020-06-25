@@ -1,10 +1,15 @@
 #include "gamerepository.h"
 
 #include <QFile>
-#include <QtSql>
 #include <QtDebug>
 #include <QByteArray>
+#include <QSqlResult>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
+
+#include "dbutils.h"
 
 static struct {
     int schemaVersion;
@@ -18,7 +23,7 @@ class SQLTransaction {
     bool rollback_ = false;
 
 public:
-    SQLTransaction(QSqlDatabase &db): db_(db) {
+    explicit SQLTransaction(QSqlDatabase &db): db_(db) {
         db.transaction();
     }
 
@@ -67,7 +72,7 @@ bool GameRepository::open(const QString &dbPath, QString *errorString)
     QSqlQuery query(QLatin1String("select value from settings where name = 'schema_version'"), db);
     bool ok = false;
     if (query.isValid()) {
-        if (auto v = query.record().value("value").toInt(&ok); ok) {
+        if (auto v = query.value(QLatin1String("value")).toInt(&ok); ok) {
             currSchemaVersion = v;
         }
     }
@@ -82,7 +87,7 @@ bool GameRepository::open(const QString &dbPath, QString *errorString)
                 return false;
             }
 
-            auto sqls = QString::fromUtf8(schemaFile.readAll()).split(";");
+            auto sqls = QString::fromUtf8(schemaFile.readAll()).split(QLatin1String(";"));
             for (auto sql : sqls) {
                 sql = sql.trimmed();
                 if (sql.isEmpty()) continue;
@@ -103,4 +108,64 @@ bool GameRepository::open(const QString &dbPath, QString *errorString)
     d->db.close();
     d->db = db;
     return true;
+}
+
+std::optional<SessionData> getSessionData(QSqlDatabase &db, SessionId sessionId) {
+    auto session = queryFirst<Session>(db, QLatin1String("select * from sessions where id = ?"), sessionId);
+
+    if (!session) {
+        return std::nullopt;
+    }
+
+    auto courtResult = query<Court>(db, QLatin1String("select * from courts where session_id = ?"), session->id);
+    auto courts = std::get_if<QVector<Court>>(&courtResult);
+    if (!courts) {
+        return std::nullopt;
+    }
+
+    std::optional<SessionData> data;
+    data.emplace().session = *session;
+    data.value().courts = *courts;
+    return data;
+}
+
+std::optional<SessionData> GameRepository::getLastSession() const {
+    QSqlQuery query(QLatin1String("select id from sessions order by start_time desc limit 1"), d->db);
+    if (query.next()) {
+        return getSessionData(d->db, query.value(0).toInt());
+    }
+
+    return std::nullopt;
+}
+
+std::optional<SessionData> GameRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
+    SQLTransaction trans(d->db);
+    auto result = query(d->db, QLatin1String("insert into sessions (fee, announcement) values (?, ?)"), fee, announcement);
+    auto insertedId = std::get_if<QVariant>(&result);
+    if (!insertedId || insertedId->isValid()) {
+        return std::nullopt;
+    }
+    auto sessionId = insertedId->toInt();
+
+    QSqlQuery courtQuery(d->db);
+    if (!courtQuery.prepare(QLatin1String("insert into courts (session_id, name, sort_order) values (?, ?, ?)"))) {
+        return std::nullopt;
+    }
+
+    for (const auto &court : courts) {
+        bindQuery(courtQuery, sessionId, court.name, court.sortOrder);
+        if (!courtQuery.exec()) {
+            return std::nullopt;
+        }
+    }
+
+    return getSessionData(d->db, sessionId);
+}
+
+QVector<GameAllocation> GameRepository::getPastAllocations(SessionId) const {
+    return QVector<GameAllocation>();
+}
+
+GameId GameRepository::createGame(const QVector<GameAllocation> &) {
+    return 0;
 }

@@ -30,6 +30,16 @@ int main(int argc, char *argv[])
         qDebug() << "Error opening db: " << error;
     }
 
+    repo.createSession(500, QLatin1String("Hello, world"), {
+        CourtConfiguration { QLatin1String("Court1"), 1 },
+        CourtConfiguration { QLatin1String("Court2"), 1 },
+    });
+
+    auto lastSession = repo.getLastSession();
+    if (lastSession) {
+        qDebug() << "Last session start time = " << lastSession->session.startTime;
+    }
+
     QRandomGenerator random(1);
     QVector<Member> members;
     for (auto i = 0; i < 20; i++) {
@@ -37,8 +47,8 @@ int main(int argc, char *argv[])
         m.id = i;
         m.level = random.bounded(10);
         m.fistName = QStringLiteral("Player %1").arg(i + 1);
-        m.lastName = "Last";
-        m.gender = i % 3 == 0 ? "male" : "female";
+        m.lastName = QStringLiteral("Last");
+        m.gender = i % 3 == 0 ? QStringLiteral("male") : QStringLiteral("female");
         members.push_back(m);
     }
 
@@ -59,8 +69,10 @@ int main(int argc, char *argv[])
         qDebug() << "Got allocation: " << result;
         pastAllocations.append(result);
 
-        QObject::connect(new GameMatcher(pastAllocations, members, players, courts, 4, 1), &GameMatcher::onFinished, onGameMatched);
+//        QObject::connect(new GameMatcher(pastAllocations, members, players, courts, 4, 1), &GameMatcher::onFinished, onGameMatched);
     };
+
+
 
     QObject::connect(new GameMatcher(pastAllocations, members, players, courts, 4, 1), &GameMatcher::onFinished, onGameMatched);
 
