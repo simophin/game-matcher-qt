@@ -13,8 +13,6 @@
 
 #include "gamestats.h"
 
-struct GameMatcher::Impl {
-};
 
 struct PlayerInfo {
     Player player;
@@ -69,87 +67,71 @@ static std::list<PlayerInfo> findEligiblePlayers(const QVector<Member> &members,
     return std::list<PlayerInfo>(eligiblePlayers.cbegin(), eligiblePlayers.cend());
 }
 
-GameMatcher::GameMatcher(const QVector<GameAllocation> &pastAllocation,
+QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAllocation,
                          const QVector<Member> &members,
                          const QVector<Player> &players,
                          const QVector<CourtId> &courts,
                          int playerPerCourt,
-                         int seed,
-                         QObject *parent) : QObject(parent), d(new Impl) {
-    typedef QFutureWatcher<QVector<GameAllocation>> Watcher;
-    auto watcher = new Watcher(this);
-    watcher->setFuture(QtConcurrent::run([=] {
-        GameStats stats(pastAllocation, members, players);
+                         int seed) const {
+    GameStats stats(pastAllocation, members, players);
 
-        // Find eligible players
-        auto eligiblePlayers = findEligiblePlayers(members, players, stats, seed);
+    // Find eligible players
+    auto eligiblePlayers = findEligiblePlayers(members, players, stats, seed);
 
-        // Cut eligible players list
-        const auto numPlayers = std::min<int>(eligiblePlayers.size() / playerPerCourt * playerPerCourt, playerPerCourt * courts.size());
-        {
-            auto iter = eligiblePlayers.begin();
-            for (int i = 0; i < numPlayers - 1; i++) ++iter;
-            const auto lowestEligibleScore = iter->eligibilityScore;
-            for (; iter != eligiblePlayers.cend(); ++iter) {
-                if (lowestEligibleScore != iter->eligibilityScore) {
-                    iter = eligiblePlayers.erase(iter);
-                }
+    // Cut eligible players list
+    const auto numPlayers = std::min<int>(eligiblePlayers.size() / playerPerCourt * playerPerCourt, playerPerCourt * courts.size());
+    {
+        auto iter = eligiblePlayers.begin();
+        for (int i = 0; i < numPlayers - 1; i++) ++iter;
+        const auto lowestEligibleScore = iter->eligibilityScore;
+        for (; iter != eligiblePlayers.cend(); ++iter) {
+            if (lowestEligibleScore != iter->eligibilityScore) {
+                iter = eligiblePlayers.erase(iter);
             }
         }
+    }
 
-        std::vector<decltype(eligiblePlayers)::iterator> opponents;
+    std::vector<decltype(eligiblePlayers)::iterator> opponents;
 
-        QVector<GameAllocation> result;
-        result.reserve(numPlayers);
-        auto court = courts.cbegin();
+    QVector<GameAllocation> result;
+    result.reserve(numPlayers);
+    auto court = courts.cbegin();
 
-        while (eligiblePlayers.size() >= playerPerCourt) {
-            auto iter = eligiblePlayers.begin();
-            auto matchee = iter++;
+    while (eligiblePlayers.size() >= playerPerCourt) {
+        auto iter = eligiblePlayers.begin();
+        auto matchee = iter++;
 
-            // Add rest of the eligible players to opponent list
-            opponents.clear();
-            opponents.reserve(eligiblePlayers.size() - 1);
-            for (; iter != eligiblePlayers.end(); iter++) {
-                iter->matchingScore = -stats.numGamesBetween(matchee->player.id, iter->player.id) +
-                                          std::abs(matchee->member.level - iter->member.level) * 10;
-                opponents.push_back(iter);
-            }
+        // Add rest of the eligible players to opponent list
+        opponents.clear();
+        opponents.reserve(eligiblePlayers.size() - 1);
+        for (; iter != eligiblePlayers.end(); iter++) {
+            iter->matchingScore = -stats.numGamesBetween(matchee->player.id, iter->player.id) +
+                                  std::abs(matchee->member.level - iter->member.level) * 10;
+            opponents.push_back(iter);
+        }
 
-            // Sort opponent list
-            sortByMatchingScore(opponents);
+        // Sort opponent list
+        sortByMatchingScore(opponents);
 
-            GameAllocation ga;
+        GameAllocation ga;
 
-            // Push matchee itself
-            ga.courtId = *court;
-            ga.playerId = matchee->player.id;
+        // Push matchee itself
+        ga.courtId = *court;
+        ga.playerId = matchee->player.id;
+        result.push_back(ga);
+        eligiblePlayers.erase(matchee);
+
+        // Push other opponents
+        for (int i = 0; i < playerPerCourt - 1; i++) {
+            auto &opponentIter = *opponents.rbegin();
+            ga.playerId = opponentIter->player.id;
+            eligiblePlayers.erase(opponentIter);
+            opponents.pop_back();
             result.push_back(ga);
-            eligiblePlayers.erase(matchee);
-
-            // Push other opponents
-            for (int i = 0; i < playerPerCourt - 1; i++) {
-                auto &opponentIter = *opponents.rbegin();
-                ga.playerId = opponentIter->player.id;
-                eligiblePlayers.erase(opponentIter);
-                opponents.pop_back();
-                result.push_back(ga);
-            }
-            court++;
         }
+        court++;
+    }
 
-        return result;
-    }));
-
-    connect(watcher, &Watcher::finished, [this, watcher] {
-        emit onFinished(watcher->result());
-        watcher->deleteLater();
-        deleteLater();
-    });
+    return result;
 }
 
-
-
-GameMatcher::~GameMatcher() {
-    delete d;
-}

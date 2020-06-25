@@ -18,18 +18,16 @@
 #include <QVariant>
 #include <variant>
 
-QString camelCaseToUnderscore(const QString &s);
-
 
 inline void bindQuery(QSqlQuery &query, int) {}
 
-template <typename T, typename ...Args>
+template<typename T, typename ...Args>
 inline void bindQuery(QSqlQuery &query, int startPos, T arg, Args...otherArgs) {
     query.bindValue(startPos, arg);
     bindQuery(query, startPos + 1, otherArgs...);
 }
 
-template <typename...Args>
+template<typename...Args>
 bool prepareAndBindQuery(QSqlQuery &q, const QString &sql, Args...args) {
     if (!q.prepare(sql)) {
         return false;
@@ -39,42 +37,66 @@ bool prepareAndBindQuery(QSqlQuery &q, const QString &sql, Args...args) {
     return true;
 }
 
-template <typename Entity>
+template<typename Entity>
 void writeRecordToEntity(const QSqlRecord &record, Entity &entity) {
     static auto propertyMaps = [] {
         QHash<QString, QMetaProperty> result;
-        const QMetaObject &metaObject = Entity::staticMetaObject;
-        for (auto i = metaObject.propertyCount() - 1; i >= 0; i--) {
-            auto prop = metaObject.property(i);
-            result[camelCaseToUnderscore(QLatin1String(prop.name()))] = prop;
+        const QMetaObject *metaObject = &Entity::staticMetaObject;
+        while (metaObject) {
+            for (auto i = metaObject->propertyCount() - 1; i >= 0; i--) {
+                auto prop = metaObject->property(i);
+                result[QLatin1String(prop.name())] = prop;
+            }
+            metaObject = metaObject->superClass();
         }
         return result;
-    } ();
+    }();
 
     for (int i = 0; i < record.count(); i++) {
-        auto prop = propertyMaps.constFind(record.fieldName(i));
+        auto key = record.fieldName(i);
+        auto prop = propertyMaps.constFind(key);
         if (prop == propertyMaps.constEnd()) {
-            qWarning() << "Unable to find property " << record.fieldName(i) << " in the entity";
+            qWarning() << "Unable to find property " << key
+                       << " in the entity: " << Entity::staticMetaObject.className();
             continue;
         }
-        prop->writeOnGadget(&entity, record.value(i));
+
+        if (!prop->isWritable()) {
+            qWarning() << "Unable to write to property: " << key
+                       << " in the entity: " << Entity::staticMetaObject.className();
+        }
+
+        QVariant value;
+        if (!record.isNull(i)) {
+            value = record.value(i);
+        }
+
+        if (!prop->writeOnGadget(&entity, value)) {
+            qWarning() << "Unable to write to property: " << key
+                       << " in the entity: " << Entity::staticMetaObject.className()
+                       << ", withValue = " << value;
+        }
     }
 }
 
-inline void writeRecordToEntity(const QSqlRecord &record) {
-
-}
 
 struct VoidEntity {
-    Q_GADGET;
+Q_GADGET;
 };
 
-template <typename Entity>
-using QueryResult = std::variant<QSqlError, QVector<Entity>, QVariant>;
+
+template<typename IdType = int>
+struct UpdateResult {
+    size_t numRowsAffected;
+    std::optional<IdType> lastInsertedId;
+};
+
+template<typename Entity, typename IdType>
+using QueryResult = std::variant<QSqlError, QVector<Entity>, UpdateResult<IdType>>;
 
 
-template <typename Entity = VoidEntity, typename...Args>
-QueryResult<Entity> query(QSqlDatabase &db, const QString &sql, Args...args) {
+template<typename Entity = VoidEntity, typename IdType = int, typename...Args>
+QueryResult<Entity, IdType> query(QSqlDatabase &db, const QString &sql, Args...args) {
     QSqlQuery q(db);
     if (!prepareAndBindQuery(q, sql, args...) || !q.exec()) {
         qWarning() << "Error query: " << q.lastQuery() << ": " << q.lastError();
@@ -93,10 +115,17 @@ QueryResult<Entity> query(QSqlDatabase &db, const QString &sql, Args...args) {
         return entities;
     }
 
-    return q.lastInsertId();
+    UpdateResult<IdType> result;
+
+    if (q.lastInsertId().isValid()) {
+        result.lastInsertedId = q.lastInsertId().value<IdType>();
+    }
+    result.numRowsAffected = q.numRowsAffected();
+
+    return result;
 }
 
-template <typename Entity, typename...Args>
+template<typename Entity, typename...Args>
 std::optional<Entity> queryFirst(QSqlDatabase &db, const QString &sql, Args...args) {
     auto result = query<Entity, Args...>(db, sql, args...);
     if (auto *entities = std::get_if<QVector<Entity>>(&result)) {

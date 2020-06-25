@@ -18,6 +18,12 @@ struct SessionData {
     QVector<Court> courts;
 };
 
+struct MemberInfo : Member {
+    Q_GADGET
+public:
+    DECLARE_PROPERTY(int, balance, = 0);
+};
+
 class GameRepository : public QObject
 {
     Q_OBJECT
@@ -27,12 +33,23 @@ public:
 
     bool open(const QString& dbPath, QString *errorString = nullptr);
 
+    std::optional<MemberInfo> createMember(
+            const QString &fistName, const QString &lastName,
+            const QString &gender, int level);
+
+    [[nodiscard]] QVector<Member> findMember(const QString &needle) const;
+    std::optional<MemberInfo> getMember(MemberId) const;
+    std::optional<Player> getPlayer(PlayerId) const;
+    std::optional<Player> checkIn(MemberId, SessionId, int payment) const;
+    bool checkOut(PlayerId);
+
     [[nodiscard]] std::optional<SessionData> getLastSession() const;
     std::optional<SessionData> createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &);
 
-    QVector<GameAllocation> getPastAllocations(SessionId) const;
+    [[nodiscard]] QVector<GameAllocation> getPastAllocations(SessionId) const;
+    [[nodiscard]] QVector<GameAllocation> getLastGameAllocation(SessionId) const;
 
-    GameId createGame(const QVector<GameAllocation> &);
+    std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &);
 
 private:
     struct Impl;

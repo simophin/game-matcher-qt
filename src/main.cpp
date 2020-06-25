@@ -23,58 +23,86 @@ int main(int argc, char *argv[])
 //    }, Qt::QueuedConnection);
 //    engine.load(url);
 
+    qRegisterMetaType<GameId>("GameId");
+    qRegisterMetaType<CourtId>("CourtId");
+    qRegisterMetaType<SessionId>("SessionId");
+    qRegisterMetaType<PlayerId>("PlayerId");
+    qRegisterMetaType<MemberId>("MemberId");
+
     QCoreApplication app(argc, argv);
     GameRepository repo;
     QString error;
-    if (!repo.open(QLatin1String(":memory:"), &error)) {
+    if (!repo.open(QLatin1String("test.sqlitedb"), &error)) {
         qDebug() << "Error opening db: " << error;
-    }
-
-    repo.createSession(500, QLatin1String("Hello, world"), {
-        CourtConfiguration { QLatin1String("Court1"), 1 },
-        CourtConfiguration { QLatin1String("Court2"), 1 },
-    });
-
-    auto lastSession = repo.getLastSession();
-    if (lastSession) {
-        qDebug() << "Last session start time = " << lastSession->session.startTime;
+        return -2;
     }
 
     QRandomGenerator random(1);
     QVector<Member> members;
     for (auto i = 0; i < 20; i++) {
-        Member m;
-        m.id = i;
-        m.level = random.bounded(10);
-        m.fistName = QStringLiteral("Player %1").arg(i + 1);
-        m.lastName = QStringLiteral("Last");
-        m.gender = i % 3 == 0 ? QStringLiteral("male") : QStringLiteral("female");
-        members.push_back(m);
+        auto m = repo.createMember(
+                QStringLiteral("Player %1").arg(i + 1),
+                QStringLiteral("Last"),
+                i % 3 == 0 ? QStringLiteral("male") : QStringLiteral("female"),
+                random.bounded(10)
+                );
+
+        if (!m) {
+            qCritical() << "Unable to create member";
+            return -1;
+        }
+
+        members.push_back(*m);
+    }
+
+
+    auto lastSession = repo.createSession(500, QLatin1String("Hello, world"), {
+        CourtConfiguration { QLatin1String("Court1"), 1 },
+        CourtConfiguration { QLatin1String("Court2"), 1 },
+    });
+    if (!lastSession) {
+        qCritical() << "Unable to create session";
+        return -1;
+    }
+
+    lastSession = repo.getLastSession();
+    if (!lastSession) {
+        qDebug() << "Can't find last session";
+        return -1;
     }
 
     QVector<Player> players;
     for (const auto &member : members) {
-        Player p;
-        p.memberId = member.id;
-        p.id = member.id;
-        p.checkInTime = QDateTime::currentDateTime();
-        players.push_back(p);
+        auto p = repo.checkIn(member.id, lastSession->session.id, 500);
+        if (!p) {
+            qCritical() << "Unable to check in memberId" << member.id;
+            return -1;
+        }
+
+        players.push_back(*p);
     }
 
-    QVector<CourtId> courts = { 1, 2, 3, 4 };
+    QVector<CourtId> courts;
+    for (const auto &court : lastSession->courts) {
+        courts.append(court.id);
+    }
 
     QVector<GameAllocation> pastAllocations;
 
-    auto onGameMatched = [&](const QVector<GameAllocation> &result) {
-        qDebug() << "Got allocation: " << result;
-        pastAllocations.append(result);
+    GameMatcher matcher;
+    auto matchResult = matcher.match(pastAllocations, members, players, courts, 4, 1);
+    auto gameId = repo.createGame(lastSession->session.id, matchResult);
+    if (!gameId) {
+        qCritical() << "Unable to create game";
+        return -2;
+    }
 
-//        QObject::connect(new GameMatcher(pastAllocations, members, players, courts, 4, 1), &GameMatcher::onFinished, onGameMatched);
-    };
-
-
-
-    QObject::connect(new GameMatcher(pastAllocations, members, players, courts, 4, 1), &GameMatcher::onFinished, onGameMatched);
+    pastAllocations.append(repo.getLastGameAllocation(lastSession->session.id));
+    gameId = repo.createGame(lastSession->session.id, matcher.match(pastAllocations, members, players, courts, 4, 1));
+    if (!gameId) {
+        qCritical() << "Unable to create game2";
+        return -3;
+    }
 
     return app.exec();
 }
