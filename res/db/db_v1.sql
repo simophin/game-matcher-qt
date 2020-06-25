@@ -3,8 +3,10 @@ create table settings
     name text not null primary key,
     value text not null
 );
+---
 
 insert into settings(name, value) values ('schema_version', 1);
+---
 
 create table members
 (
@@ -18,7 +20,28 @@ create table members
     check ( gender = 'male' or gender = 'female' ),
     check ( level >= 0 and level <= 10 )
 );
+---
 
+create unique index member_unique_names on members (firstName, lastName);
+---
+
+create virtual table member_names using fts5(memberId UNINDEXED, name);
+---
+create trigger member_names_ai after insert on members
+    begin
+        insert into member_names(memberId, name) values (new.id, new.firstName || ' ' || new.lastName);
+    end;
+---
+create trigger member_names_au after update on members
+    begin
+        update member_names set name = new.firstName || ' ' || new.lastName;
+    end;
+---
+create trigger member_names_ad after delete on members
+    begin
+        delete from member_names where memberId = old.id;
+    end;
+---
 
 create table courts
 (
@@ -27,9 +50,9 @@ create table courts
     name       text    not null,
     sortOrder integer not null
 );
-
+---
 create index courts_sessions on courts (sessionId);
-
+---
 create table sessions
 (
     id           integer  not null primary key autoincrement,
@@ -38,7 +61,7 @@ create table sessions
     announcement text
     check ( fee >= 0 )
 );
-
+---
 create table players
 (
     id             integer  not null primary key autoincrement,
@@ -50,20 +73,22 @@ create table players
     paused         boolean  not null default false,
     unique (sessionId, memberId) on conflict fail
 );
-
+---
 create index player_sessions on players (sessionId);
+---
 create index player_member_payments on players (memberId, payment);
+---
 create index player_members on players (memberId);
-
+---
 create table games
 (
     id         integer  not null primary key autoincrement,
     sessionId integer  not null references sessions (id) on delete cascade,
     startTime datetime not null default current_timestamp
 );
-
+---
 create index game_sessions on games (sessionId);
-
+---
 create table game_allocations
 (
     gameId   integer not null references games (id) on delete cascade,
@@ -72,7 +97,9 @@ create table game_allocations
     primary key (gameId, courtId, playerId),
     unique (gameId, playerId) on conflict fail
 );
-
+---
 create index game_allocations_games on game_allocations (gameId);
+---
 create index game_allocations_courts on game_allocations (courtId);
+---
 create index game_allocations_players on game_allocations (playerId);

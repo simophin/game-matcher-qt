@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     GameRepository repo;
     QString error;
-    if (!repo.open(QLatin1String("test.sqlitedb"), &error)) {
+    if (!repo.open(QStringLiteral(":memory:"), &error)) {
         qDebug() << "Error opening db: " << error;
         return -2;
     }
@@ -55,10 +55,15 @@ int main(int argc, char *argv[])
         members.push_back(*m);
     }
 
+    auto found = repo.findMember(QStringLiteral("5"));
+    for (const auto &m : found) {
+        qDebug() << "Found " << m.matched;
+    }
 
-    auto lastSession = repo.createSession(500, QLatin1String("Hello, world"), {
-        CourtConfiguration { QLatin1String("Court1"), 1 },
-        CourtConfiguration { QLatin1String("Court2"), 1 },
+
+    auto lastSession = repo.createSession(500, QStringLiteral("Hello, world"), {
+        CourtConfiguration { QStringLiteral("Court1"), 1 },
+        CourtConfiguration { QStringLiteral("Court2"), 1 },
     });
     if (!lastSession) {
         qCritical() << "Unable to create session";

@@ -15,7 +15,7 @@ static struct {
     int schemaVersion;
     QString sqlFile;
 } schemas[] = {
-        {1, QLatin1String(":/sql/db_v1.sql")},
+        {1, QStringLiteral(":/sql/db_v1.sql")},
 };
 
 class SQLTransaction {
@@ -50,7 +50,7 @@ GameRepository::~GameRepository() {
 }
 
 bool GameRepository::open(const QString &dbPath, QString *errorString) {
-    auto db = QSqlDatabase::addDatabase(QLatin1String("QSQLITE"));
+    auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
     db.setDatabaseName(dbPath);
     if (!db.open()) {
         if (errorString) {
@@ -85,7 +85,7 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
                 return false;
             }
 
-            auto sqls = QString::fromUtf8(schemaFile.readAll()).split(QLatin1String(";"));
+            auto sqls = QString::fromUtf8(schemaFile.readAll()).split(QStringLiteral("---"));
             for (auto sql : sqls) {
                 sql = sql.trimmed();
                 if (sql.isEmpty()) continue;
@@ -109,13 +109,13 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
 }
 
 std::optional<SessionData> getSessionData(QSqlDatabase &db, SessionId sessionId) {
-    auto session = queryFirst<Session>(db, QLatin1String("select * from sessions where id = ?"), sessionId);
+    auto session = queryFirst<Session>(db, QStringLiteral("select * from sessions where id = ?"), sessionId);
 
     if (!session) {
         return std::nullopt;
     }
 
-    auto courtResult = query<Court>(db, QLatin1String("select * from courts where sessionId = ?"), session->id);
+    auto courtResult = query<Court>(db, QStringLiteral("select * from courts where sessionId = ?"), session->id);
     auto courts = std::get_if<QVector<Court>>(&courtResult);
     if (!courts) {
         return std::nullopt;
@@ -128,7 +128,7 @@ std::optional<SessionData> getSessionData(QSqlDatabase &db, SessionId sessionId)
 }
 
 std::optional<SessionData> GameRepository::getLastSession() const {
-    QSqlQuery query(QLatin1String("select id from sessions order by startTime desc limit 1"), d->db);
+    QSqlQuery query(QStringLiteral("select id from sessions order by startTime desc limit 1"), d->db);
     if (query.next()) {
         return getSessionData(d->db, query.value(0).toInt());
     }
@@ -139,7 +139,7 @@ std::optional<SessionData> GameRepository::getLastSession() const {
 std::optional<SessionData>
 GameRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
     SQLTransaction trans(d->db);
-    auto result = query(d->db, QLatin1String("insert into sessions (fee, announcement) values (?, ?)"), fee,
+    auto result = query(d->db, QStringLiteral("insert into sessions (fee, announcement) values (?, ?)"), fee,
                         announcement);
     auto updateResult = std::get_if<UpdateResult<SessionId>>(&result);
     if (!updateResult || !updateResult->lastInsertedId) {
@@ -150,7 +150,7 @@ GameRepository::createSession(int fee, const QString &announcement, const QVecto
     auto sessionId = *updateResult->lastInsertedId;
 
     for (const auto &court : courts) {
-        result = query(d->db, QLatin1String("insert into courts (sessionId, name, sortOrder) values (?, ?, ?)"),
+        result = query(d->db, QStringLiteral("insert into courts (sessionId, name, sortOrder) values (?, ?, ?)"),
                        sessionId, court.name, court.sortOrder);
 
         if (auto error = std::get_if<QSqlError>(&result); error) {
@@ -170,9 +170,10 @@ GameRepository::createSession(int fee, const QString &announcement, const QVecto
 
 QVector<GameAllocation> GameRepository::getPastAllocations(SessionId id) const {
     auto queryResult = query<GameAllocation>(d->db,
-                                             QLatin1String("select * from game_allocations GA "
+                                             QStringLiteral("select * from game_allocations GA "
                                                            "inner join games G on GA.gameId = G.id "
-                                                           "where G.sessionId = ?", id));
+                                                           "where G.sessionId = ?"),
+                                                           id);
     if (auto result = std::get_if<QVector<GameAllocation>>(&queryResult); result) {
         return *result;
     }
@@ -183,7 +184,7 @@ QVector<GameAllocation> GameRepository::getPastAllocations(SessionId id) const {
 std::optional<GameId> GameRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
     SQLTransaction tx(d->db);
 
-    auto queryResult = query(d->db, QLatin1String("insert into games (sessionId) values (?)"), sessionId);
+    auto queryResult = query(d->db, QStringLiteral("insert into games (sessionId) values (?)"), sessionId);
     auto updateResult = std::get_if<UpdateResult<GameId>>(&queryResult);
     if (!updateResult || !updateResult->lastInsertedId) {
         tx.setError();
@@ -193,7 +194,7 @@ std::optional<GameId> GameRepository::createGame(SessionId sessionId, const QVec
     auto gameId = *updateResult->lastInsertedId;
     for (const auto &ga : allocations) {
         queryResult = query(d->db,
-                            QLatin1String("insert into game_allocations (gameId, courtId, playerId) values (?, ?, ?)"),
+                            QStringLiteral("insert into game_allocations (gameId, courtId, playerId) values (?, ?, ?)"),
                             gameId, ga.courtId, ga.playerId);
         if (std::get_if<QSqlError>(&queryResult)) {
             tx.setError();
@@ -223,13 +224,15 @@ GameRepository::createMember(const QString &fistName,
     return getMember(*updateResult->lastInsertedId);
 }
 
-QVector<Member> GameRepository::findMember(const QString &needle) const {
-    auto searchTerm = QStringLiteral("%%%1").arg(needle);
-    auto result = query<Member>(
+QVector<MemberSearchResult> GameRepository::findMember(const QString &needle) const {
+    auto result = query<MemberSearchResult>(
             d->db,
-            QStringLiteral("select * from members where firstName like ? or lastName like ?"),
-            searchTerm, searchTerm);
-    if (auto queryResult = std::get_if<QVector<Member>>(&result); queryResult) {
+            QStringLiteral("select M.*, highlight(member_names, 1, '[', ']') as matched from members M "
+                           "inner join member_names on M.id = memberId "
+                           "where member_names MATCH ? "
+                           "order by rank"),
+            needle);
+    if (auto queryResult = std::get_if<QVector<MemberSearchResult>>(&result); queryResult) {
         return *queryResult;
     }
 
