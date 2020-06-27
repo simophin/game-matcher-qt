@@ -1,4 +1,4 @@
-#include "gamerepository.h"
+#include "clubrepository.h"
 
 #include <QFile>
 #include <QtDebug>
@@ -37,19 +37,19 @@ public:
     }
 };
 
-struct GameRepository::Impl {
+struct ClubRepository::Impl {
     QSqlDatabase db;
 };
 
-GameRepository::GameRepository(QObject *parent) : QObject(parent), d(new Impl) {
+ClubRepository::ClubRepository(QObject *parent) : QObject(parent), d(new Impl) {
 
 }
 
-GameRepository::~GameRepository() {
+ClubRepository::~ClubRepository() {
     delete d;
 }
 
-bool GameRepository::open(const QString &dbPath, QString *errorString) {
+static std::optional<QSqlDatabase> openDatabase(const QString &dbPath, QString *errorString = nullptr) {
     auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
     db.setDatabaseName(dbPath);
     if (!db.open()) {
@@ -58,7 +58,7 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
         }
 
         qWarning() << "Error opening: " << dbPath << ":" << db.lastError();
-        return false;
+        return std::nullopt;
     }
 
 
@@ -66,8 +66,8 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
 
     SQLTransaction tx(db);
 
-    auto result = queryFirst<Setting>(d->db,
-            QStringLiteral("select * from settings where name = 'schema_version'"));
+    auto result = queryFirst<Setting>(db,
+                                      QStringLiteral("select * from settings where name = 'schema_version'"));
 
     if (result) {
         currSchemaVersion = result->value.toInt();
@@ -82,7 +82,7 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
             if (!schemaFile.open(QIODevice::ReadOnly)) {
                 tx.setError();
                 qCritical() << "Unable to open file: " << schema.sqlFile;
-                return false;
+                return std::nullopt;
             }
 
             auto sqls = QString::fromUtf8(schemaFile.readAll()).split(QStringLiteral("---"));
@@ -96,15 +96,78 @@ bool GameRepository::open(const QString &dbPath, QString *errorString) {
                     }
                     qCritical() << "Error executing sql " << sql
                                 << ":" << db.lastError();
-                    return false;
+                    return std::nullopt;
                 }
             }
             qDebug() << "Migrated to schema version " << schema.schemaVersion;
         }
     }
 
+    return db;
+}
+
+void ClubRepository::close() {
     d->db.close();
-    d->db = db;
+}
+
+bool ClubRepository::open(const QString &path) {
+    if (path == d->db.databaseName()) return d->db.isOpen();
+
+    if (auto db = openDatabase(path)) {
+        d->db = *db;
+        emit dbPathChanged();
+        emit clubInfoChanged();
+        emit lastGameInfoChanged();
+        return true;
+    }
+
+    return false;
+}
+
+
+bool ClubRepository::isValid() const {
+    return d->db.isOpen();
+}
+
+ClubInfo ClubRepository::clubInfo() const {
+    auto result = query<Setting, QString>(d->db, QStringLiteral(
+            "select * from settings where name in ('club_name', 'session_fee', 'club_creation_date')"));
+    ClubInfo clubInfo;
+    if (auto queryResult = std::get_if<QVector<Setting>>(&result)) {
+        for (const auto &item : *queryResult) {
+            if (item.name == QLatin1String("club_name")) {
+                clubInfo.name = item.value;
+            } else if (item.name == QLatin1String("club_creation_date")) {
+                clubInfo.creationDate = QDateTime::fromString(item.value);
+            } else if (item.name == QLatin1String("session_fee")) {
+                clubInfo.sessionFee = item.value.toInt();
+            }
+        }
+        clubInfo.valid = !clubInfo.name.isEmpty();
+    }
+    return clubInfo;
+}
+
+bool ClubRepository::setClubInfo(const ClubInfo &info) {
+    SQLTransaction tx(d->db);
+
+    auto saveSettings = [&](const QString &name, const QString &value) {
+        auto result = query(d->db, QStringLiteral("insert or replace into settings (name, value) values (?, ?)"), name,
+                            value);
+        if (std::get_if<UpdateResult<int>>(&result)) {
+            return true;
+        }
+        return false;
+    };
+
+    if (!saveSettings(QStringLiteral("club_name"), info.name) ||
+        !saveSettings(QStringLiteral("session_fee"), QString::number(info.sessionFee)) ||
+        !saveSettings(QStringLiteral("club_creation_date"), info.creationDate.toString())) {
+        tx.setError();
+        return false;
+    }
+
+    emit clubInfoChanged();
     return true;
 }
 
@@ -127,7 +190,7 @@ std::optional<SessionData> getSessionData(QSqlDatabase &db, SessionId sessionId)
     return data;
 }
 
-std::optional<SessionData> GameRepository::getLastSession() const {
+std::optional<SessionData> ClubRepository::getLastSession() const {
     QSqlQuery query(QStringLiteral("select id from sessions order by startTime desc limit 1"), d->db);
     if (query.next()) {
         return getSessionData(d->db, query.value(0).toInt());
@@ -137,7 +200,7 @@ std::optional<SessionData> GameRepository::getLastSession() const {
 }
 
 std::optional<SessionData>
-GameRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
+ClubRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
     SQLTransaction trans(d->db);
     auto result = query(d->db, QStringLiteral("insert into sessions (fee, announcement) values (?, ?)"), fee,
                         announcement);
@@ -168,12 +231,12 @@ GameRepository::createSession(int fee, const QString &announcement, const QVecto
     return std::nullopt;
 }
 
-QVector<GameAllocation> GameRepository::getPastAllocations(SessionId id) const {
+QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id) const {
     auto queryResult = query<GameAllocation>(d->db,
                                              QStringLiteral("select * from game_allocations GA "
-                                                           "inner join games G on GA.gameId = G.id "
-                                                           "where G.sessionId = ?"),
-                                                           id);
+                                                            "inner join games G on GA.gameId = G.id "
+                                                            "where G.sessionId = ?"),
+                                             id);
     if (auto result = std::get_if<QVector<GameAllocation>>(&queryResult); result) {
         return *result;
     }
@@ -181,7 +244,7 @@ QVector<GameAllocation> GameRepository::getPastAllocations(SessionId id) const {
     return {};
 }
 
-std::optional<GameId> GameRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
+std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
     SQLTransaction tx(d->db);
 
     auto queryResult = query(d->db, QStringLiteral("insert into games (sessionId) values (?)"), sessionId);
@@ -206,7 +269,7 @@ std::optional<GameId> GameRepository::createGame(SessionId sessionId, const QVec
 }
 
 std::optional<MemberInfo>
-GameRepository::createMember(const QString &fistName,
+ClubRepository::createMember(const QString &fistName,
                              const QString &lastName, const QString &gender, int level) {
     SQLTransaction tx(d->db);
 
@@ -224,7 +287,7 @@ GameRepository::createMember(const QString &fistName,
     return getMember(*updateResult->lastInsertedId);
 }
 
-QVector<MemberSearchResult> GameRepository::findMember(const QString &needle) const {
+QVector<MemberSearchResult> ClubRepository::findMember(const QString &needle) const {
     auto result = query<MemberSearchResult>(
             d->db,
             QStringLiteral("select M.*, highlight(member_names, 1, '[', ']') as matched from members M "
@@ -239,16 +302,17 @@ QVector<MemberSearchResult> GameRepository::findMember(const QString &needle) co
     return {};
 }
 
-std::optional<MemberInfo> GameRepository::getMember(MemberId id) const {
+std::optional<MemberInfo> ClubRepository::getMember(MemberId id) const {
     return queryFirst<MemberInfo>(d->db,
-            QStringLiteral("select M.*, M.initialBalance + (select COALESCE(sum(payment), 0) from players where memberId = M.id) as balance from members M where id = ?"),
-            id);
+                                  QStringLiteral(
+                                          "select M.*, M.initialBalance + (select COALESCE(sum(payment), 0) from players where memberId = M.id) as balance from members M where id = ?"),
+                                  id);
 }
 
-std::optional<Player> GameRepository::checkIn(MemberId memberId, SessionId sessionId, int payment) const {
+std::optional<Player> ClubRepository::checkIn(MemberId memberId, SessionId sessionId, int payment) const {
     auto result = query(d->db,
-            QStringLiteral("insert into players (sessionId, memberId, payment) values (?, ?, ?)"),
-            sessionId, memberId, payment);
+                        QStringLiteral("insert into players (sessionId, memberId, payment) values (?, ?, ?)"),
+                        sessionId, memberId, payment);
     auto updateResult = std::get_if<UpdateResult<PlayerId>>(&result);
     if (!updateResult || !updateResult->lastInsertedId) {
         return std::nullopt;
@@ -257,10 +321,10 @@ std::optional<Player> GameRepository::checkIn(MemberId memberId, SessionId sessi
     return getPlayer(*updateResult->lastInsertedId);
 }
 
-bool GameRepository::checkOut(PlayerId id) {
+bool ClubRepository::checkOut(PlayerId id) {
     auto result = query(d->db,
-            QStringLiteral("update players set checkOutTime = current_timestamp where id = ?"),
-            id);
+                        QStringLiteral("update players set checkOutTime = current_timestamp where id = ?"),
+                        id);
     if (auto updateResult = std::get_if<UpdateResult<PlayerId>>(&result)) {
         return updateResult->numRowsAffected > 0;
     }
@@ -268,10 +332,10 @@ bool GameRepository::checkOut(PlayerId id) {
     return false;
 }
 
-QVector<GameAllocation> GameRepository::getLastGameAllocation(SessionId id) const {
+QVector<GameAllocation> ClubRepository::getLastGameAllocation(SessionId id) const {
     auto result = query<GameAllocation>(d->db,
-            QStringLiteral("select GA.* from game_allocations GA "
-                           "where GA.gameId in (select id from games order by startTime desc limit 1)"));
+                                        QStringLiteral("select GA.* from game_allocations GA "
+                                                       "where GA.gameId in (select id from games order by startTime desc limit 1)"));
     if (auto queryResult = std::get_if<QVector<GameAllocation>>(&result)) {
         return *queryResult;
     }
@@ -279,7 +343,13 @@ QVector<GameAllocation> GameRepository::getLastGameAllocation(SessionId id) cons
     return {};
 }
 
-std::optional<Player> GameRepository::getPlayer(PlayerId id) const {
+std::optional<Player> ClubRepository::getPlayer(PlayerId id) const {
     return queryFirst<Player>(d->db,
-            QStringLiteral("select * from players where id = ?"), id);
+                              QStringLiteral("select * from players where id = ?"), id);
 }
+
+GameInfo ClubRepository::lastGameInfo() const {
+    return GameInfo();
+}
+
+

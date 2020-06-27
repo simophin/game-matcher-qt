@@ -35,6 +35,20 @@ public:
     DECLARE_PROPERTY(QString, gender,);
     DECLARE_PROPERTY(int, level, = 0);
     DECLARE_PROPERTY(int, initialBalance, = 0);
+
+    bool operator==(const Member &rhs) const {
+        return id == rhs.id &&
+               registerDate == rhs.registerDate &&
+               firstName == rhs.firstName &&
+               lastName == rhs.lastName &&
+               gender == rhs.gender &&
+               level == rhs.level &&
+               initialBalance == rhs.initialBalance;
+    }
+
+    bool operator!=(const Member &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 

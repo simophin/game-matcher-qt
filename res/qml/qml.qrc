@@ -5,5 +5,11 @@
         <file>Page1Form.ui.qml</file>
         <file>Page2Form.ui.qml</file>
         <file>qtquickcontrols2.conf</file>
+        <file>WelcomePage.qml</file>
+        <file>WelcomePageForm.ui.qml</file>
+        <file>NewClubPage.qml</file>
+        <file>NewClubPageForm.ui.qml</file>
+        <file>ClubPage.qml</file>
+        <file>ClubPageForm.ui.qml</file>
     </qresource>
 </RCC>
