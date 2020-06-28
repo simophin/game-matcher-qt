@@ -9,11 +9,11 @@
     type name defaultValue; \
     Q_PROPERTY(type name MEMBER name)
 
-typedef int MemberId;
-typedef int PlayerId;
-typedef int SessionId;
-typedef int CourtId;
-typedef int GameId;
+typedef qlonglong MemberId;
+typedef qlonglong PlayerId;
+typedef qlonglong SessionId;
+typedef qlonglong CourtId;
+typedef qlonglong GameId;
 
 
 struct Setting {

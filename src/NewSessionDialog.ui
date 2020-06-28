@@ -9,12 +9,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>370</height>
+    <width>658</width>
+    <height>467</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Start a new session</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -53,7 +53,7 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QTextEdit" name="textEdit"/>
+        <widget class="QTextEdit" name="annoucement"/>
        </item>
       </layout>
      </item>

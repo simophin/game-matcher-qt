@@ -93,6 +93,8 @@ public:
     GameInfo lastGameInfo() const;
     Q_PROPERTY(GameInfo lastGameInfo READ lastGameInfo NOTIFY lastGameInfoChanged STORED false);
 
+    QString getSettings(const QString &key) const;
+    bool setSettings(const QString &key, const QVariant &value);
 
     std::optional<MemberInfo> createMember(
             const QString &fistName, const QString &lastName,
@@ -103,6 +105,7 @@ public:
     std::optional<Player> getPlayer(PlayerId) const;
     std::optional<Player> checkIn(MemberId, SessionId, int payment) const;
     bool checkOut(PlayerId);
+
 
     [[nodiscard]] std::optional<SessionData> getLastSession() const;
     std::optional<SessionData> createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &);
@@ -115,6 +118,7 @@ public:
 signals:
     void clubInfoChanged();
     void lastGameInfoChanged();
+    void lastSessionChanged();
 
 private:
     struct Impl;

@@ -12,6 +12,14 @@
 #include <QApplication>
 
 int main(int argc, char **argv) {
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    qRegisterMetaType<GameId>("GameId");
+    qRegisterMetaType<CourtId>("CourtId");
+    qRegisterMetaType<SessionId>("SessionId");
+    qRegisterMetaType<PlayerId>("PlayerId");
+    qRegisterMetaType<MemberId>("MemberId");
+    qRegisterMetaType<ClubInfo>("ClubInfo");
+
     QApplication app(argc, argv);
 
     QCoreApplication::setOrganizationName(QStringLiteral("Cloudwalker"));

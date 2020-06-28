@@ -7,11 +7,8 @@
 
 
 #include <QFrame>
-#include <memory>
+#include "models.h"
 
-namespace Ui {
-    class ClubPage;
-}
 
 class ClubPage : public QFrame {
 Q_OBJECT
@@ -20,14 +17,16 @@ public:
 
     ~ClubPage() override;
 
+public slots:
+    void openSession(SessionId);
+    void openLastSession();
+
 private slots:
     void onSessionCreated();
 
 private:
     struct Impl;
-    std::unique_ptr<Impl> d;
-
-    std::unique_ptr<Ui::ClubPage> ui;
+    Impl *d;
 };
 
 #endif //GAMEMATCHER_CLUBPAGE_H

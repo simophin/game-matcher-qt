@@ -153,7 +153,7 @@ bool ClubRepository::setClubInfo(const ClubInfo &info) {
     auto saveSettings = [&](const QString &name, const QString &value) {
         auto result = query(d->db, QStringLiteral("insert or replace into settings (name, value) values (?, ?)"), name,
                             value);
-        if (std::get_if<UpdateResult<int>>(&result)) {
+        if (std::get_if<UpdateResult<qlonglong>>(&result)) {
             return true;
         }
         return false;
@@ -223,6 +223,7 @@ ClubRepository::createSession(int fee, const QString &announcement, const QVecto
     }
 
     if (auto data = getSessionData(d->db, sessionId); data) {
+        emit this->lastSessionChanged();
         return data;
     }
 
@@ -351,4 +352,24 @@ GameInfo ClubRepository::lastGameInfo() const {
     return GameInfo();
 }
 
+QString ClubRepository::getSettings(const QString &key) const {
+    auto settings = queryFirst<Setting>(d->db,
+            QStringLiteral("select * from settings where name = ?"), key);
+    if (settings) {
+        return settings->value;
+    }
+
+    return QString();
+}
+
+bool ClubRepository::setSettings(const QString &key, const QVariant &value) {
+    auto result = query<VoidEntity, QString>(d->db,
+            QStringLiteral("insert or replace into settings (name, value) values (?, ?)"),
+            key, value.toString());
+    if (auto update = std::get_if<UpdateResult<QString>>(&result)) {
+        return update->numRowsAffected > 0;
+    }
+
+    return false;
+}
 

@@ -85,7 +85,7 @@ Q_GADGET;
 };
 
 
-template<typename IdType = int>
+template<typename IdType>
 struct UpdateResult {
     size_t numRowsAffected;
     std::optional<IdType> lastInsertedId;
@@ -95,7 +95,7 @@ template<typename Entity, typename IdType>
 using QueryResult = std::variant<QSqlError, QVector<Entity>, UpdateResult<IdType>>;
 
 
-template<typename Entity = VoidEntity, typename IdType = int, typename...Args>
+template<typename Entity = VoidEntity, typename IdType = qlonglong, typename...Args>
 QueryResult<Entity, IdType> query(QSqlDatabase &db, const QString &sql, Args...args) {
     QSqlQuery q(db);
     if (!prepareAndBindQuery(q, sql, args...) || !q.exec()) {

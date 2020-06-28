@@ -16,8 +16,16 @@ public:
 
     ~EmptySessionPage() override;
 
+    signals:
+    void newSessionCreated();
+    void lastSessionResumed();
+
 private slots:
     void applyInfo();
+    void on_startButton_clicked();
+    void on_resumeButton_clicked();
+    void on_updateButton_clicked();
+    void on_statsButton_clicked();
 
 private:
     struct Impl;

@@ -7,36 +7,27 @@
 
 #include "clubrepository.h"
 #include "SessionPage.h"
-#include "NewSessionDialog.h"
 #include "EmptySessionPage.h"
 
 #include <QErrorMessage>
-#include <QMessageBox>
 
 struct ClubPage::Impl {
     ClubRepository repo;
+    Ui::ClubPage ui;
 };
 
 ClubPage::ClubPage(const QString &path, QWidget *parent)
-        : QFrame(parent), d(new Impl), ui(new Ui::ClubPage()) {
-    ui->setupUi(this);
+        : QFrame(parent), d(new Impl) {
+    d->ui.setupUi(this);
     if (!d->repo.open(path)) {
         (new QErrorMessage(this))->showMessage(tr("Unable to open club file \"%1\"").arg(path));
         deleteLater();
     }
 
-    bool createDialog;
-    auto session = d->repo.getLastSession();
-    if (session && qAbs(session->session.startTime.daysTo(QDateTime::currentDateTime())) > 0) {
-        createDialog = QMessageBox::question(this, tr("Question about last session"),
-                                             tr("Last session is long time ago. Do you want to start a new one?")) == QMessageBox::Yes;
-    } else if (!session) {
-        createDialog = true;
-    } else {
-        createDialog = false;
-    }
-
-    ui->layout->addWidget(new EmptySessionPage(&d->repo, this));
+    auto page = new EmptySessionPage(&d->repo, this);
+    connect(page, &EmptySessionPage::lastSessionResumed, this, &ClubPage::openLastSession);
+    connect(page, &EmptySessionPage::newSessionCreated, this, &ClubPage::openLastSession);
+    d->ui.layout->addWidget(page);
 
 //    if (createDialog) {
 //        auto dialog = new NewSessionDialog(&d->repo, this);
@@ -50,13 +41,25 @@ ClubPage::ClubPage(const QString &path, QWidget *parent)
 }
 
 void ClubPage::onSessionCreated() {
-    while (!ui->layout->isEmpty()) {
-        ui->layout->removeItem(ui->layout->itemAt(0));
+    while (!d->ui.layout->isEmpty()) {
+        d->ui.layout->removeItem(d->ui.layout->itemAt(0));
     }
 
 //    if (auto session = d->repo.getLastSession()) {
-//        ui->layout->addWidget(new SessionPage(&d->repo, *session, this), 1);
+//        d->ui.layout->addWidget(new SessionPage(&d->repo, *session, this), 1);
 //    }
 }
 
-ClubPage::~ClubPage() = default;
+void ClubPage::openLastSession() {
+    if (auto lastSession = d->repo.getLastSession()) {
+        openSession(lastSession->session.id);
+    }
+}
+
+void ClubPage::openSession(SessionId) {
+
+}
+
+ClubPage::~ClubPage() {
+    delete d;
+}

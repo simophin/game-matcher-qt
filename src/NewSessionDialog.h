@@ -19,9 +19,14 @@ public:
 
     ~NewSessionDialog() override;
 
-signals:
+    void accept() override;
 
+signals:
     void sessionCreated();
+
+private slots:
+    void validateForm();
+    void on_buttonBox_accepted();
 
 private:
     struct Impl;
