@@ -113,7 +113,6 @@ public:
     std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &);
 
 signals:
-    void dbPathChanged();
     void clubInfoChanged();
     void lastGameInfoChanged();
 

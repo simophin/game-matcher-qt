@@ -6,7 +6,7 @@
 #include "ui_MainWindow.h"
 
 #include "WelcomePage.h"
-#include "ClubHomePage.h"
+#include "ClubPage.h"
 
 #include <QSettings>
 #include <QFile>
@@ -24,13 +24,13 @@ MainWindow::MainWindow(QWidget *parent)
         connect(page, &WelcomePage::clubOpened, this, &MainWindow::onClubOpened);
         setCentralWidget(page);
     } else {
-        setCentralWidget(new ClubHomePage(this));
+        setCentralWidget(new ClubPage(lastOpen.toString(), this));
     }
 }
 
 void MainWindow::onClubOpened(QString path) {
     QSettings().setValue(SETTINGS_KEY_LAST_OPEN_CLUB_FILE, path);
-    setCentralWidget(new ClubHomePage(this));
+    setCentralWidget(new ClubPage(path, this));
 }
 
 MainWindow::~MainWindow() = default;

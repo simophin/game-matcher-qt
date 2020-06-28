@@ -115,7 +115,6 @@ bool ClubRepository::open(const QString &path) {
 
     if (auto db = openDatabase(path)) {
         d->db = *db;
-        emit dbPathChanged();
         emit clubInfoChanged();
         emit lastGameInfoChanged();
         return true;
