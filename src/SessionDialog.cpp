@@ -7,6 +7,7 @@
 #include "ui_SessionDialog.h"
 
 #include "clubrepository.h"
+#include "Adapter.h"
 
 struct SessionDialog::Impl {
     ClubRepository *repo;
@@ -17,25 +18,6 @@ struct SessionDialog::Impl {
 static const auto minCourtDisplayWidth = 90;
 static const auto maxCourtDisplayWidth = 120;
 
-class CourtListModel : public QAbstractListModel {
-public:
-    CourtListModel(QObject *parent) : QAbstractListModel(parent) {}
-
-    int rowCount(const QModelIndex &parent) const override {
-        return 0;
-    }
-
-    int columnCount(const QModelIndex &parent) const override {
-        return 1;
-    }
-
-    QVariant data(const QModelIndex &index, int role) const override {
-        return QVariant();
-    }
-
-private:
-
-};
 
 SessionDialog::SessionDialog(ClubRepository *repo, SessionId sessionId, QWidget *parent)
         : QDialog(parent), d(new Impl{repo}) {
@@ -88,6 +70,10 @@ void SessionDialog::onCurrentGameChanged() {
             }
         }
 
-        d->ui.courtView->setItemDelegate()
+        setEntities(d->ui.courtGrid, courts,
+                    [=] { return new CourtDisplay(this); },
+                    [](CourtDisplay *display, const CourtInfo &info) {
+                        display->setCourt(info);
+                    });
     }
 }

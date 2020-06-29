@@ -23,14 +23,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QListView" name="courtView">
-       <property name="flow">
-        <enum>QListView::LeftToRight</enum>
-       </property>
-       <property name="isWrapping" stdset="0">
-        <bool>true</bool>
-       </property>
-      </widget>
+      <layout class="QGridLayout" name="courtGrid"/>
      </item>
     </layout>
    </item>

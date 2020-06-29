@@ -4,6 +4,7 @@
 
 #include "CourtDisplay.h"
 #include "ui_CourtDisplay.h"
+#include "Adapter.h"
 
 
 struct CourtDisplay::Impl {
@@ -22,23 +23,10 @@ CourtDisplay::~CourtDisplay() {
 void CourtDisplay::setCourt(const CourtInfo &court) {
     d->ui.courtName->setText(court.courtName);
 
-    const auto numViews = d->ui.memberListLayout->count();
-    const auto numPlayers = court.players.size();
-    const auto numReuse = qMin(numPlayers, numViews);
-    int i = 0;
-    for (; i < numReuse; i++) {
-        qobject_cast<QLabel *>(d->ui.memberListLayout->itemAt(i)->widget())->setText(court.players[i].displayName);
-    }
-    
-    if (numReuse < numPlayers) {
-        // Add missing
-        for (; i < numPlayers; i++) {
-            d->ui.memberListLayout->addWidget(new QLabel(court.players[i].displayName, this));
-        }
-    } else if (numReuse < numViews) {
-        // Remove excessive
-        while (d->ui.memberListLayout->count() > numPlayers) {
-            d->ui.memberListLayout->removeItem(d->ui.memberListLayout->itemAt(d->ui.memberListLayout->count() - 1));
-        }
-    }
+    setEntities(d->ui.memberListLayout,
+                court.players,
+                [=] { return new QLabel(this); },
+                [](QLabel *label, const auto &player) {
+                    label->setText(player.displayName);
+                });
 }
