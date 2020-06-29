@@ -21,9 +21,6 @@ public slots:
     void openSession(SessionId);
     void openLastSession();
 
-private slots:
-    void onSessionCreated();
-
 private:
     struct Impl;
     Impl *d;

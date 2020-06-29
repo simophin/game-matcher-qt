@@ -170,29 +170,11 @@ bool ClubRepository::setClubInfo(const ClubInfo &info) {
     return true;
 }
 
-std::optional<SessionData> getSessionData(QSqlDatabase &db, SessionId sessionId) {
-    auto session = queryFirst<Session>(db, QStringLiteral("select * from sessions where id = ?"), sessionId);
 
-    if (!session) {
-        return std::nullopt;
-    }
-
-    auto courtResult = query<Court>(db, QStringLiteral("select * from courts where sessionId = ?"), session->id);
-    auto courts = std::get_if<QVector<Court>>(&courtResult);
-    if (!courts) {
-        return std::nullopt;
-    }
-
-    std::optional<SessionData> data;
-    data.emplace().session = *session;
-    data.value().courts = *courts;
-    return data;
-}
-
-std::optional<SessionData> ClubRepository::getLastSession() const {
+std::optional<SessionId> ClubRepository::getLastSession() const {
     QSqlQuery query(QStringLiteral("select id from sessions order by startTime desc limit 1"), d->db);
     if (query.next()) {
-        return getSessionData(d->db, query.value(0).toInt());
+        return query.value(0).toInt();
     }
 
     return std::nullopt;
@@ -222,7 +204,7 @@ ClubRepository::createSession(int fee, const QString &announcement, const QVecto
         }
     }
 
-    if (auto data = getSessionData(d->db, sessionId); data) {
+    if (auto data = getSession(sessionId)) {
         emit this->lastSessionChanged();
         return data;
     }
@@ -303,10 +285,11 @@ QVector<MemberSearchResult> ClubRepository::findMember(const QString &needle) co
 }
 
 std::optional<MemberInfo> ClubRepository::getMember(MemberId id) const {
-    return queryFirst<MemberInfo>(d->db,
-                                  QStringLiteral(
-                                          "select M.*, M.initialBalance + (select COALESCE(sum(payment), 0) from players where memberId = M.id) as balance from members M where id = ?"),
-                                  id);
+    return queryFirst<MemberInfo>(
+            d->db,
+            QStringLiteral(
+                    "select M.*, M.initialBalance + (select COALESCE(sum(payment), 0) from players where memberId = M.id) as balance from members M where id = ?"),
+            id);
 }
 
 std::optional<Player> ClubRepository::checkIn(MemberId memberId, SessionId sessionId, int payment) const {
@@ -354,7 +337,7 @@ GameInfo ClubRepository::lastGameInfo() const {
 
 QString ClubRepository::getSettings(const QString &key) const {
     auto settings = queryFirst<Setting>(d->db,
-            QStringLiteral("select * from settings where name = ?"), key);
+                                        QStringLiteral("select * from settings where name = ?"), key);
     if (settings) {
         return settings->value;
     }
@@ -364,12 +347,42 @@ QString ClubRepository::getSettings(const QString &key) const {
 
 bool ClubRepository::setSettings(const QString &key, const QVariant &value) {
     auto result = query<VoidEntity, QString>(d->db,
-            QStringLiteral("insert or replace into settings (name, value) values (?, ?)"),
-            key, value.toString());
+                                             QStringLiteral(
+                                                     "insert or replace into settings (name, value) values (?, ?)"),
+                                             key, value.toString());
     if (auto update = std::get_if<UpdateResult<QString>>(&result)) {
         return update->numRowsAffected > 0;
     }
 
     return false;
 }
+
+std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const {
+    auto session = queryFirst<Session>(d->db, QStringLiteral("select * from sessions where id = ?"), sessionId);
+
+    if (!session) {
+        return std::nullopt;
+    }
+
+    auto courtResult = query<Court>(d->db, QStringLiteral("select * from courts where sessionId = ?"), sessionId);
+    auto courts = std::get_if<QVector<Court>>(&courtResult);
+    if (!courts) {
+        return std::nullopt;
+    }
+
+    auto playersResult = query<Member>(d->db,
+            QStringLiteral("select M.* from members M inner join players P on M.id = P.memberId where P.sessionId = ?"),
+            sessionId);
+    auto players = std::get_if<QVector<Member>>(&playersResult);
+    if (!players) {
+        return std::nullopt;
+    }
+
+    std::optional<SessionData> data;
+    data.emplace().session = *session;
+    data.value().courts = *courts;
+    data.value().checkedIn = *players;
+    return data;
+}
+
 

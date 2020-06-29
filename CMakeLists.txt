@@ -24,7 +24,7 @@ add_executable(GameMatcher
         src/models.h
         src/gamematcher.cpp
         src/gamematcher.h
-        src/gamestats.h src/dbutils.h src/dbutils.cpp src/MainWindow.h src/MainWindow.cpp src/NewClubDialog.h src/NewClubDialog.cpp src/WelcomePage.cpp src/WelcomePage.h src/ClubPage.cpp src/ClubPage.h src/SessionPage.cpp src/SessionPage.h src/NewSessionDialog.cpp src/NewSessionDialog.h src/EmptySessionPage.cpp src/EmptySessionPage.h)
+        src/gamestats.h src/dbutils.h src/dbutils.cpp src/MainWindow.h src/MainWindow.cpp src/NewClubDialog.h src/NewClubDialog.cpp src/WelcomePage.cpp src/WelcomePage.h src/ClubPage.cpp src/ClubPage.h src/SessionDialog.cpp src/SessionDialog.h src/NewSessionDialog.cpp src/NewSessionDialog.h src/EmptySessionPage.cpp src/EmptySessionPage.h src/CourtDisplay.cpp src/CourtDisplay.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
