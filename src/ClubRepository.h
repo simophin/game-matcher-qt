@@ -6,6 +6,7 @@
 #include <qqml.h>
 
 #include "models.h"
+#include "MemberFilter.h"
 
 class QFile;
 
@@ -27,11 +28,6 @@ public:
     DECLARE_PROPERTY(int, balance, = 0);
 };
 
-struct MemberSearchResult : Member {
-Q_GADGET
-public:
-    DECLARE_PROPERTY(QString, matched,);
-};
 
 struct ClubInfo {
 Q_GADGET
@@ -111,18 +107,19 @@ public:
 
     bool saveMember(const Member &);
 
-    [[nodiscard]] QVector<MemberSearchResult> findMember(const QString &needle) const;
+    QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 
     bool hasMember(const QString &firstName, const QString &lastName);
 
     std::optional<MemberInfo> getMember(MemberId) const;
+
+    QVector<Member> getAllMembers(MemberSearchFilter) const;
 
     std::optional<Player> getPlayer(PlayerId) const;
 
     std::optional<Player> checkIn(MemberId, SessionId, int payment) const;
 
     bool checkOut(PlayerId);
-
 
     std::optional<SessionData> getSession(SessionId) const;
 

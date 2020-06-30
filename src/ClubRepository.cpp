@@ -1,4 +1,4 @@
-#include "clubrepository.h"
+#include "ClubRepository.h"
 
 #include <QFile>
 #include <QtDebug>
@@ -9,7 +9,7 @@
 #include <QSqlError>
 
 
-#include "dbutils.h"
+#include "DbUtils.h"
 
 static struct {
     int schemaVersion;
@@ -129,7 +129,7 @@ bool ClubRepository::isValid() const {
 }
 
 ClubInfo ClubRepository::clubInfo() const {
-    auto result = query<Setting, QString>(d->db, QStringLiteral(
+    auto result = query<Setting>(d->db, QStringLiteral(
             "select * from settings where name in ('club_name', 'session_fee', 'club_creation_date')"));
     ClubInfo clubInfo;
     if (auto queryResult = std::get_if<QVector<Setting>>(&result)) {
@@ -153,7 +153,7 @@ bool ClubRepository::setClubInfo(const ClubInfo &info) {
     auto saveSettings = [&](const QString &name, const QString &value) {
         auto result = query(d->db, QStringLiteral("insert or replace into settings (name, value) values (?, ?)"), name,
                             value);
-        if (std::get_if<UpdateResult<qlonglong>>(&result)) {
+        if (std::get_if<UpdateResult<VoidEntity>>(&result)) {
             return true;
         }
         return false;
@@ -183,9 +183,10 @@ std::optional<SessionId> ClubRepository::getLastSession() const {
 std::optional<SessionData>
 ClubRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
     SQLTransaction trans(d->db);
-    auto result = query(d->db, QStringLiteral("insert into sessions (fee, announcement) values (?, ?)"), fee,
-                        announcement);
-    auto updateResult = std::get_if<UpdateResult<SessionId>>(&result);
+    auto sessionResult = query<Session>(d->db, QStringLiteral("insert into sessions (fee, announcement) values (?, ?)"),
+                                        fee,
+                                        announcement);
+    auto updateResult = std::get_if<UpdateResult<Session>>(&sessionResult);
     if (!updateResult || !updateResult->lastInsertedId) {
         trans.setError();
         return std::nullopt;
@@ -194,10 +195,11 @@ ClubRepository::createSession(int fee, const QString &announcement, const QVecto
     auto sessionId = *updateResult->lastInsertedId;
 
     for (const auto &court : courts) {
-        result = query(d->db, QStringLiteral("insert into courts (sessionId, name, sortOrder) values (?, ?, ?)"),
-                       sessionId, court.name, court.sortOrder);
+        auto courtResult = query<Court>(d->db, QStringLiteral(
+                                                "insert into courts (sessionId, name, sortOrder) values (?, ?, ?)"),
+                                        sessionId, court.name, court.sortOrder);
 
-        if (auto error = std::get_if<QSqlError>(&result); error) {
+        if (auto error = std::get_if<QSqlError>(&courtResult); error) {
             qWarning() << "Error inserting court: " << *error;
             trans.setError();
             return std::nullopt;
@@ -230,7 +232,7 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
     SQLTransaction tx(d->db);
 
     auto queryResult = query(d->db, QStringLiteral("insert into games (sessionId) values (?)"), sessionId);
-    auto updateResult = std::get_if<UpdateResult<GameId>>(&queryResult);
+    auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&queryResult);
     if (!updateResult || !updateResult->lastInsertedId) {
         tx.setError();
         return std::nullopt;
@@ -259,7 +261,7 @@ ClubRepository::createMember(const QString &fistName,
                         QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
                         fistName, lastName, gender, level);
 
-    auto updateResult = std::get_if<UpdateResult<MemberId>>(&result);
+    auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result);
     if (!updateResult || !updateResult->lastInsertedId) {
         qWarning() << "Error inserting member";
         tx.setError();
@@ -269,16 +271,54 @@ ClubRepository::createMember(const QString &fistName,
     return getMember(*updateResult->lastInsertedId);
 }
 
-QVector<MemberSearchResult> ClubRepository::findMember(const QString &needle) const {
-    auto result = query<MemberSearchResult>(
-            d->db,
-            QStringLiteral("select M.*, highlight(member_names, 1, '[', ']') as matched from members M "
-                           "inner join member_names on M.id = memberId "
-                           "where member_names MATCH ? "
-                           "order by rank"),
-            needle);
-    if (auto queryResult = std::get_if<QVector<MemberSearchResult>>(&result); queryResult) {
-        return *queryResult;
+static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const MemberSearchFilter &filter) {
+    QString sql;
+    QVector<QVariant> args;
+    if (std::get_if<AllMembers>(&filter)) {
+        sql = QStringLiteral("select * from members M where 1");
+    } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
+        sql = QStringLiteral("select M.* from members M "
+                             "inner join players P on P.memberId = M.id "
+                             "where P.checkOutTime is null "
+                             " and P.sessionId = ? ");
+        args.push_back(checkedIn->sessionId);
+
+        if (checkedIn->paused) {
+            sql += QStringLiteral(" and P.paused = ?");
+            args.push_back(*checkedIn->paused);
+        }
+    } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
+        sql = QStringLiteral("select M.* from members M "
+                             "  where id not in (select memberId from players where sessionId = ?)");
+        args.push_back(nonCheckedIn->sessionId);
+    }
+
+    return std::make_pair(sql, args);
+}
+
+QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QString &needle) const {
+    auto[sql, args] = constructFindMembersSql(filter);
+    auto trimmed = needle;
+    if (!trimmed.isEmpty()) {
+        sql += QStringLiteral(" and (M.firstName like ? or M.lastName like ?)");
+        auto realNeedle = QStringLiteral("%1%%").arg(trimmed);
+        args.push_back(realNeedle);
+        args.push_back(realNeedle);
+    }
+
+    auto result = queryArgs<Member>(d->db, sql, args);
+    if (auto set = std::get_if<QVector<Member>>(&result)) {
+        return *set;
+    }
+
+    return {};
+}
+
+QVector<Member> ClubRepository::getAllMembers(MemberSearchFilter filter) const {
+    auto[sql, args] = constructFindMembersSql(filter);
+    auto result = queryArgs<Member>(d->db, sql, args);
+    if (auto set = std::get_if<QVector<Member>>(&result)) {
+        return *set;
     }
 
     return {};
@@ -296,7 +336,7 @@ std::optional<Player> ClubRepository::checkIn(MemberId memberId, SessionId sessi
     auto result = query(d->db,
                         QStringLiteral("insert into players (sessionId, memberId, payment) values (?, ?, ?)"),
                         sessionId, memberId, payment);
-    auto updateResult = std::get_if<UpdateResult<PlayerId>>(&result);
+    auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result);
     if (!updateResult || !updateResult->lastInsertedId) {
         return std::nullopt;
     }
@@ -308,7 +348,7 @@ bool ClubRepository::checkOut(PlayerId id) {
     auto result = query(d->db,
                         QStringLiteral("update players set checkOutTime = current_timestamp where id = ?"),
                         id);
-    if (auto updateResult = std::get_if<UpdateResult<PlayerId>>(&result)) {
+    if (auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return updateResult->numRowsAffected > 0;
     }
 
@@ -346,11 +386,11 @@ QString ClubRepository::getSettings(const QString &key) const {
 }
 
 bool ClubRepository::setSettings(const QString &key, const QVariant &value) {
-    auto result = query<VoidEntity, QString>(d->db,
-                                             QStringLiteral(
-                                                     "insert or replace into settings (name, value) values (?, ?)"),
-                                             key, value.toString());
-    if (auto update = std::get_if<UpdateResult<QString>>(&result)) {
+    auto result = query<Setting>(d->db,
+                                 QStringLiteral(
+                                         "insert or replace into settings (name, value) values (?, ?)"),
+                                 key, value.toString());
+    if (auto update = std::get_if<UpdateResult<Setting>>(&result)) {
         return update->numRowsAffected > 0;
     }
 
@@ -387,10 +427,11 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
 }
 
 bool ClubRepository::hasMember(const QString &firstName, const QString &lastName) {
-    auto countQuery = queryFirst<SingleDataEntity>(d->db,
-                                                   QStringLiteral(
-                                                           "select count(*) as data from members where firstName = ? and lastName = ?"),
-                                                   firstName, lastName);
+    auto countQuery = queryFirst<SingleDataEntity>(
+            d->db,
+            QStringLiteral(
+                    "select count(*) as data from members where firstName = ? and lastName = ?"),
+            firstName, lastName);
     if (countQuery) {
         bool ok;
         return countQuery->data.toInt(&ok) > 0 && ok;
@@ -406,11 +447,13 @@ bool ClubRepository::saveMember(const Member &m) {
                         m.firstName, m.lastName, m.gender,
                         m.level, m.email, m.phone);
 
-    if (auto update = std::get_if<UpdateResult<MemberId>>(&result)) {
+    if (auto update = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return update->numRowsAffected > 0;
     }
 
     return false;
 }
+
+
 
 

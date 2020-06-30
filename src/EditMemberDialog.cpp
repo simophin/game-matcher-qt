@@ -5,7 +5,7 @@
 #include "EditMemberDialog.h"
 #include "ui_EditMemberDialog.h"
 
-#include "clubrepository.h"
+#include "ClubRepository.h"
 
 #include <optional>
 #include <QMessageBox>
@@ -109,6 +109,9 @@ void EditMemberDialog::accept() {
         if (!d->repo->saveMember(m)) {
             QMessageBox::warning(this, tr("Unable to save to database"),
                     tr("Probably nothing you can do about this. You can ignore this."));
+        } else {
+            QMessageBox::information(this, tr("Success"),tr("Update successfully"));
+            QDialog::accept();
         }
     } else if (auto newMember = d->repo->createMember(firstName, lastName, gender.toString(), level.toInt())) {
         emit this->newMemberCreated(newMember->id);

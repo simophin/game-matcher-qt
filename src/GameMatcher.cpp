@@ -1,4 +1,4 @@
-#include "gamematcher.h"
+#include "GameMatcher.h"
 
 #include <QtConcurrent/QtConcurrent>
 #include <QFutureWatcher>
@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-#include "gamestats.h"
+#include "GameStats.h"
 
 
 struct PlayerInfo {

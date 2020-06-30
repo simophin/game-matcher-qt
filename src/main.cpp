@@ -3,9 +3,9 @@
 
 #include <QFile>
 #include <QRandomGenerator>
-#include "clubrepository.h"
-#include "gamematcher.h"
-#include "gamestats.h"
+#include "ClubRepository.h"
+#include "GameMatcher.h"
+#include "GameStats.h"
 #include "models.h"
 
 #include "MainWindow.h"

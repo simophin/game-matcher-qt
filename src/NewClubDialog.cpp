@@ -9,7 +9,7 @@
 
 #include "NewClubDialog.h"
 #include "ui_NewClubDialog.h"
-#include "clubrepository.h"
+#include "ClubRepository.h"
 
 NewClubDialog::NewClubDialog(QWidget *parent)
         : QDialog(parent), ui(new Ui::NewClubDialog()) {

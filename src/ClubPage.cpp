@@ -5,7 +5,7 @@
 #include "ClubPage.h"
 #include "ui_ClubPage.h"
 
-#include "clubrepository.h"
+#include "ClubRepository.h"
 #include "SessionDialog.h"
 #include "EmptySessionPage.h"
 

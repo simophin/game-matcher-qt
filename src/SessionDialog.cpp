@@ -6,8 +6,9 @@
 #include "CourtDisplay.h"
 #include "ui_SessionDialog.h"
 
-#include "clubrepository.h"
+#include "ClubRepository.h"
 #include "Adapter.h"
+#include "MemberSelectDialog.h"
 
 struct SessionDialog::Impl {
     ClubRepository *repo;
@@ -26,8 +27,10 @@ SessionDialog::SessionDialog(ClubRepository *repo, SessionId sessionId, QWidget 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
         onSessionDataChanged();
+        onCurrentGameChanged();
     } else {
         QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
+        close();
     }
 }
 
@@ -76,4 +79,10 @@ void SessionDialog::onCurrentGameChanged() {
                         display->setCourt(info);
                     });
     }
+}
+
+void SessionDialog::on_checkInButton_clicked() {
+    auto dialog = new MemberSelectDialog(AllMembers{}, d->repo, this);
+    dialog->setWindowTitle(tr("Select yourself to check in..."));
+    dialog->show();
 }

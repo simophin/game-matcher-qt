@@ -19,6 +19,8 @@ typedef qlonglong GameId;
 struct Setting {
     Q_GADGET
 public:
+    typedef QString IdType;
+
     DECLARE_PROPERTY(QString, name, );
     DECLARE_PROPERTY(QString, value, );
 };
@@ -33,6 +35,7 @@ static const auto levelMax = 10;
 struct Member {
 Q_GADGET
 public:
+    typedef MemberId IdType;
 
     DECLARE_PROPERTY(MemberId, id, = 0);
     DECLARE_PROPERTY(QDateTime, registerDate,);
@@ -43,6 +46,10 @@ public:
     DECLARE_PROPERTY(QString, phone,);
     DECLARE_PROPERTY(int, level, = 0);
     DECLARE_PROPERTY(int, initialBalance, = 0);
+
+    QString fullName() const {
+        return QObject::tr("%1 %2", "full name").arg(firstName, lastName);
+    }
 
     bool operator==(const Member &rhs) const {
         return id == rhs.id &&
@@ -63,6 +70,7 @@ public:
 struct Session {
     Q_GADGET
 public:
+    typedef SessionId IdType;
     DECLARE_PROPERTY(SessionId, id, = 0);
     DECLARE_PROPERTY(int, fee, = 0);
     DECLARE_PROPERTY(QString, announcement, );
@@ -73,6 +81,7 @@ public:
 struct Player {
 Q_GADGET
 public:
+    typedef PlayerId IdType;
 
     DECLARE_PROPERTY(PlayerId, id, = 0);
     DECLARE_PROPERTY(SessionId, sessionId, = 0);
@@ -87,6 +96,7 @@ public:
 struct Court {
 Q_GADGET
 public:
+    typedef CourtId IdType;
 
     DECLARE_PROPERTY(CourtId, id, = 0);
     DECLARE_PROPERTY(SessionId, sessionId, = 0);
@@ -98,6 +108,7 @@ public:
 struct GameAllocation {
 Q_GADGET
 public:
+    typedef GameId IdType; //This is not correct. Here to satisfy the compiler only
     DECLARE_PROPERTY(GameId, gameId, = 0);
     DECLARE_PROPERTY(CourtId, courtId, = 0);
     DECLARE_PROPERTY(PlayerId, playerId, = 0);

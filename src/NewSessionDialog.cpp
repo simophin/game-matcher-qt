@@ -5,7 +5,7 @@
 #include "NewSessionDialog.h"
 #include "ui_NewSessionDialog.h"
 
-#include "clubrepository.h"
+#include "ClubRepository.h"
 
 #include <QPushButton>
 #include <QMessageBox>

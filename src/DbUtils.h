@@ -19,24 +19,6 @@
 #include <variant>
 
 
-inline void bindQuery(QSqlQuery &query, int) {}
-
-template<typename T, typename ...Args>
-inline void bindQuery(QSqlQuery &query, int startPos, T arg, Args...otherArgs) {
-    query.bindValue(startPos, arg);
-    bindQuery(query, startPos + 1, otherArgs...);
-}
-
-template<typename...Args>
-bool prepareAndBindQuery(QSqlQuery &q, const QString &sql, Args...args) {
-    if (!q.prepare(sql)) {
-        return false;
-    }
-
-    bindQuery(q, 0, args...);
-    return true;
-}
-
 template<typename Entity>
 void writeRecordToEntity(const QSqlRecord &record, Entity &entity) {
     static auto propertyMaps = [] {
@@ -81,30 +63,44 @@ void writeRecordToEntity(const QSqlRecord &record, Entity &entity) {
 
 
 struct VoidEntity {
-Q_GADGET;
+Q_GADGET
+public:
+    typedef qlonglong IdType; // Wrong but to satisfy the compiler
 };
 
 struct SingleDataEntity {
-    Q_GADGET;
+Q_GADGET
 public:
+    typedef qlonglong IdType; // Wrong but to satisfy the compiler
     QVariant data;
     Q_PROPERTY(QVariant data MEMBER data);
 };
 
-template<typename IdType>
+template<typename EntityType = VoidEntity>
 struct UpdateResult {
     size_t numRowsAffected;
-    std::optional<IdType> lastInsertedId;
+    std::optional<typename EntityType::IdType> lastInsertedId;
 };
 
-template<typename Entity, typename IdType>
-using QueryResult = std::variant<QSqlError, QVector<Entity>, UpdateResult<IdType>>;
+template<typename Entity>
+using QueryResult = std::variant<QSqlError, QVector<Entity>, UpdateResult<Entity>>;
 
 
-template<typename Entity = VoidEntity, typename IdType = qlonglong, typename...Args>
-QueryResult<Entity, IdType> query(QSqlDatabase &db, const QString &sql, Args...args) {
+template<typename Entity = VoidEntity, typename VariantList>
+QueryResult<Entity> queryArgs(QSqlDatabase &db, const QString &sql, const VariantList &args) {
     QSqlQuery q(db);
-    if (!prepareAndBindQuery(q, sql, args...) || !q.exec()) {
+
+    if (!q.prepare(sql)) {
+        qWarning() << "Error preparing: " << q.lastQuery() << ": " << q.lastError();
+        return q.lastError();
+    }
+
+    int i = 0;
+    for (const auto &arg : args) {
+        q.bindValue(i++, arg);
+    }
+
+    if (!q.exec()) {
         qWarning() << "Error query: " << q.lastQuery() << ": " << q.lastError();
         return q.lastError();
     }
@@ -121,14 +117,19 @@ QueryResult<Entity, IdType> query(QSqlDatabase &db, const QString &sql, Args...a
         return entities;
     }
 
-    UpdateResult<IdType> result;
+    UpdateResult<Entity> result;
 
     if (q.lastInsertId().isValid()) {
-        result.lastInsertedId = q.lastInsertId().value<IdType>();
+        result.lastInsertedId = q.lastInsertId().value<typename Entity::IdType>();
     }
     result.numRowsAffected = q.numRowsAffected();
 
     return result;
+}
+
+template<typename Entity = VoidEntity, typename...Args>
+QueryResult<Entity> query(QSqlDatabase &db, const QString &sql, Args...args) {
+    return queryArgs<Entity>(db, sql, QVector<QVariant>{args...});
 }
 
 template<typename Entity, typename...Args>

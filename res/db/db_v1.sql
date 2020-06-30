@@ -4,10 +4,8 @@ create table settings
     value text not null
 );
 ---
-
 insert into settings(name, value) values ('schema_version', 1);
 ---
-
 create table members
 (
     id              integer  not null primary key autoincrement,
@@ -23,28 +21,8 @@ create table members
     check ( level >= 0 and level <= 10 )
 );
 ---
-
 create unique index member_unique_names on members (firstName, lastName);
 ---
-
-create virtual table member_names using fts5(memberId UNINDEXED, name);
----
-create trigger member_names_ai after insert on members
-    begin
-        insert into member_names(memberId, name) values (new.id, new.firstName || ' ' || new.lastName);
-    end;
----
-create trigger member_names_au after update on members
-    begin
-        update member_names set name = new.firstName || ' ' || new.lastName;
-    end;
----
-create trigger member_names_ad after delete on members
-    begin
-        delete from member_names where memberId = old.id;
-    end;
----
-
 create table courts
 (
     id         integer not null primary key autoincrement,

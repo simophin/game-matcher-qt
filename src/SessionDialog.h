@@ -23,6 +23,8 @@ private slots:
     void onSessionDataChanged();
     void onCurrentGameChanged();
 
+    void on_checkInButton_clicked();
+
 private:
     struct Impl;
     Impl *d;

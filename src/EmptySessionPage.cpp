@@ -5,18 +5,25 @@
 #include "EmptySessionPage.h"
 #include "ui_EmptySessionPage.h"
 
-#include "clubrepository.h"
+#include "ClubRepository.h"
 #include "NewSessionDialog.h"
 #include "EditMemberDialog.h"
+#include "FakeNames.h"
+
+#include <QRandomGenerator>
 
 struct EmptySessionPage::Impl {
-    ClubRepository * const repo;
+    ClubRepository *const repo;
     Ui::EmptySessionPage ui;
 };
 
 EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
         : QFrame(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
+    d->ui.createFakeButton->setVisible(false);
+#ifndef NDEBUG
+    d->ui.createFakeButton->setVisible(true);
+#endif
 
     applyInfo();
     connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::applyInfo);
@@ -55,4 +62,14 @@ void EmptySessionPage::on_statsButton_clicked() {
 void EmptySessionPage::on_newMemberButton_clicked() {
     auto dialog = new EditMemberDialog(d->repo, this);
     dialog->show();
+}
+
+
+void EmptySessionPage::on_createFakeButton_clicked() {
+    for (const auto &name : FakeNames::names()) {
+        const auto components = name.split(QStringLiteral(" "));
+        d->repo->createMember(components[0], components[1],
+                              QRandomGenerator::global()->generate() % 4 == 0 ? genderFemale : genderMale,
+                              QRandomGenerator::global()->bounded(levelMin, levelMax));
+    }
 }
