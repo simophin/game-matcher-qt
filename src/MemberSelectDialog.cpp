@@ -60,3 +60,15 @@ void MemberSelectDialog::validateForm() {
         button->setEnabled(d->ui.memberList->currentItem() != nullptr);
     }
 }
+
+void MemberSelectDialog::accept() {
+    auto currentItem = d->ui.memberList->currentItem();
+    if (!currentItem) {
+        return;
+    }
+
+    if (auto data = currentItem->data(Qt::UserRole); data.isValid()) {
+        emit this->memberSelected(data.toLongLong());
+        QDialog::accept();
+    }
+}

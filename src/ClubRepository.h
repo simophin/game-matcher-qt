@@ -119,7 +119,9 @@ public:
 
     std::optional<Player> checkIn(MemberId, SessionId, int payment) const;
 
-    bool checkOut(PlayerId);
+    bool checkOut(SessionId, MemberId);
+
+    bool setPaused(SessionId, MemberId, bool);
 
     std::optional<SessionData> getSession(SessionId) const;
 

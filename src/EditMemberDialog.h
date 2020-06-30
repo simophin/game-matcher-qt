@@ -24,6 +24,7 @@ public:
 
     signals:
     void newMemberCreated(MemberId);
+    void memberUpdated(MemberId);
 
 private:
     struct Impl;

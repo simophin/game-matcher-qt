@@ -344,10 +344,10 @@ std::optional<Player> ClubRepository::checkIn(MemberId memberId, SessionId sessi
     return getPlayer(*updateResult->lastInsertedId);
 }
 
-bool ClubRepository::checkOut(PlayerId id) {
+bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
     auto result = query(d->db,
-                        QStringLiteral("update players set checkOutTime = current_timestamp where id = ?"),
-                        id);
+                        QStringLiteral("update players set checkOutTime = current_timestamp where sessionId = ? and memberId = ?"),
+                        sessionId, memberId);
     if (auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return updateResult->numRowsAffected > 0;
     }
@@ -449,6 +449,17 @@ bool ClubRepository::saveMember(const Member &m) {
 
     if (auto update = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return update->numRowsAffected > 0;
+    }
+
+    return false;
+}
+
+bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paused) {
+    auto result = query(d->db,
+                        QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
+                        paused, sessionId, memberId);
+    if (auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result)) {
+        return updateResult->numRowsAffected > 0;
     }
 
     return false;

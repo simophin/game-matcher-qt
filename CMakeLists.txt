@@ -55,7 +55,15 @@ add_executable(GameMatcher
         src/EditMemberDialog.h
         src/EditMemberDialog.ui
         src/MemberSelectDialog.ui
-        src/MemberSelectDialog.cpp src/MemberSelectDialog.h src/FakeNames.cpp src/FakeNames.h src/MemberFilter.h)
+        src/MemberSelectDialog.cpp
+        src/MemberSelectDialog.h
+        src/FakeNames.cpp
+        src/FakeNames.h
+        src/MemberFilter.h
+        src/CheckInDialog.cpp
+        src/CheckInDialog.h
+        src/CheckInDialog.ui
+        )
 
 target_compile_definitions(GameMatcher
         PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>

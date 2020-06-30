@@ -23,6 +23,8 @@ public:
 
     ~MemberSelectDialog() override;
 
+    void accept() override;
+
 signals:
 
     void memberSelected(MemberId);

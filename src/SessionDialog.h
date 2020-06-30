@@ -24,6 +24,11 @@ private slots:
     void onCurrentGameChanged();
 
     void on_checkInButton_clicked();
+    void on_checkOutButton_clicked();
+    void on_pauseButton_clicked();
+    void on_resumeButton_clicked();
+    void on_registerButton_clicked();
+    void on_updateButton_clicked();
 
 private:
     struct Impl;

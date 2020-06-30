@@ -11,6 +11,7 @@
 #include "FakeNames.h"
 
 #include <QRandomGenerator>
+#include <QMessageBox>
 
 struct EmptySessionPage::Impl {
     ClubRepository *const repo;
@@ -62,6 +63,10 @@ void EmptySessionPage::on_statsButton_clicked() {
 void EmptySessionPage::on_newMemberButton_clicked() {
     auto dialog = new EditMemberDialog(d->repo, this);
     dialog->show();
+    connect(dialog, &EditMemberDialog::newMemberCreated, [=] {
+        QMessageBox::information(this, tr("Welcome"),
+                                 tr("Register successfully. Welcome to %1.").arg(d->repo->clubInfo().name));
+    });
 }
 
 

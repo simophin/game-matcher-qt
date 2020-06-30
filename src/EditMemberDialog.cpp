@@ -111,12 +111,11 @@ void EditMemberDialog::accept() {
                     tr("Probably nothing you can do about this. You can ignore this."));
         } else {
             QMessageBox::information(this, tr("Success"),tr("Update successfully"));
+            emit this->memberUpdated(*d->editingMember);
             QDialog::accept();
         }
     } else if (auto newMember = d->repo->createMember(firstName, lastName, gender.toString(), level.toInt())) {
         emit this->newMemberCreated(newMember->id);
-        QMessageBox::information(this, tr("Welcome"),
-                tr("Register successfully. Welcome to %1.").arg(d->repo->clubInfo().name));
         QDialog::accept();
     } else {
         QMessageBox::warning(this, tr("Unable to save to database"),
