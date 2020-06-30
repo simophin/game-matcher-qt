@@ -109,7 +109,7 @@ public:
 
     QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 
-    bool hasMember(const QString &firstName, const QString &lastName);
+    std::optional<MemberId> findMemberBy(const QString &firstName, const QString &lastName);
 
     std::optional<MemberInfo> getMember(MemberId) const;
 

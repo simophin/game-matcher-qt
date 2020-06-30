@@ -59,6 +59,8 @@ void EditMemberDialog::setMember(MemberId id) {
         }
         d->ui.emailLineEdit->setText(m->email);
         d->ui.phoneLineEdit->setText(m->phone);
+
+        setWindowTitle(tr("Editing member info"));
     }
 }
 
@@ -68,10 +70,14 @@ void EditMemberDialog::accept() {
     auto firstName = d->ui.firstNameLineEdit->text().trimmed();
     auto lastName = d->ui.lastNameLineEdit->text().trimmed();
 
-    if (!firstName.isEmpty() && !lastName.isEmpty() && d->repo->hasMember(firstName, lastName)) {
-        errors.append(
-                tr("* Your name \"%1 %2\" is taken. You can try adding a middle name to the last name").arg(firstName,
-                                                                                                          lastName));
+    if (!firstName.isEmpty() && !lastName.isEmpty()) {
+        auto existingMember = d->repo->findMemberBy(firstName, lastName);
+        if ((d->editingMember && existingMember && d->editingMember != existingMember) ||
+                (!d->editingMember && existingMember)) {
+            errors.append(
+                    tr("* The name \"%1 %2\" is taken. You can try adding a middle name to the last name")
+                    .arg(firstName, lastName));
+        }
     }
 
     if (firstName.isEmpty()) {
@@ -110,7 +116,6 @@ void EditMemberDialog::accept() {
             QMessageBox::warning(this, tr("Unable to save to database"),
                     tr("Probably nothing you can do about this. You can ignore this."));
         } else {
-            QMessageBox::information(this, tr("Success"),tr("Update successfully"));
             emit this->memberUpdated(*d->editingMember);
             QDialog::accept();
         }

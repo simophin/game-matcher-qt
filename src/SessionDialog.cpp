@@ -34,7 +34,7 @@ struct SessionDialog::Impl {
             if (QMessageBox::question(parent, tr("Check out"), tr("Are you sure to %1 %2").arg(action, member->fullName())) ==
                 QMessageBox::Yes) {
                 if (cb(*member)) {
-                    QMessageBox::information(parent, tr("Success"), tr("%1 as %2: success").arg(member->fullName()));
+                    QMessageBox::information(parent, tr("Success"), tr("%1 as %2: success").arg(action, member->fullName()));
                 } else {
                     QMessageBox::critical(parent, tr("Error"),
                                           tr("Unable to %1 as %2. Maybe you have already done so.").arg(action, member->fullName()));
@@ -152,7 +152,7 @@ void SessionDialog::on_registerButton_clicked() {
 }
 
 void SessionDialog::on_updateButton_clicked() {
-    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, d->repo, this);
+    auto dialog = new MemberSelectDialog(AllMembers{}, d->repo, this);
     dialog->setWindowTitle(tr("Select yourself to edit..."));
     dialog->show();
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {

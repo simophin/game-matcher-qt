@@ -426,26 +426,24 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
     return data;
 }
 
-bool ClubRepository::hasMember(const QString &firstName, const QString &lastName) {
-    auto countQuery = queryFirst<SingleDataEntity>(
+std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, const QString &lastName) {
+    auto result = queryFirst<Member>(
             d->db,
-            QStringLiteral(
-                    "select count(*) as data from members where firstName = ? and lastName = ?"),
+            QStringLiteral("select * from members where firstName = ? and lastName = ?"),
             firstName, lastName);
-    if (countQuery) {
-        bool ok;
-        return countQuery->data.toInt(&ok) > 0 && ok;
+    if (result) {
+        return result->id;
     }
 
-    return false;
+    return std::nullopt;
 }
 
 bool ClubRepository::saveMember(const Member &m) {
     auto result = query(d->db,
                         QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
-                                       " = (?, ?, ?, ?, ?, ?)"),
+                                       " = (?, ?, ?, ?, ?, ?) where id = ?"),
                         m.firstName, m.lastName, m.gender,
-                        m.level, m.email, m.phone);
+                        m.level, m.email, m.phone, m.id);
 
     if (auto update = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return update->numRowsAffected > 0;
