@@ -6,7 +6,7 @@
 #include "ui_ClubPage.h"
 
 #include "ClubRepository.h"
-#include "SessionDialog.h"
+#include "SessionWindow.h"
 #include "EmptySessionPage.h"
 
 #include <QErrorMessage>
@@ -39,7 +39,7 @@ void ClubPage::openLastSession() {
 }
 
 void ClubPage::openSession(SessionId sessionId) {
-    auto session = new SessionDialog(&d->repo, sessionId, this);
+    auto session = new SessionWindow(&d->repo, sessionId, this);
     session->show();
 }
 

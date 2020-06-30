@@ -2,9 +2,9 @@
 // Created by Fanchao Liu on 27/06/20.
 //
 #include <QMessageBox>
-#include "SessionDialog.h"
+#include "SessionWindow.h"
 #include "CourtDisplay.h"
-#include "ui_SessionDialog.h"
+#include "ui_SessionWindow.h"
 
 #include "ClubRepository.h"
 #include "Adapter.h"
@@ -14,10 +14,10 @@
 
 #include <functional>
 
-struct SessionDialog::Impl {
+struct SessionWindow::Impl {
     ClubRepository *repo;
     SessionData session;
-    Ui::SessionDialog ui;
+    Ui::SessionWindow ui;
 
     void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter, std::function<bool(const Member &)> cb) {
         auto dialog = new MemberSelectDialog(filter, repo, parent);
@@ -48,12 +48,13 @@ static const auto minCourtDisplayWidth = 90;
 static const auto maxCourtDisplayWidth = 120;
 
 
-SessionDialog::SessionDialog(ClubRepository *repo, SessionId sessionId, QWidget *parent)
-        : QDialog(parent), d(new Impl{repo}) {
+SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
+        : QMainWindow(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
+        setWindowTitle(tr("%1 game session").arg(repo->clubInfo().name));
         onSessionDataChanged();
         onCurrentGameChanged();
     } else {
@@ -62,15 +63,14 @@ SessionDialog::SessionDialog(ClubRepository *repo, SessionId sessionId, QWidget 
     }
 }
 
-SessionDialog::~SessionDialog() {
+SessionWindow::~SessionWindow() {
     delete d;
 }
 
-void SessionDialog::onSessionDataChanged() {
-
+void SessionWindow::onSessionDataChanged() {
 }
 
-void SessionDialog::onCurrentGameChanged() {
+void SessionWindow::onCurrentGameChanged() {
     auto game = d->repo->lastGameInfo();
     if (game.empty()) {
     } else {
@@ -111,7 +111,7 @@ void SessionDialog::onCurrentGameChanged() {
 
 
 
-void SessionDialog::on_checkInButton_clicked() {
+void SessionWindow::on_checkInButton_clicked() {
     auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, d->repo, this);
     dialog->setWindowTitle(tr("Select yourself to check in..."));
     dialog->show();
@@ -121,25 +121,25 @@ void SessionDialog::on_checkInButton_clicked() {
     });
 }
 
-void SessionDialog::on_checkOutButton_clicked() {
+void SessionWindow::on_checkOutButton_clicked() {
     d->selectMemberTo(this, tr("check out"), CheckedIn{d->session.session.id}, [=](const Member &m) {
         return d->repo->checkOut(d->session.session.id, m.id);
     });
 }
 
-void SessionDialog::on_pauseButton_clicked() {
+void SessionWindow::on_pauseButton_clicked() {
     d->selectMemberTo(this, tr("pause"), CheckedIn{d->session.session.id, false}, [=](const Member &m) {
         return d->repo->setPaused(d->session.session.id, m.id, true);
     });
 }
 
-void SessionDialog::on_resumeButton_clicked() {
+void SessionWindow::on_resumeButton_clicked() {
     d->selectMemberTo(this, tr("resume"), CheckedIn{d->session.session.id, true}, [=](const Member &m) {
         return d->repo->setPaused(d->session.session.id, m.id, false);
     });
 }
 
-void SessionDialog::on_registerButton_clicked() {
+void SessionWindow::on_registerButton_clicked() {
     auto dialog = new EditMemberDialog(d->repo, this);
     dialog->show();
     connect(dialog, &EditMemberDialog::newMemberCreated, [=](auto memberId) {
@@ -151,7 +151,7 @@ void SessionDialog::on_registerButton_clicked() {
     });
 }
 
-void SessionDialog::on_updateButton_clicked() {
+void SessionWindow::on_updateButton_clicked() {
     auto dialog = new MemberSelectDialog(AllMembers{}, d->repo, this);
     dialog->setWindowTitle(tr("Select yourself to edit..."));
     dialog->show();

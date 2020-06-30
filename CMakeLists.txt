@@ -38,9 +38,9 @@ add_executable(GameMatcher
         src/ClubPage.cpp
         src/ClubPage.h
         src/ClubPage.ui
-        src/SessionDialog.cpp
-        src/SessionDialog.h
-        src/SessionDialog.ui
+        src/SessionWindow.cpp
+        src/SessionWindow.h
+        src/SessionWindow.ui
         src/NewSessionDialog.cpp
         src/NewSessionDialog.h
         src/NewSessionDialog.ui
