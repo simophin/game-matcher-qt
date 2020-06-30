@@ -14,8 +14,10 @@ create table members
     registerDate   datetime not null default current_timestamp,
     firstName      text     not null,
     lastName       text     not null,
-    gender          text     not null,
-    level           integer  not null,
+    gender         text     not null,
+    level          integer  not null,
+    email          text,
+    phone          text,
     initialBalance integer  not null default 0,
     check ( gender = 'male' or gender = 'female' ),
     check ( level >= 0 and level <= 10 )

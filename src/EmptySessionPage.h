@@ -26,6 +26,7 @@ private slots:
     void on_resumeButton_clicked();
     void on_updateButton_clicked();
     void on_statsButton_clicked();
+    void on_newMemberButton_clicked();
 
 private:
     struct Impl;

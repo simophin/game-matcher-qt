@@ -24,6 +24,12 @@ public:
 };
 
 
+static const auto genderMale = QStringLiteral("male");
+static const auto genderFemale = QStringLiteral("female");
+
+static const auto levelMin = 0;
+static const auto levelMax = 10;
+
 struct Member {
 Q_GADGET
 public:
@@ -33,6 +39,8 @@ public:
     DECLARE_PROPERTY(QString, firstName,);
     DECLARE_PROPERTY(QString, lastName,);
     DECLARE_PROPERTY(QString, gender,);
+    DECLARE_PROPERTY(QString, email,);
+    DECLARE_PROPERTY(QString, phone,);
     DECLARE_PROPERTY(int, level, = 0);
     DECLARE_PROPERTY(int, initialBalance, = 0);
 

@@ -371,8 +371,9 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
     }
 
     auto playersResult = query<Member>(d->db,
-            QStringLiteral("select M.* from members M inner join players P on M.id = P.memberId where P.sessionId = ?"),
-            sessionId);
+                                       QStringLiteral(
+                                               "select M.* from members M inner join players P on M.id = P.memberId where P.sessionId = ?"),
+                                       sessionId);
     auto players = std::get_if<QVector<Member>>(&playersResult);
     if (!players) {
         return std::nullopt;
@@ -383,6 +384,33 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
     data.value().courts = *courts;
     data.value().checkedIn = *players;
     return data;
+}
+
+bool ClubRepository::hasMember(const QString &firstName, const QString &lastName) {
+    auto countQuery = queryFirst<SingleDataEntity>(d->db,
+                                                   QStringLiteral(
+                                                           "select count(*) as data from members where firstName = ? and lastName = ?"),
+                                                   firstName, lastName);
+    if (countQuery) {
+        bool ok;
+        return countQuery->data.toInt(&ok) > 0 && ok;
+    }
+
+    return false;
+}
+
+bool ClubRepository::saveMember(const Member &m) {
+    auto result = query(d->db,
+                        QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
+                                       " = (?, ?, ?, ?, ?, ?)"),
+                        m.firstName, m.lastName, m.gender,
+                        m.level, m.email, m.phone);
+
+    if (auto update = std::get_if<UpdateResult<MemberId>>(&result)) {
+        return update->numRowsAffected > 0;
+    }
+
+    return false;
 }
 
 

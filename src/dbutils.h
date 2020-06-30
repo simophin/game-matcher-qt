@@ -84,6 +84,12 @@ struct VoidEntity {
 Q_GADGET;
 };
 
+struct SingleDataEntity {
+    Q_GADGET;
+public:
+    QVariant data;
+    Q_PROPERTY(QVariant data MEMBER data);
+};
 
 template<typename IdType>
 struct UpdateResult {

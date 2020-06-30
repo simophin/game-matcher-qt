@@ -7,6 +7,7 @@
 
 #include "clubrepository.h"
 #include "NewSessionDialog.h"
+#include "EditMemberDialog.h"
 
 struct EmptySessionPage::Impl {
     ClubRepository * const repo;
@@ -49,4 +50,9 @@ void EmptySessionPage::on_updateButton_clicked() {
 
 void EmptySessionPage::on_statsButton_clicked() {
     //TODO
+}
+
+void EmptySessionPage::on_newMemberButton_clicked() {
+    auto dialog = new EditMemberDialog(d->repo, this);
+    dialog->show();
 }

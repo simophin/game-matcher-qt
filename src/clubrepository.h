@@ -109,7 +109,11 @@ public:
             const QString &fistName, const QString &lastName,
             const QString &gender, int level);
 
+    bool saveMember(const Member &);
+
     [[nodiscard]] QVector<MemberSearchResult> findMember(const QString &needle) const;
+
+    bool hasMember(const QString &firstName, const QString &lastName);
 
     std::optional<MemberInfo> getMember(MemberId) const;
 
