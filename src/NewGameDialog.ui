@@ -25,7 +25,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Player list (right click on a player to pause or check out):</string>
+        <string>Player list (double click the player to toggle, right click to see more options):</string>
        </property>
       </widget>
      </item>

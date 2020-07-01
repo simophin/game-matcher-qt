@@ -10,6 +10,7 @@
 
 #include "models.h"
 
+class QListWidgetItem;
 class ClubRepository;
 
 class NewGameDialog : public QDialog {
@@ -27,6 +28,7 @@ private slots:
     void refresh();
 
     void on_playerList_customContextMenuRequested(const QPoint &);
+    void on_playerList_itemDoubleClicked(QListWidgetItem *);
 
     void validateForm();
 

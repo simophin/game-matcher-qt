@@ -111,6 +111,13 @@ void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
     }
 }
 
+void NewGameDialog::on_playerList_itemDoubleClicked(QListWidgetItem *item) {
+    bool paused = !item->data(dataRoleUserIsPaused).toBool();
+    if (d->repo->setPaused(d->session, item->data(dataRoleUserId).value<MemberId>(), paused)) {
+        refresh();
+    }
+}
+
 void NewGameDialog::validateForm() {
     if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
         auto session = d->repo->getSession(d->session);
@@ -128,6 +135,8 @@ void NewGameDialog::validateForm() {
         }
     }
 }
+
+
 
 void NewGameDialog::accept() {
 
