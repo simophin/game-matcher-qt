@@ -117,7 +117,6 @@ bool ClubRepository::open(const QString &path) {
     if (auto db = openDatabase(path)) {
         d->db = *db;
         emit clubInfoChanged();
-        emit lastGameInfoChanged();
         return true;
     }
 
@@ -206,7 +205,6 @@ ClubRepository::createSession(int fee, const QString &announcement, int numPlaye
     }
 
     if (auto data = getSession(sessionId)) {
-        emit this->lastSessionChanged();
         return data;
     }
 
@@ -242,8 +240,6 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
             tx.setError();
             return std::nullopt;
         }
-
-        emit this->lastGameInfoChanged();
     }
 
     return gameId;
@@ -341,7 +337,6 @@ QVector<GameAllocation> ClubRepository::getLastGameAllocation(SessionId id) cons
                            "where GA.gameId in (select id from games where sessionId = ? order by startTime desc limit 1)"),
             {id}).orDefault();
 }
-
 
 
 std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) const {

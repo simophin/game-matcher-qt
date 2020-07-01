@@ -31,14 +31,6 @@ int main(int argc, char **argv) {
 
     main.show();
 
-
-    ClubRepository repo;
-    if (!repo.open(QStringLiteral("/Users/fanchao/Temp/clubfile.sqlitedb"))) {
-        throw std::runtime_error("Unable to open");
-    }
-
-    (new NewGameDialog(1, &repo))->show();
-
     return app.exec();
 }
 

@@ -28,8 +28,6 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
 
     applyInfo();
     connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::applyInfo);
-    connect(d->repo, &ClubRepository::lastGameInfoChanged, this, &EmptySessionPage::applyInfo);
-    connect(d->repo, &ClubRepository::lastSessionChanged, this, &EmptySessionPage::applyInfo);
 }
 
 EmptySessionPage::~EmptySessionPage() {

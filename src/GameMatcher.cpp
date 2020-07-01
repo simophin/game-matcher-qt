@@ -73,6 +73,7 @@ QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAl
                          const QVector<CourtId> &courts,
                          int playerPerCourt,
                          int seed) const {
+    qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << players.size() << " players and " << courts.size() << " courts";
     GameStats stats(pastAllocation, members, players);
 
     // Find eligible players
@@ -131,6 +132,8 @@ QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAl
         }
         court++;
     }
+
+    qDebug() << "Matched result has " << result.size() << " allocations";
 
     return result;
 }

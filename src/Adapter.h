@@ -19,7 +19,7 @@ void setEntities(QLayout *layout, const Entities &entities, WidgetCreate create,
         update(qobject_cast<WidgetPointer>(layout->itemAt(i)->widget()), entities[i]);
     }
 
-    if (numReuse < numPlayers) {
+    if (numViews < numPlayers) {
         // Add missing
         for (; i < numPlayers; i++) {
             WidgetPointer widget = create();

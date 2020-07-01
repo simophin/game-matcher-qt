@@ -131,10 +131,6 @@ signals:
 
     void clubInfoChanged();
 
-    void lastGameInfoChanged();
-
-    void lastSessionChanged();
-
 private:
     struct Impl;
     Impl *d;

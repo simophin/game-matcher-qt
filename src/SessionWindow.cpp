@@ -58,8 +58,6 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
         setWindowTitle(tr("%1 game session").arg(repo->getClubInfo().name));
         onSessionDataChanged();
         onCurrentGameChanged();
-
-        connect(repo, &ClubRepository::lastGameInfoChanged, this, &SessionWindow::onCurrentGameChanged);
     } else {
         QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
         close();
@@ -77,6 +75,7 @@ void SessionWindow::onCurrentGameChanged() {
     auto game = d->repo->getLastGameInfo(d->session.session.id);
     if (!game || game->empty()) {
     } else {
+        statusBar()->showMessage(tr("Game id = %1").arg(game->id));
         QVector<CourtInfo> courts;
         courts.reserve(game->courts.size());
         QSet<MemberId> sameFirstNames;
