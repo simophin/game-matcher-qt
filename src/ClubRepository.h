@@ -39,6 +39,8 @@ public:
 struct CourtPlayers {
 Q_GADGET
 public:
+    typedef CourtId IdType;
+
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
     DECLARE_PROPERTY(QVector<Member>, players,);
@@ -57,7 +59,7 @@ public:
 struct GameInfo {
 Q_GADGET
 public:
-    DECLARE_PROPERTY(QString, announcement,);
+    DECLARE_PROPERTY(GameId, id, );
     DECLARE_PROPERTY(QDateTime, startTime,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
 
@@ -81,15 +83,11 @@ public:
 
     Q_PROPERTY(bool isValid READ isValid);
 
-    ClubInfo clubInfo() const;
+    ClubInfo getClubInfo() const;
 
-    bool setClubInfo(const ClubInfo &);
+    bool saveClubInfo(const ClubInfo &);
 
-    Q_PROPERTY(ClubInfo clubInfo READ clubInfo WRITE setClubInfo NOTIFY clubInfoChanged);
-
-    GameInfo lastGameInfo() const;
-
-    Q_PROPERTY(GameInfo lastGameInfo READ lastGameInfo NOTIFY lastGameInfoChanged STORED false);
+    std::optional<GameInfo> getLastGameInfo(SessionId) const;
 
     QString getSettings(const QString &key) const;
 
@@ -109,9 +107,9 @@ public:
 
     QVector<Member> getAllMembers(MemberSearchFilter) const;
 
-    std::optional<Player> getPlayer(PlayerId) const;
+    QVector<Player> getAllPlayers(SessionId) const;
 
-    std::optional<Player> checkIn(MemberId, SessionId, int payment) const;
+    bool checkIn(MemberId, SessionId, int payment) const;
 
     bool checkOut(SessionId, MemberId);
 

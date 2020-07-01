@@ -55,7 +55,7 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
-        setWindowTitle(tr("%1 game session").arg(repo->clubInfo().name));
+        setWindowTitle(tr("%1 game session").arg(repo->getClubInfo().name));
         onSessionDataChanged();
         onCurrentGameChanged();
     } else {
@@ -72,11 +72,11 @@ void SessionWindow::onSessionDataChanged() {
 }
 
 void SessionWindow::onCurrentGameChanged() {
-    auto game = d->repo->lastGameInfo();
-    if (game.empty()) {
+    auto game = d->repo->getLastGameInfo(d->session.session.id);
+    if (!game || game->empty()) {
     } else {
         QVector<CourtInfo> courts;
-        courts.reserve(game.courts.size());
+        courts.reserve(game->courts.size());
         QSet<MemberId> sameFirstNames;
         QMap<QString, MemberId> firstNameMaps;
         for (const auto &m : d->session.checkedIn) {
@@ -88,7 +88,7 @@ void SessionWindow::onCurrentGameChanged() {
             }
         }
 
-        for (const auto &item : game.courts) {
+        for (const auto &item : game->courts) {
             CourtInfo info;
             info.courtName = item.courtName;
             info.courtId = item.courtId;

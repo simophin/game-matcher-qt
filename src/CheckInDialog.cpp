@@ -30,7 +30,7 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId session, ClubRepository *rep
     }
 
     d->ui.nameValueLabel->setText(member->fullName());
-    auto sessionFee = repo->clubInfo().sessionFee;
+    auto sessionFee = repo->getClubInfo().sessionFee;
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
     connect(d->ui.paidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
     connect(d->ui.unpaidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
@@ -48,7 +48,7 @@ void CheckInDialog::validateForm() {
 }
 
 void CheckInDialog::accept() {
-    auto payment = d->ui.paidRadioButton->isChecked() ? d->repo->clubInfo().sessionFee : 0;
+    auto payment = d->ui.paidRadioButton->isChecked() ? d->repo->getClubInfo().sessionFee : 0;
     if (!d->repo->checkIn(d->id, d->session, payment)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;

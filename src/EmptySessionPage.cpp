@@ -37,7 +37,7 @@ EmptySessionPage::~EmptySessionPage() {
 }
 
 void EmptySessionPage::applyInfo() {
-    d->ui.clubNameLabel->setText(tr("Welcome to %1").arg(d->repo->clubInfo().name));
+    d->ui.clubNameLabel->setText(tr("Welcome to %1").arg(d->repo->getClubInfo().name));
     d->ui.resumeButton->setEnabled(d->repo->getLastSession().has_value());
 }
 
@@ -65,7 +65,7 @@ void EmptySessionPage::on_newMemberButton_clicked() {
     dialog->show();
     connect(dialog, &EditMemberDialog::newMemberCreated, [=] {
         QMessageBox::information(this, tr("Welcome"),
-                                 tr("Register successfully. Welcome to %1.").arg(d->repo->clubInfo().name));
+                                 tr("Register successfully. Welcome to %1.").arg(d->repo->getClubInfo().name));
     });
 }
 

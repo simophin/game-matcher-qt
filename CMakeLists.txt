@@ -65,7 +65,7 @@ add_executable(GameMatcher
         src/CheckInDialog.ui
         src/NewGameDialog.cpp
         src/NewGameDialog.ui
-        src/NewGameDialog.h)
+        src/NewGameDialog.h src/TypeUtils.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

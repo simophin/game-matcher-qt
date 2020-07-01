@@ -34,7 +34,7 @@ NewClubDialog::NewClubDialog(QWidget *parent)
         info.name = ui->clubNameLineEdit->text().trimmed();
         info.sessionFee = ui->feePerSessionLineEdit->text().toDouble() * 100;
         info.creationDate = QDateTime::currentDateTimeUtc();
-        if (!club.open(path) || !club.setClubInfo(info)) {
+        if (!club.open(path) || !club.saveClubInfo(info)) {
             (new QErrorMessage(this))->showMessage(tr("Unable to create \"%1\"").arg(path));
             return;
         }

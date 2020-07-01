@@ -24,7 +24,7 @@ NewSessionDialog::NewSessionDialog(ClubRepository *repo, QWidget *parent)
     validator->setDecimals(2);
     validator->setNotation(QDoubleValidator::StandardNotation);
     d->ui.feeLineEdit->setValidator(validator);
-    d->ui.feeLineEdit->setText(QString::number(repo->clubInfo().sessionFee / 100.0));
+    d->ui.feeLineEdit->setText(QString::number(repo->getClubInfo().sessionFee / 100.0));
 
     d->ui.numberOfCourtsSpinBox->setValue(repo->getSettings(settingsKeyLastNumCourts).toInt());
     connect(d->ui.numberOfCourtsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int value) {

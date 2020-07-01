@@ -6,6 +6,7 @@
 #include "ui_NewGameDialog.h"
 
 #include "ClubRepository.h"
+#include "GameMatcher.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -139,6 +140,27 @@ void NewGameDialog::validateForm() {
 
 
 void NewGameDialog::accept() {
+    if (auto session = d->repo->getSession(d->session)) {
+        auto matcher = new GameMatcher(this);
+        QVector<CourtId> courtIds;
+        courtIds.reserve(session->courts.size());
+        for (const auto &court : session->courts) {
+            courtIds.push_back(court.id);
+        }
 
-    QDialog::accept();
+        auto result = matcher->match(d->repo->getPastAllocations(d->session),
+                       d->repo->getAllMembers(AllMembers{}),
+                       d->repo->getAllPlayers(d->session),
+                       courtIds,
+                       session->session.numPlayersPerCourt,
+                       QDateTime::currentMSecsSinceEpoch()
+        );
+
+        if (d->repo->createGame(d->session, result)) {
+            QDialog::accept();
+            return;
+        }
+    }
+
+    QMessageBox::critical(this, tr("Fail"), tr("Unable to create a new game"));
 }

@@ -18,131 +18,156 @@
 #include <QVariant>
 #include <variant>
 
+#include <type_traits>
 
-template<typename Entity>
-void writeRecordToEntity(const QSqlRecord &record, Entity &entity) {
-    static auto propertyMaps = [] {
-        QHash<QString, QMetaProperty> result;
-        const QMetaObject *metaObject = &Entity::staticMetaObject;
-        while (metaObject) {
-            for (auto i = metaObject->propertyCount() - 1; i >= 0; i--) {
-                auto prop = metaObject->property(i);
-                result[QLatin1String(prop.name())] = prop;
+#include "TypeUtils.h"
+
+
+template <typename T>
+struct QueryResult {
+    mutable std::variant<QSqlError, T> result;
+
+    inline QueryResult(const QSqlError &e): result(e) {}
+    inline QueryResult(const QSqlError *e): result(*e) {}
+    inline QueryResult(const T &data): result(data) {}
+    inline QueryResult() = default;
+
+    inline T *success() const {
+        return std::get_if<T>(&result);
+    }
+
+    inline QSqlError *error() const {
+        return std::get_if<QSqlError>(&result);
+    }
+
+    inline T orDefault(T defaultValue = T()) {
+        if (auto d = success()) {
+            return *d;
+        }
+        return defaultValue;
+    }
+
+    inline std::optional<T> toOptional() {
+        if (auto d = success()) {
+            return *d;
+        }
+        return std::nullopt;
+    }
+
+    inline operator bool() const {
+        return success() != nullptr;
+    }
+
+    inline T* operator->() {
+        assert(success());
+        return success();
+    }
+
+    inline T& operator*() {
+        assert(success());
+        return *success();
+    }
+};
+
+class DbUtils {
+public:
+
+    template <typename Entity, std::enable_if_t<HasMetaObject<Entity>::value, int> = 0>
+    static bool readFrom(Entity& entity, const QSqlRecord &record) {
+        static auto propertyMaps = [] {
+            QHash<QString, QMetaProperty> result;
+            const QMetaObject *metaObject = &Entity::staticMetaObject;
+            while (metaObject) {
+                for (auto i = metaObject->propertyCount() - 1; i >= 0; i--) {
+                    auto prop = metaObject->property(i);
+                    result[QLatin1String(prop.name())] = prop;
+                }
+                metaObject = metaObject->superClass();
             }
-            metaObject = metaObject->superClass();
+            return result;
+        }();
+
+        for (int i = 0; i < record.count(); i++) {
+            auto key = record.fieldName(i);
+            auto prop = propertyMaps.constFind(key);
+            if (prop == propertyMaps.constEnd()) {
+                qWarning() << "Unable to find property " << key
+                           << " in the entity: " << Entity::staticMetaObject.className();
+                continue;
+            }
+
+            if (!prop->isWritable()) {
+                qWarning() << "Unable to write to property: " << key
+                           << " in the entity: " << Entity::staticMetaObject.className();
+            }
+
+            QVariant value;
+            if (!record.isNull(i)) {
+                value = record.value(i);
+            }
+
+            if (!prop->writeOnGadget(&entity, value)) {
+                qWarning() << "Unable to write to property: " << key
+                           << " in the entity: " << Entity::staticMetaObject.className()
+                           << ", withValue = " << value;
+            }
+        }
+        return true;
+    }
+
+    template <typename T, std::enable_if_t<std::is_constructible_v<QVariant, T>, int> = 0>
+    static bool readFrom(T& out, const QSqlRecord &record) {
+        if (auto v = record.value(0); v.isValid()) {
+            out = v.value<T>();
+            return true;
+        }
+        return false;
+    }
+
+    static QueryResult<QSqlQuery> buildQuery(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds);
+
+    template <typename ResultType>
+    static inline QueryResult<QVector<ResultType>> queryList(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+        auto query = buildQuery(db, sql, binds);
+        if (!query) return query.error();
+        if (!query->isSelect()) return {};
+        QVector<ResultType> result;
+        result.reserve(query->size());
+        while (query->next()) {
+            ResultType r;
+            if (!readFrom(r, query->record())) {
+                return QSqlError(QObject::tr("Unable to read from record"));
+            }
+            result.push_back(r);
         }
         return result;
-    }();
-
-    for (int i = 0; i < record.count(); i++) {
-        auto key = record.fieldName(i);
-        auto prop = propertyMaps.constFind(key);
-        if (prop == propertyMaps.constEnd()) {
-            qWarning() << "Unable to find property " << key
-                       << " in the entity: " << Entity::staticMetaObject.className();
-            continue;
-        }
-
-        if (!prop->isWritable()) {
-            qWarning() << "Unable to write to property: " << key
-                       << " in the entity: " << Entity::staticMetaObject.className();
-        }
-
-        QVariant value;
-        if (!record.isNull(i)) {
-            value = record.value(i);
-        }
-
-        if (!prop->writeOnGadget(&entity, value)) {
-            qWarning() << "Unable to write to property: " << key
-                       << " in the entity: " << Entity::staticMetaObject.className()
-                       << ", withValue = " << value;
-        }
     }
-}
 
+    template <typename ResultType>
+    static inline QueryResult<ResultType> queryFirst(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+        auto result = queryList<ResultType>(db, sql, binds);
+        if (!result) return result.error();
+        if (result->isEmpty()) {
+            return QSqlError(QObject::tr("Empty data set"));
+        }
+        return result->at(0);
+    }
 
-struct VoidEntity {
-Q_GADGET
-public:
-    typedef qlonglong IdType; // Wrong but to satisfy the compiler
+    template <typename IdType>
+    static inline QueryResult<IdType> insert(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+        auto query = buildQuery(db, sql, binds);
+        if (!query) return query.error();
+        if (auto id = query->lastInsertId(); id.isValid()) {
+            return id.value<IdType>();
+        }
+        return QSqlError(QObject::tr("Unable to retrieve lastInsertId"));
+    }
+
+    static inline QueryResult<int> update(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+        auto query = buildQuery(db, sql, binds);
+        if (!query) return query.error();
+        return query->numRowsAffected();
+    }
 };
-
-struct SingleDataEntity {
-Q_GADGET
-public:
-    typedef qlonglong IdType; // Wrong but to satisfy the compiler
-    QVariant data;
-    Q_PROPERTY(QVariant data MEMBER data);
-};
-
-template<typename EntityType = VoidEntity>
-struct UpdateResult {
-    size_t numRowsAffected;
-    std::optional<typename EntityType::IdType> lastInsertedId;
-};
-
-template<typename Entity>
-using QueryResult = std::variant<QSqlError, QVector<Entity>, UpdateResult<Entity>>;
-
-
-template<typename Entity = VoidEntity, typename VariantList>
-QueryResult<Entity> queryArgs(QSqlDatabase &db, const QString &sql, const VariantList &args) {
-    QSqlQuery q(db);
-
-    if (!q.prepare(sql)) {
-        qWarning() << "Error preparing: " << q.lastQuery() << ": " << q.lastError();
-        return q.lastError();
-    }
-
-    int i = 0;
-    for (const auto &arg : args) {
-        q.bindValue(i++, arg);
-    }
-
-    if (!q.exec()) {
-        qWarning() << "Error query: " << q.lastQuery() << ": " << q.lastError();
-        return q.lastError();
-    }
-
-    if (q.isSelect()) {
-        QVector<Entity> entities;
-        entities.reserve(q.size());
-        while (q.next()) {
-            Entity entity;
-            writeRecordToEntity(q.record(), entity);
-            entities.append(entity);
-        }
-
-        return entities;
-    }
-
-    UpdateResult<Entity> result;
-
-    if (q.lastInsertId().isValid()) {
-        result.lastInsertedId = q.lastInsertId().value<typename Entity::IdType>();
-    }
-    result.numRowsAffected = q.numRowsAffected();
-
-    return result;
-}
-
-template<typename Entity = VoidEntity, typename...Args>
-QueryResult<Entity> query(QSqlDatabase &db, const QString &sql, Args...args) {
-    return queryArgs<Entity>(db, sql, QVector<QVariant>{args...});
-}
-
-template<typename Entity, typename...Args>
-std::optional<Entity> queryFirst(QSqlDatabase &db, const QString &sql, Args...args) {
-    auto result = query<Entity, Args...>(db, sql, args...);
-    if (auto *entities = std::get_if<QVector<Entity>>(&result)) {
-        if (entities->isEmpty()) {
-            return std::nullopt;
-        }
-        return entities->at(0);
-    }
-
-    return std::nullopt;
-}
 
 #endif //GAMEMATCHER_DBUTILS_H
