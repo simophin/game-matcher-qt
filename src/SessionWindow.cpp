@@ -95,11 +95,10 @@ void SessionWindow::onCurrentGameChanged() {
             for (const auto &m : item.players) {
                 info.players.append(CourtPlayer{
                         m.id,
-                        sameFirstNames.contains(m.id)
-                        ? tr("%1 %2", "Full name: First Last").arg(m.firstName, m.lastName)
-                        : m.firstName
+                        sameFirstNames.contains(m.id) ? m.fullName() : m.firstName
                 });
             }
+            courts.push_back(info);
         }
 
         setEntities(d->ui.courtGrid, courts,

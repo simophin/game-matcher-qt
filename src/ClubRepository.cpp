@@ -1,4 +1,5 @@
 #include "ClubRepository.h"
+#include "ClubRepositoryInternal.h"
 
 #include <QFile>
 #include <QtDebug>
@@ -216,9 +217,9 @@ ClubRepository::createSession(int fee, const QString &announcement, int numPlaye
 QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id) const {
     return DbUtils::queryList<GameAllocation>(
             d->db,
-            QStringLiteral("select * from game_allocations GA "
-                           "inner join games G on GA.gameId = G.id "
-                           "where G.sessionId = ?"),
+            QStringLiteral("select * from game_allocations where gameId in ( "
+                           "select id from games where sessionId = ?"
+                           ")"),
             {id}).orDefault();
 }
 
@@ -340,6 +341,7 @@ QVector<GameAllocation> ClubRepository::getLastGameAllocation(SessionId id) cons
 }
 
 
+
 std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) const {
     auto gameResult = DbUtils::queryFirst<GameInfo>(
             d->db,
@@ -349,20 +351,29 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
             {sessionId});
 
     if (!gameResult) return std::nullopt;
-//
-//        auto allocations = queryList<GameAllocation>(
-//                d->db, QStringLiteral("select * from game_allocations where gameId = ?"), gameResult->id);
-//
-//        if (!allocations) return std::nullopt;
-//
-//        auto courts = queryList<Court>(
-//                d->db, QStringLiteral("select * from courts where sessionId = ?"), sessionId);
-//
-//        if (!courts) return std::nullopt;
-//
-//
 
-    return std::nullopt;
+    auto members = DbUtils::queryList<GameAllocationMember>(
+            d->db,
+            QStringLiteral("select M.*, C.id as courtId, C.name as courtName from game_allocations GA "
+                           "inner join games G on G.id = GA.gameId "
+                           "inner join players P on P.memberId = M.id and P.id = GA.playerId "
+                           "inner join members M on M.id = P.memberId "
+                           "inner join courts C on C.id = GA.courtId "
+                           "where G.id = ? "
+                           "order by courtId"),
+            {gameResult->id});
+
+    if (!members) return std::nullopt;
+
+    for (const auto &member : *members) {
+        if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {
+            gameResult->courts.append(CourtPlayers {member.courtId, member.courtName});
+        }
+
+        gameResult->courts.last().players.append(member);
+    }
+
+    return *gameResult;
 }
 
 QString ClubRepository::getSettings(const QString &key) const {
