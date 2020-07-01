@@ -11,7 +11,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 COMPONENTS Core Quick Sql Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Sql Widgets REQUIRED)
 
 
 add_executable(GameMatcher
@@ -63,10 +63,11 @@ add_executable(GameMatcher
         src/CheckInDialog.cpp
         src/CheckInDialog.h
         src/CheckInDialog.ui
-        )
+        src/NewGameDialog.cpp
+        src/NewGameDialog.ui
+        src/NewGameDialog.h)
 
 target_compile_definitions(GameMatcher
-        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
-        -DQT_NO_CAST_FROM_ASCII=1)
+        PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Quick Qt5::Sql Qt5::Widgets)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets)

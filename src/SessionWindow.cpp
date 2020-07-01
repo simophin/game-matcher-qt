@@ -11,6 +11,7 @@
 #include "MemberSelectDialog.h"
 #include "CheckInDialog.h"
 #include "EditMemberDialog.h"
+#include "NewGameDialog.h"
 
 #include <functional>
 
@@ -164,4 +165,16 @@ void SessionWindow::on_updateButton_clicked() {
         });
     });
 
+}
+
+void SessionWindow::changeEvent(QEvent *event) {
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        d->ui.retranslateUi(this);
+    }
+}
+
+void SessionWindow::on_actionStartNewGame_triggered() {
+    auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
+    dialog->show();
 }

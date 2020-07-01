@@ -68,4 +68,11 @@ void NewSessionDialog::on_buttonBox_accepted() {
 
 }
 
+void NewSessionDialog::changeEvent(QEvent *event) {
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        d->ui.retranslateUi(this);
+    }
+}
+
 NewSessionDialog::~NewSessionDialog() = default;

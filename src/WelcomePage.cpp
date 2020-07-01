@@ -33,4 +33,11 @@ void WelcomePage::on_createButton_clicked() {
     dialog->show();
 }
 
+void WelcomePage::changeEvent(QEvent *event) {
+    QFrame::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        ui->retranslateUi(this);
+    }
+}
+
 WelcomePage::~WelcomePage() = default;

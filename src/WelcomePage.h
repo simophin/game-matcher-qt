@@ -19,6 +19,9 @@ public:
 
     ~WelcomePage() override;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private slots:
     void on_openButton_clicked();
     void on_createButton_clicked();

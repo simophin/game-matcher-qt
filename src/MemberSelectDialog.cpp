@@ -72,3 +72,10 @@ void MemberSelectDialog::accept() {
         QDialog::accept();
     }
 }
+
+void MemberSelectDialog::changeEvent(QEvent *event) {
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        d->ui.retranslateUi(this);
+    }
+}

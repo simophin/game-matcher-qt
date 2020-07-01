@@ -54,4 +54,11 @@ void NewClubDialog::validateForm() {
     }
 }
 
+void NewClubDialog::changeEvent(QEvent *event) {
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        ui->retranslateUi(this);
+    }
+}
+
 NewClubDialog::~NewClubDialog() = default;

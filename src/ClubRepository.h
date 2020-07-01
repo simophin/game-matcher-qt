@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <optional>
-#include <qqml.h>
 
 #include "models.h"
 #include "MemberFilter.h"
@@ -23,7 +22,6 @@ struct SessionData {
 
 struct MemberInfo : Member {
 Q_GADGET
-    QML_ELEMENT
 public:
     DECLARE_PROPERTY(int, balance, = 0);
 };
@@ -31,7 +29,6 @@ public:
 
 struct ClubInfo {
 Q_GADGET
-    QML_ELEMENT
 public:
     DECLARE_PROPERTY(bool, valid, = false);
     DECLARE_PROPERTY(QString, name,);
@@ -41,7 +38,6 @@ public:
 
 struct CourtPlayers {
 Q_GADGET
-    QML_ELEMENT
 public:
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
@@ -60,7 +56,6 @@ public:
 
 struct GameInfo {
 Q_GADGET
-    QML_ELEMENT
 public:
     DECLARE_PROPERTY(QString, announcement,);
     DECLARE_PROPERTY(QDateTime, startTime,);
@@ -73,7 +68,6 @@ public:
 
 class ClubRepository : public QObject {
 Q_OBJECT
-    QML_ELEMENT
 public:
     explicit ClubRepository(QObject *parent = nullptr);
 

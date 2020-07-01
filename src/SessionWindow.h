@@ -19,6 +19,9 @@ public:
 
     ~SessionWindow() override;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private slots:
     void onSessionDataChanged();
     void onCurrentGameChanged();
@@ -29,6 +32,8 @@ private slots:
     void on_resumeButton_clicked();
     void on_registerButton_clicked();
     void on_updateButton_clicked();
+
+    void on_actionStartNewGame_triggered();
 
 private:
     struct Impl;

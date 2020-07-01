@@ -21,6 +21,9 @@ public:
 
     void accept() override;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 signals:
     void sessionCreated();
 

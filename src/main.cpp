@@ -1,5 +1,4 @@
 #include <QGuiApplication>
-#include <QQmlApplicationEngine>
 
 #include <QFile>
 #include <QRandomGenerator>
@@ -9,6 +8,7 @@
 #include "models.h"
 
 #include "MainWindow.h"
+#include "NewGameDialog.h"
 #include <QApplication>
 
 int main(int argc, char **argv) {
@@ -26,9 +26,18 @@ int main(int argc, char **argv) {
     QCoreApplication::setOrganizationDomain(QStringLiteral("fanchao.nz"));
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
-    MainWindow main(nullptr);
 
-    main.show();
+//    MainWindow main(nullptr);
+
+//    main.show();
+
+
+    ClubRepository repo;
+    if (!repo.open(QStringLiteral("/Users/fanchao/Temp/clubfile"))) {
+        throw std::runtime_error("Unable to open");
+    }
+
+    (new NewGameDialog(1, &repo))->show();
 
     return app.exec();
 }

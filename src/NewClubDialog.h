@@ -19,6 +19,9 @@ public:
 
     ~NewClubDialog() override;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 signals:
     void clubCreated(QString path);
 
