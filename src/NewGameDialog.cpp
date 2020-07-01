@@ -10,6 +10,7 @@
 #include <QEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPushButton>
 
 static const auto dataRoleUserId = Qt::UserRole + 1;
 static const auto dataRoleUserIsPaused = Qt::UserRole + 2;
@@ -18,6 +19,16 @@ struct NewGameDialog::Impl {
     SessionId const session;
     ClubRepository *const repo;
     Ui::NewGameDialog ui;
+
+    int countNonPausedPlayers() const {
+        int rc = 0;
+        for (int i = 0, size = ui.playerList->count(); i < size; i++) {
+            if (!ui.playerList->item(i)->data(dataRoleUserIsPaused).toBool()) {
+                rc++;
+            }
+        }
+        return rc;
+    }
 };
 
 NewGameDialog::NewGameDialog(SessionId session, ClubRepository *repo, QWidget *parent)
@@ -61,6 +72,8 @@ void NewGameDialog::refresh() {
         widgetItem->setFont(font);
         widgetItem->setForeground(palette.midlight());
     }
+
+    validateForm();
 }
 
 void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
@@ -96,4 +109,27 @@ void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
         }
         menu->popup(d->ui.playerList->mapToGlobal(pt));
     }
+}
+
+void NewGameDialog::validateForm() {
+    if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
+        auto session = d->repo->getSession(d->session);
+        if (!session) {
+            button->setEnabled(false);
+            button->setText(tr("Error getting session info"));
+        }
+        else if (d->countNonPausedPlayers() < session->session.numPlayersPerCourt) {
+            button->setEnabled(false);
+            button->setText(tr("Not enough people to play"));
+        }
+        else {
+            button->setEnabled(true);
+            button->setText(tr("Start"));
+        }
+    }
+}
+
+void NewGameDialog::accept() {
+
+    QDialog::accept();
 }

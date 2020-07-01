@@ -121,7 +121,7 @@ public:
 
     std::optional<SessionId> getLastSession() const;
 
-    std::optional<SessionData> createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &);
+    std::optional<SessionData> createSession(int fee, const QString &announcement, int numPlayersPerCourt, const QVector<CourtConfiguration> &);
 
     [[nodiscard]] QVector<GameAllocation> getPastAllocations(SessionId) const;
 

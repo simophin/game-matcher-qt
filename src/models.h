@@ -75,6 +75,7 @@ public:
     DECLARE_PROPERTY(int, fee, = 0);
     DECLARE_PROPERTY(QString, announcement, );
     DECLARE_PROPERTY(QDateTime, startTime, );
+    DECLARE_PROPERTY(int, numPlayersPerCourt, = 0);
 };
 
 

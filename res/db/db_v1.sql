@@ -38,6 +38,7 @@ create table sessions
     id           integer  not null primary key autoincrement,
     startTime   datetime not null default current_timestamp,
     fee          integer  not null,
+    numPlayersPerCourt integer not null,
     announcement text
     check ( fee >= 0 )
 );

@@ -181,11 +181,13 @@ std::optional<SessionId> ClubRepository::getLastSession() const {
 }
 
 std::optional<SessionData>
-ClubRepository::createSession(int fee, const QString &announcement, const QVector<CourtConfiguration> &courts) {
+ClubRepository::createSession(int fee, const QString &announcement, int numPlayersPerCourt,
+                              const QVector<CourtConfiguration> &courts) {
     SQLTransaction trans(d->db);
-    auto sessionResult = query<Session>(d->db, QStringLiteral("insert into sessions (fee, announcement) values (?, ?)"),
-                                        fee,
-                                        announcement);
+    auto sessionResult = query<Session>(
+            d->db,
+            QStringLiteral("insert into sessions (fee, announcement, numPlayersPerCourt) values (?, ?, ?)"),
+            fee, announcement, numPlayersPerCourt);
     auto updateResult = std::get_if<UpdateResult<Session>>(&sessionResult);
     if (!updateResult || !updateResult->lastInsertedId) {
         trans.setError();
@@ -346,7 +348,8 @@ std::optional<Player> ClubRepository::checkIn(MemberId memberId, SessionId sessi
 
 bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
     auto result = query(d->db,
-                        QStringLiteral("update players set checkOutTime = current_timestamp where sessionId = ? and memberId = ?"),
+                        QStringLiteral(
+                                "update players set checkOutTime = current_timestamp where sessionId = ? and memberId = ?"),
                         sessionId, memberId);
     if (auto updateResult = std::get_if<UpdateResult<VoidEntity>>(&result)) {
         return updateResult->numRowsAffected > 0;

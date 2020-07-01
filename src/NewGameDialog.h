@@ -21,10 +21,14 @@ public:
 
     void changeEvent(QEvent *) override;
 
+    void accept() override;
+
 private slots:
     void refresh();
 
     void on_playerList_customContextMenuRequested(const QPoint &);
+
+    void validateForm();
 
 private:
     struct Impl;

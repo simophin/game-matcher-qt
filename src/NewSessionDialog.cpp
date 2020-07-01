@@ -43,7 +43,8 @@ void NewSessionDialog::validateForm() {
     if (auto btn = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
         btn->setEnabled(
                 d->ui.feeLineEdit->hasAcceptableInput() &&
-                d->ui.numberOfCourtsSpinBox->value() > 0);
+                d->ui.numberOfCourtsSpinBox->value() > 0 &&
+                d->ui.numberOfPlayersPerCourtSpinBox->value() > 0);
     }
 }
 
@@ -59,6 +60,7 @@ void NewSessionDialog::on_buttonBox_accepted() {
     if (d->repo->createSession(
             d->ui.feeLineEdit->text().toDouble() * 100,
             d->ui.annoucement->toPlainText(),
+            d->ui.numberOfCourtsSpinBox->value(),
             courts)) {
         emit this->sessionCreated();
         close();

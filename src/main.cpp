@@ -27,13 +27,13 @@ int main(int argc, char **argv) {
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
 
-//    MainWindow main(nullptr);
+    MainWindow main(nullptr);
 
-//    main.show();
+    main.show();
 
 
     ClubRepository repo;
-    if (!repo.open(QStringLiteral("/Users/fanchao/Temp/clubfile"))) {
+    if (!repo.open(QStringLiteral("/Users/fanchao/Temp/clubfile.sqlitedb"))) {
         throw std::runtime_error("Unable to open");
     }
 
