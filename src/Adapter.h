@@ -26,7 +26,7 @@ void setEntities(QLayout *layout, const Entities &entities, WidgetCreate create,
             update(widget, entities[i]);
             layout->addWidget(widget);
         }
-    } else if (numReuse < numViews) {
+    } else if (numPlayers < numViews) {
         // Remove excessive
         while (layout->count() > numPlayers) {
             layout->removeItem(layout->itemAt(layout->count() - 1));

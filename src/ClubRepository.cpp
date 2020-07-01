@@ -242,6 +242,8 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
             tx.setError();
             return std::nullopt;
         }
+
+        emit this->lastGameInfoChanged();
     }
 
     return gameId;

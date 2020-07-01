@@ -24,6 +24,9 @@ public:
 
     void accept() override;
 
+    signals:
+    void newGameMade();
+
 private slots:
     void refresh();
 

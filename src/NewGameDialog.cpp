@@ -157,6 +157,7 @@ void NewGameDialog::accept() {
         );
 
         if (d->repo->createGame(d->session, result)) {
+            emit this->newGameMade();
             QDialog::accept();
             return;
         }

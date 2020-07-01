@@ -58,6 +58,8 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
         setWindowTitle(tr("%1 game session").arg(repo->getClubInfo().name));
         onSessionDataChanged();
         onCurrentGameChanged();
+
+        connect(repo, &ClubRepository::lastGameInfoChanged, this, &SessionWindow::onCurrentGameChanged);
     } else {
         QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
         close();
@@ -176,4 +178,5 @@ void SessionWindow::changeEvent(QEvent *event) {
 void SessionWindow::on_actionStartNewGame_triggered() {
     auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
     dialog->show();
+    connect(dialog, &NewGameDialog::newGameMade, this, &SessionWindow::onCurrentGameChanged);
 }
