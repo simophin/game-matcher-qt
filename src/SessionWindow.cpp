@@ -3,7 +3,6 @@
 //
 #include <QMessageBox>
 #include "SessionWindow.h"
-#include "CourtDisplay.h"
 #include "ui_SessionWindow.h"
 
 #include "ClubRepository.h"
@@ -12,6 +11,8 @@
 #include "CheckInDialog.h"
 #include "EditMemberDialog.h"
 #include "NewGameDialog.h"
+#include "ListModel.h"
+#include "CourtItemDelegate.h"
 
 #include <functional>
 
@@ -19,6 +20,8 @@ struct SessionWindow::Impl {
     ClubRepository *repo;
     SessionData session;
     Ui::SessionWindow ui;
+    ListModel<CourtPlayers> model;
+    CourtItemDelegate delegate;
 
     void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter, std::function<bool(const Member &)> cb) {
         auto dialog = new MemberSelectDialog(filter, repo, parent);
@@ -52,6 +55,8 @@ static const auto maxCourtDisplayWidth = 120;
 SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
         : QMainWindow(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
+    d->ui.courtList->setModel(&d->model);
+    d->ui.courtList->setItemDelegate(&d->delegate);
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
@@ -73,40 +78,12 @@ void SessionWindow::onSessionDataChanged() {
 
 void SessionWindow::onCurrentGameChanged() {
     auto game = d->repo->getLastGameInfo(d->session.session.id);
+
     if (!game || game->empty()) {
+        d->model.setItems({});
     } else {
         statusBar()->showMessage(tr("Game id = %1").arg(game->id));
-        QVector<CourtInfo> courts;
-        courts.reserve(game->courts.size());
-        QSet<MemberId> sameFirstNames;
-        QMap<QString, MemberId> firstNameMaps;
-        for (const auto &m : d->session.checkedIn) {
-            if (firstNameMaps.contains(m.firstName)) {
-                sameFirstNames.insert(m.id);
-                sameFirstNames.insert(firstNameMaps[m.firstName]);
-            } else {
-                firstNameMaps[m.firstName] = m.id;
-            }
-        }
-
-        for (const auto &item : game->courts) {
-            CourtInfo info;
-            info.courtName = item.courtName;
-            info.courtId = item.courtId;
-            for (const auto &m : item.players) {
-                info.players.append(CourtPlayer{
-                        m.id,
-                        sameFirstNames.contains(m.id) ? m.fullName() : m.firstName
-                });
-            }
-            courts.push_back(info);
-        }
-
-        setEntities(d->ui.courtGrid, courts,
-                    [=] { return new CourtDisplay(this); },
-                    [](CourtDisplay *display, const CourtInfo &info) {
-                        display->setCourt(info);
-                    });
+        d->model.setItems(game->courts);
     }
 }
 

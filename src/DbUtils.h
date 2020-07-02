@@ -115,7 +115,7 @@ public:
         return true;
     }
 
-    template <typename T, std::enable_if_t<std::is_constructible_v<QVariant, T>, int> = 0>
+    template <typename T, std::enable_if_t<!HasMetaObject<T>::value, int> = 0>
     static bool readFrom(T& out, const QSqlRecord &record) {
         if (auto v = record.value(0); v.isValid()) {
             out = v.value<T>();

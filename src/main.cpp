@@ -18,7 +18,8 @@ int main(int argc, char **argv) {
     qRegisterMetaType<SessionId>("SessionId");
     qRegisterMetaType<PlayerId>("PlayerId");
     qRegisterMetaType<MemberId>("MemberId");
-    qRegisterMetaType<ClubInfo>("ClubInfo");
+    qRegisterMetaType<ClubInfo>();
+    qRegisterMetaType<CourtPlayers>();
 
     QApplication app(argc, argv);
 

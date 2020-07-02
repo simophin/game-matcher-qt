@@ -47,9 +47,6 @@ add_executable(GameMatcher
         src/EmptySessionPage.cpp
         src/EmptySessionPage.h
         src/EmptySessionPage.ui
-        src/CourtDisplay.cpp
-        src/CourtDisplay.h
-        src/CourtDisplay.ui
         src/Adapter.h
         src/EditMemberDialog.cpp
         src/EditMemberDialog.h
@@ -65,7 +62,11 @@ add_executable(GameMatcher
         src/CheckInDialog.ui
         src/NewGameDialog.cpp
         src/NewGameDialog.ui
-        src/NewGameDialog.h src/TypeUtils.h src/ClubRepositoryInternal.h)
+        src/NewGameDialog.h
+        src/TypeUtils.h
+        src/ClubRepositoryInternal.h
+        src/CourtItemDelegate.cpp
+        src/CourtItemDelegate.h src/ListModel.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

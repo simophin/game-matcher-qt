@@ -39,8 +39,6 @@ public:
 struct CourtPlayers {
 Q_GADGET
 public:
-    typedef CourtId IdType;
-
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
     DECLARE_PROPERTY(QVector<Member>, players,);
@@ -55,6 +53,8 @@ public:
         return !(rhs == *this);
     }
 };
+
+Q_DECLARE_METATYPE(CourtPlayers);
 
 struct GameInfo {
 Q_GADGET
