@@ -29,7 +29,9 @@ void setEntities(QLayout *layout, const Entities &entities, WidgetCreate create,
     } else if (numPlayers < numViews) {
         // Remove excessive
         while (layout->count() > numPlayers) {
-            layout->removeItem(layout->itemAt(layout->count() - 1));
+            auto item = layout->takeAt(layout->count() - 1);
+            delete item->widget();
+            delete item;
         }
     }
 }

@@ -28,7 +28,7 @@ create table courts
     id         integer not null primary key autoincrement,
     sessionId integer not null references sessions (id) on delete cascade,
     name       text    not null,
-    sortOrder integer not null
+    sortOrder integer not null unique on conflict abort
 );
 ---
 create index courts_sessions on courts (sessionId);

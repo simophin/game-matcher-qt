@@ -11,17 +11,17 @@
 #include "CheckInDialog.h"
 #include "EditMemberDialog.h"
 #include "NewGameDialog.h"
-#include "ListModel.h"
-#include "CourtItemDelegate.h"
+#include "FlowLayout.h"
+#include "CourtDisplay.h"
 
 #include <functional>
+#include <QPointer>
 
 struct SessionWindow::Impl {
     ClubRepository *repo;
     SessionData session;
     Ui::SessionWindow ui;
-    ListModel<CourtPlayers> model;
-    CourtItemDelegate delegate;
+    QPointer<FlowLayout> courtLayout;
 
     void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter, std::function<bool(const Member &)> cb) {
         auto dialog = new MemberSelectDialog(filter, repo, parent);
@@ -55,8 +55,8 @@ static const auto maxCourtDisplayWidth = 120;
 SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
         : QMainWindow(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
-    d->ui.courtList->setModel(&d->model);
-    d->ui.courtList->setItemDelegate(&d->delegate);
+    d->courtLayout = new FlowLayout();
+    d->ui.courtFrame->setLayout(d->courtLayout->layout());
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
@@ -77,13 +77,23 @@ void SessionWindow::onSessionDataChanged() {
 }
 
 void SessionWindow::onCurrentGameChanged() {
-    auto game = d->repo->getLastGameInfo(d->session.session.id);
+    if (auto courtLayout = d->courtLayout.data()) {
+        auto game = d->repo->getLastGameInfo(d->session.session.id);
+        
+        auto createWidget = [this]() {
+            return new CourtDisplay(this);
+        };
 
-    if (!game || game->empty()) {
-        d->model.setItems({});
-    } else {
-        statusBar()->showMessage(tr("Game id = %1").arg(game->id));
-        d->model.setItems(game->courts);
+        auto updateWidget = [this](CourtDisplay *widget, const CourtPlayers &court) {
+            widget->setCourt(court);
+        };
+
+        if (!game || game->empty()) {
+            setEntities(courtLayout, QVector<CourtPlayers>(), createWidget, updateWidget);
+        } else {
+            setEntities(courtLayout, game->courts, createWidget, updateWidget);
+            statusBar()->showMessage(tr("Game id = %1").arg(game->id));
+        }
     }
 }
 

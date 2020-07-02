@@ -43,6 +43,8 @@ public:
     DECLARE_PROPERTY(int, level, = 0);
     DECLARE_PROPERTY(int, initialBalance, = 0);
 
+    QString displayName;
+
     QString fullName() const {
         return QObject::tr("%1 %2", "full name").arg(firstName, lastName);
     }

@@ -357,12 +357,22 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
                            "inner join members M on M.id = P.memberId "
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
-                           "order by courtId"),
+                           "order by C.sortOrder"),
             {gameResult->id});
 
     if (!members) return std::nullopt;
 
-    for (const auto &member : *members) {
+    QHash<QString, Member*> firstNames;
+    for (auto &member : *members) {
+        if (auto found = firstNames.constFind(member.firstName); found != firstNames.constEnd()) {
+            found.value()->displayName = found.value()->fullName();
+            member.displayName = member.fullName();
+        }
+        firstNames[member.firstName] = &member;
+    }
+    firstNames.clear();
+
+    for (auto &member : *members) {
         if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {
             gameResult->courts.append(CourtPlayers {member.courtId, member.courtName});
         }
