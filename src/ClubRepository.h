@@ -23,7 +23,7 @@ struct MemberInfo : Member {
 Q_GADGET
 public:
     // These fields above can be optional...
-    DECLARE_PROPERTY(QVariant, numGames,);
+    DECLARE_PROPERTY(int, numGames, = -1);
 };
 
 

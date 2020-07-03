@@ -1,25 +1,21 @@
 #ifndef GAMEMATCHER_H
 #define GAMEMATCHER_H
 
-#include <QObject>
-#include <QVector>
-
 #include "models.h"
+
+#include <QVector>
+#include <QFuture>
 
 class MemberInfo;
 
-class GameMatcher : public QObject {
-Q_OBJECT
+class GameMatcher {
 public:
-    explicit GameMatcher(QObject *parent = nullptr): QObject(parent) {}
-
-public slots:
-    QVector<GameAllocation> match(
+    static QFuture<QVector<GameAllocation>> match(
             const QVector<GameAllocation> &pastAllocation,
             const QVector<MemberInfo> &eligiblePlayers,
             const QVector<CourtId> &courts,
             int playerPerCourt,
-            int seed) const;
+            int seed);
 };
 
 #endif // GAMEMATCHER_H

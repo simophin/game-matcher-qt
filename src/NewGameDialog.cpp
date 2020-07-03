@@ -12,6 +12,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QProgressDialog>
+#include <QFutureWatcher>
 
 static const auto dataRoleUserId = Qt::UserRole + 1;
 static const auto dataRoleUserIsPaused = Qt::UserRole + 2;
@@ -141,25 +143,33 @@ void NewGameDialog::validateForm() {
 
 void NewGameDialog::accept() {
     if (auto session = d->repo->getSession(d->session)) {
-        auto matcher = new GameMatcher(this);
         QVector<CourtId> courtIds;
         courtIds.reserve(session->courts.size());
         for (const auto &court : session->courts) {
             courtIds.push_back(court.id);
         }
 
-        auto result = matcher->match(d->repo->getPastAllocations(d->session),
-                       d->repo->getAllMembers(CheckedIn{d->session, false}),
-                       courtIds,
-                       session->session.numPlayersPerCourt,
-                       QDateTime::currentMSecsSinceEpoch()
-        );
+        auto result = GameMatcher::match(d->repo->getPastAllocations(d->session),
+                                         d->repo->getAllMembers(CheckedIn{d->session, false}),
+                                         courtIds,
+                                         session->session.numPlayersPerCourt,
+                                         QDateTime::currentMSecsSinceEpoch());
 
-        if (d->repo->createGame(d->session, result)) {
-            emit this->newGameMade();
-            QDialog::accept();
-            return;
-        }
+        auto progressDialog = new QProgressDialog(this);
+        progressDialog->show();
+
+        auto resultWatcher = new QFutureWatcher<QVector<GameAllocation>>(this);
+        connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
+            if (d->repo->createGame(d->session, resultWatcher->result())) {
+                emit this->newGameMade();
+                QDialog::accept();
+                return;
+            }
+
+            progressDialog->close();
+            resultWatcher->deleteLater();
+        });
+        return;
     }
 
     QMessageBox::critical(this, tr("Fail"), tr("Unable to create a new game"));
