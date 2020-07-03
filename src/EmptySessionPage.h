@@ -28,6 +28,7 @@ private slots:
     void on_statsButton_clicked();
     void on_newMemberButton_clicked();
     void on_createFakeButton_clicked();
+    void on_checkInRandomButton_clicked();
 
 private:
     struct Impl;

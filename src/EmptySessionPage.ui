@@ -104,6 +104,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="checkInRandomButton">
+          <property name="text">
+           <string>Check in 50 members</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>

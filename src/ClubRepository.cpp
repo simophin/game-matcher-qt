@@ -200,7 +200,7 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id) const {
     return DbUtils::queryList<GameAllocation>(
             d->db,
             QStringLiteral("select GA.gameId, GA.courtId, P.memberId from game_allocations GA "
-                           "inner join players P on P.id = GA.playerId"
+                           "inner join players P on P.id = GA.playerId "
                            "where GA.gameId in (select id from games where sessionId = ?) "),
             {id}).orDefault();
 }
@@ -219,7 +219,8 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
         auto insertResult = DbUtils::update(
                 d->db,
                 QStringLiteral("insert into game_allocations (gameId, courtId, playerId) values (?, ?, "
-                               "select P.id from players P where P.memberId = ?)"),
+                               "(select P.id from players P where P.memberId = ?) "
+                               ")"),
                 {*gameId, ga.courtId, ga.memberId});
 
         if (!insertResult) {

@@ -44,7 +44,8 @@ public:
     QString displayName;
 
     QString fullName() const {
-        return QObject::tr("%1 %2", "full name").arg(firstName, lastName);
+        return QObject::tr("%1 %2 (%3, %4)", "full name")
+            .arg(firstName, lastName, QString::number(level), gender.left(1));
     }
 
     bool operator==(const Member &rhs) const {

@@ -22,8 +22,10 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
         : QFrame(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
     d->ui.createFakeButton->setVisible(false);
+    d->ui.checkInRandomButton->setVisible(false);
 #ifndef NDEBUG
     d->ui.createFakeButton->setVisible(true);
+    d->ui.checkInRandomButton->setVisible(true);
 #endif
 
     applyInfo();
@@ -74,5 +76,16 @@ void EmptySessionPage::on_createFakeButton_clicked() {
         d->repo->createMember(components[0], components[1],
                               QRandomGenerator::global()->generate() % 4 == 0 ? genderFemale : genderMale,
                               QRandomGenerator::global()->bounded(levelMin, levelMax));
+    }
+}
+
+void EmptySessionPage::on_checkInRandomButton_clicked() {
+    if (auto lastSessionId = d->repo->getLastSession()) {
+        auto members = d->repo->getAllMembers(NonCheckedIn{*lastSessionId});
+        auto size = 20 - d->repo->getAllMembers(CheckedIn{*lastSessionId}).size();
+        std::shuffle(members.begin(), members.end(), std::default_random_engine());
+        for (int i = 0; i < size; i++) {
+            d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);
+        }
     }
 }

@@ -30,9 +30,10 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                 [=] { return new QLabel(this); },
                 [](QLabel *label, const Member &player) {
                     label->setText(
-                            tr("%1 (%2)").arg(
+                            tr("%1 (%2, %3)").arg(
                                     player.displayName.isEmpty() ? player.firstName : player.displayName,
-                                    QString::number(player.level))
+                                    QString::number(player.level),
+                                    player.gender.left(1))
                             );
                 });
 }

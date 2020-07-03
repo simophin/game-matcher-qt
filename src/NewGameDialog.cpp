@@ -88,7 +88,7 @@ void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
         auto memberId = item->data(dataRoleUserId).value<MemberId>();
         connect(action, &QAction::triggered, [=] {
             if (QMessageBox::question(this, tr("Check out"),
-                    tr("Are you sure to check out %1?").arg(item->text())) == QMessageBox::Yes) {
+                                      tr("Are you sure to check out %1?").arg(item->text())) == QMessageBox::Yes) {
                 if (d->repo->checkOut(d->session, memberId)) {
                     refresh();
                 }
@@ -127,18 +127,15 @@ void NewGameDialog::validateForm() {
         if (!session) {
             button->setEnabled(false);
             button->setText(tr("Error getting session info"));
-        }
-        else if (d->countNonPausedPlayers() < session->session.numPlayersPerCourt) {
+        } else if (d->countNonPausedPlayers() < session->session.numPlayersPerCourt) {
             button->setEnabled(false);
             button->setText(tr("Not enough people to play"));
-        }
-        else {
+        } else {
             button->setEnabled(true);
             button->setText(tr("Start"));
         }
     }
 }
-
 
 
 void NewGameDialog::accept() {
@@ -149,26 +146,30 @@ void NewGameDialog::accept() {
             courtIds.push_back(court.id);
         }
 
-        auto result = GameMatcher::match(d->repo->getPastAllocations(d->session),
-                                         d->repo->getAllMembers(CheckedIn{d->session, false}),
-                                         courtIds,
-                                         session->session.numPlayersPerCourt,
-                                         QDateTime::currentMSecsSinceEpoch());
 
-        auto progressDialog = new QProgressDialog(this);
-        progressDialog->show();
+        auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
+        progressDialog->open();
 
         auto resultWatcher = new QFutureWatcher<QVector<GameAllocation>>(this);
         connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
+            progressDialog->close();
+
             if (d->repo->createGame(d->session, resultWatcher->result())) {
                 emit this->newGameMade();
                 QDialog::accept();
                 return;
             }
 
-            progressDialog->close();
             resultWatcher->deleteLater();
         });
+
+        resultWatcher->setFuture(GameMatcher::match(d->repo->getPastAllocations(d->session),
+                                                    d->repo->getAllMembers(CheckedIn{d->session, false}),
+                                                    courtIds,
+                                                    session->session.numPlayersPerCourt,
+                                                    QDateTime::currentMSecsSinceEpoch())
+        );
+
         return;
     }
 
