@@ -149,8 +149,7 @@ void NewGameDialog::accept() {
         }
 
         auto result = matcher->match(d->repo->getPastAllocations(d->session),
-                       d->repo->getAllMembers(AllMembers{}),
-                       d->repo->getAllPlayers(d->session),
+                       d->repo->getAllMembers(CheckedIn{d->session, false}),
                        courtIds,
                        session->session.numPlayersPerCourt,
                        QDateTime::currentMSecsSinceEpoch()

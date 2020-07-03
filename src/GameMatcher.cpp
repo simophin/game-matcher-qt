@@ -12,11 +12,11 @@
 #include <algorithm>
 
 #include "GameStats.h"
+#include "ClubRepository.h"
 
 
 struct PlayerInfo {
-    Player player;
-    Member member;
+    MemberInfo member;
     int eligibilityScore = 0;
     int matchingScore = 0;
 };
@@ -35,28 +35,16 @@ static void sortByMatchingScore(T &list) {
     });
 }
 
-static std::list<PlayerInfo> findEligiblePlayers(const QVector<Member> &members,
-                                                 const QVector<Player> &players,
+static std::list<PlayerInfo> findEligiblePlayers(const QVector<MemberInfo> &members,
                                                  const GameStats &stats, int randomSeed) {
-    auto memberById = std::reduce(
-            members.constBegin(), members.constEnd(), QHash<MemberId, Member>(),
-            [](auto &map, const auto &member) {
-                map[member.id] = member;
-                return map;
-            });
 
     std::vector<PlayerInfo> eligiblePlayers;
-    for (const auto &player : players) {
-        if (player.paused || player.checkOutTime.isValid()) continue;
-        const auto member = memberById.find(player.memberId);
-        if (member == memberById.constEnd()) continue;
-
+    for (const auto &member : members) {
         auto &p = eligiblePlayers.emplace_back();
-        p.player = player;
-        p.member = *member;
-        p.eligibilityScore = -stats.numGamesFor(player.id);
+        p.member = member;
+        p.eligibilityScore = -member.numGames.toInt();
         if (stats.numGames() == 0) {
-            p.eligibilityScore += member->level;
+            p.eligibilityScore += member.level;
         }
     }
 
@@ -68,16 +56,15 @@ static std::list<PlayerInfo> findEligiblePlayers(const QVector<Member> &members,
 }
 
 QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAllocation,
-                         const QVector<Member> &members,
-                         const QVector<Player> &players,
+                         const QVector<MemberInfo> &members,
                          const QVector<CourtId> &courts,
                          int playerPerCourt,
                          int seed) const {
-    qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << players.size() << " players and " << courts.size() << " courts";
-    GameStats stats(pastAllocation, members, players);
+    qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << members.size() << " players and " << courts.size() << " courts";
+    GameStats stats(pastAllocation, members);
 
     // Find eligible players
-    auto eligiblePlayers = findEligiblePlayers(members, players, stats, seed);
+    auto eligiblePlayers = findEligiblePlayers(members, stats, seed);
 
     // Cut eligible players list
     const auto numPlayers = std::min<int>(eligiblePlayers.size() / playerPerCourt * playerPerCourt, playerPerCourt * courts.size());
@@ -106,7 +93,7 @@ QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAl
         opponents.clear();
         opponents.reserve(eligiblePlayers.size() - 1);
         for (; iter != eligiblePlayers.end(); iter++) {
-            iter->matchingScore = -stats.numGamesBetween(matchee->player.id, iter->player.id) +
+            iter->matchingScore = -stats.numGamesBetween(matchee->member.id, iter->member.id) +
                                   std::abs(matchee->member.level - iter->member.level) * 10;
             opponents.push_back(iter);
         }
@@ -118,14 +105,14 @@ QVector<GameAllocation> GameMatcher::match(const QVector<GameAllocation> &pastAl
 
         // Push matchee itself
         ga.courtId = *court;
-        ga.playerId = matchee->player.id;
+        ga.memberId = matchee->member.id;
         result.push_back(ga);
         eligiblePlayers.erase(matchee);
 
         // Push other opponents
         for (int i = 0; i < playerPerCourt - 1; i++) {
             auto &opponentIter = *opponents.rbegin();
-            ga.playerId = opponentIter->player.id;
+            ga.memberId = opponentIter->member.id;
             eligiblePlayers.erase(opponentIter);
             opponents.pop_back();
             result.push_back(ga);

@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
     qRegisterMetaType<GameId>("GameId");
     qRegisterMetaType<CourtId>("CourtId");
     qRegisterMetaType<SessionId>("SessionId");
-    qRegisterMetaType<PlayerId>("PlayerId");
     qRegisterMetaType<MemberId>("MemberId");
+    qRegisterMetaType<SettingKey>("SettingKey");
     qRegisterMetaType<ClubInfo>();
     qRegisterMetaType<CourtPlayers>();
 

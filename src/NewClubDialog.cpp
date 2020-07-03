@@ -19,21 +19,19 @@ NewClubDialog::NewClubDialog(QWidget *parent)
     validator->setBottom(0.0);
     validator->setNotation(QDoubleValidator::StandardNotation);
     validator->setDecimals(2);
-    ui->feePerSessionLineEdit->setValidator(validator);
     validateForm();
 
 
     connect(ui->clubNameLineEdit, &QLineEdit::textChanged, this, &NewClubDialog::validateForm);
-    connect(ui->feePerSessionLineEdit, &QLineEdit::textChanged, this, &NewClubDialog::validateForm);
 
     connect(ui->buttonBox, &QDialogButtonBox::accepted, [=] {
         auto path = QFileDialog::getSaveFileName(this);
 
         ClubRepository club;
-        ClubInfo info;
-        info.name = ui->clubNameLineEdit->text().trimmed();
-        info.sessionFee = ui->feePerSessionLineEdit->text().toDouble() * 100;
-        info.creationDate = QDateTime::currentDateTimeUtc();
+        ClubInfo info = {
+                ui->clubNameLineEdit->text().trimmed(),
+                QDateTime::currentDateTimeUtc()
+        };
         if (!club.open(path) || !club.saveClubInfo(info)) {
             (new QErrorMessage(this))->showMessage(tr("Unable to create \"%1\"").arg(path));
             return;
@@ -49,8 +47,7 @@ void NewClubDialog::accept() {}
 
 void NewClubDialog::validateForm() {
     if (auto saveButton = ui->buttonBox->button(QDialogButtonBox::Save)) {
-        saveButton->setEnabled(!ui->clubNameLineEdit->text().trimmed().isEmpty() &&
-            ui->feePerSessionLineEdit->hasAcceptableInput());
+        saveButton->setEnabled(!ui->clubNameLineEdit->text().trimmed().isEmpty());
     }
 }
 

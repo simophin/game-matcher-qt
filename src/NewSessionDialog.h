@@ -29,7 +29,6 @@ signals:
 
 private slots:
     void validateForm();
-    void on_buttonBox_accepted();
 
 private:
     struct Impl;

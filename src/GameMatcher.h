@@ -6,6 +6,8 @@
 
 #include "models.h"
 
+class MemberInfo;
+
 class GameMatcher : public QObject {
 Q_OBJECT
 public:
@@ -14,8 +16,7 @@ public:
 public slots:
     QVector<GameAllocation> match(
             const QVector<GameAllocation> &pastAllocation,
-            const QVector<Member> &members,
-            const QVector<Player> &players,
+            const QVector<MemberInfo> &eligiblePlayers,
             const QVector<CourtId> &courts,
             int playerPerCourt,
             int seed) const;

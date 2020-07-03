@@ -16,23 +16,21 @@ struct CourtConfiguration {
 
 struct SessionData {
     Session session;
-    QVector<Member> checkedIn;
     QVector<Court> courts;
 };
 
 struct MemberInfo : Member {
 Q_GADGET
 public:
-    DECLARE_PROPERTY(int, balance, = 0);
+    // These fields above can be optional...
+    DECLARE_PROPERTY(QVariant, numGames,);
 };
 
 
 struct ClubInfo {
 Q_GADGET
 public:
-    DECLARE_PROPERTY(bool, valid, = false);
     DECLARE_PROPERTY(QString, name,);
-    DECLARE_PROPERTY(int, sessionFee,);
     DECLARE_PROPERTY(QDateTime, creationDate,);
 };
 
@@ -41,7 +39,7 @@ Q_GADGET
 public:
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
-    DECLARE_PROPERTY(QVector<Member>, players,);
+    DECLARE_PROPERTY(QVector<MemberInfo>, players,);
 
     bool operator==(const CourtPlayers &rhs) const {
         return courtId == rhs.courtId &&
@@ -59,7 +57,7 @@ Q_DECLARE_METATYPE(CourtPlayers);
 struct GameInfo {
 Q_GADGET
 public:
-    DECLARE_PROPERTY(GameId, id, );
+    DECLARE_PROPERTY(GameId, id,);
     DECLARE_PROPERTY(QDateTime, startTime,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
 
@@ -89,27 +87,25 @@ public:
 
     std::optional<GameInfo> getLastGameInfo(SessionId) const;
 
-    QString getSettings(const QString &key) const;
+    QString getSetting(const SettingKey &key) const;
 
-    bool setSettings(const QString &key, const QVariant &value);
+    bool saveSettings(const SettingKey &key, const QVariant &value);
 
-    std::optional<MemberInfo> createMember(
+    std::optional<Member> createMember(
             const QString &fistName, const QString &lastName,
             const QString &gender, int level);
 
     bool saveMember(const Member &);
 
-    QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
+    QVector<MemberInfo> findMember(MemberSearchFilter, const QString &needle) const;
 
     std::optional<MemberId> findMemberBy(const QString &firstName, const QString &lastName);
 
-    std::optional<MemberInfo> getMember(MemberId) const;
+    std::optional<Member> getMember(MemberId) const;
 
-    QVector<Member> getAllMembers(MemberSearchFilter) const;
+    QVector<MemberInfo> getAllMembers(MemberSearchFilter) const;
 
-    QVector<Player> getAllPlayers(SessionId) const;
-
-    bool checkIn(MemberId, SessionId, int payment) const;
+    bool checkIn(MemberId, SessionId, bool paid) const;
 
     bool checkOut(SessionId, MemberId);
 
@@ -119,11 +115,10 @@ public:
 
     std::optional<SessionId> getLastSession() const;
 
-    std::optional<SessionData> createSession(int fee, const QString &announcement, int numPlayersPerCourt, const QVector<CourtConfiguration> &);
+    std::optional<SessionData>
+    createSession(int fee, const QString &place, const QString &announcement, int numPlayersPerCourt, const QVector<CourtConfiguration> &);
 
-    [[nodiscard]] QVector<GameAllocation> getPastAllocations(SessionId) const;
-
-    [[nodiscard]] QVector<GameAllocation> getLastGameAllocation(SessionId) const;
+    QVector<GameAllocation> getPastAllocations(SessionId) const;
 
     std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &);
 

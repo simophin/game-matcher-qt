@@ -6,13 +6,14 @@
 #define GAMEMATCHER_CLUBREPOSITORYINTERNAL_H
 
 #include "models.h"
+#include "ClubRepository.h"
 
 #include <QObject>
 
-struct GameAllocationMember : Member {
+struct GameAllocationMember : MemberInfo {
     Q_GADGET
 public:
-    DECLARE_PROPERTY(CourtId , courtId, )
+    DECLARE_PROPERTY(CourtId, courtId, )
     DECLARE_PROPERTY(QString, courtName, )
 };
 

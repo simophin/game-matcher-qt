@@ -13,14 +13,22 @@
 
 struct CheckInDialog::Impl {
     MemberId id;
-    SessionId session;
     ClubRepository *repo;
+    SessionData session;
     Ui::CheckInDialog ui;
 };
 
-CheckInDialog::CheckInDialog(MemberId id, SessionId session, ClubRepository *repo, QWidget *parent)
-        : QDialog(parent), d(new Impl{id, session, repo}) {
+CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *repo, QWidget *parent)
+        : QDialog(parent), d(new Impl{id, repo}) {
     d->ui.setupUi(this);
+
+    if (auto session = repo->getSession(sessionId); session) {
+        d->session = *session;
+    } else {
+        QMessageBox::critical(this, tr("Unable to find current session"), tr("Please try again"));
+        close();
+        return;
+    }
 
     auto member = repo->getMember(id);
     if (!member) {
@@ -30,7 +38,7 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId session, ClubRepository *rep
     }
 
     d->ui.nameValueLabel->setText(member->fullName());
-    auto sessionFee = repo->getClubInfo().sessionFee;
+    auto sessionFee = d->session.session.fee;
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
     connect(d->ui.paidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
     connect(d->ui.unpaidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
@@ -48,8 +56,7 @@ void CheckInDialog::validateForm() {
 }
 
 void CheckInDialog::accept() {
-    auto payment = d->ui.paidRadioButton->isChecked() ? d->repo->getClubInfo().sessionFee : 0;
-    if (!d->repo->checkIn(d->id, d->session, payment)) {
+    if (!d->repo->checkIn(d->id, d->session.session.id, d->ui.paidRadioButton->isChecked())) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;
     }

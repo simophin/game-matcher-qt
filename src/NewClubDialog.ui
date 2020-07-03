@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>453</width>
-    <height>299</height>
+    <width>528</width>
+    <height>251</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -50,20 +50,6 @@
       </item>
       <item row="0" column="1">
        <widget class="QLineEdit" name="clubNameLineEdit"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="feePerSessionLabel">
-        <property name="text">
-         <string>Fee per session</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="feePerSessionLineEdit">
-        <property name="placeholderText">
-         <string>in dollars</string>
-        </property>
-       </widget>
       </item>
      </layout>
     </widget>

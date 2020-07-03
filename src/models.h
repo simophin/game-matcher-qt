@@ -10,16 +10,15 @@
     Q_PROPERTY(type name MEMBER name)
 
 typedef qlonglong MemberId;
-typedef qlonglong PlayerId;
 typedef qlonglong SessionId;
 typedef qlonglong CourtId;
 typedef qlonglong GameId;
-
+typedef QString SettingKey;
 
 struct Setting {
     Q_GADGET
 public:
-    DECLARE_PROPERTY(QString, name, );
+    DECLARE_PROPERTY(SettingKey, name, );
     DECLARE_PROPERTY(QString, value, );
 };
 
@@ -41,7 +40,6 @@ public:
     DECLARE_PROPERTY(QString, email,);
     DECLARE_PROPERTY(QString, phone,);
     DECLARE_PROPERTY(int, level, = 0);
-    DECLARE_PROPERTY(int, initialBalance, = 0);
 
     QString displayName;
 
@@ -55,8 +53,7 @@ public:
                firstName == rhs.firstName &&
                lastName == rhs.lastName &&
                gender == rhs.gender &&
-               level == rhs.level &&
-               initialBalance == rhs.initialBalance;
+               level == rhs.level;
     }
 
     bool operator!=(const Member &rhs) const {
@@ -71,21 +68,9 @@ public:
     DECLARE_PROPERTY(SessionId, id, = 0);
     DECLARE_PROPERTY(int, fee, = 0);
     DECLARE_PROPERTY(QString, announcement, );
+    DECLARE_PROPERTY(QString, place, );
     DECLARE_PROPERTY(QDateTime, startTime, );
     DECLARE_PROPERTY(int, numPlayersPerCourt, = 0);
-};
-
-
-struct Player {
-Q_GADGET
-public:
-    DECLARE_PROPERTY(PlayerId, id, = 0);
-    DECLARE_PROPERTY(SessionId, sessionId, = 0);
-    DECLARE_PROPERTY(MemberId, memberId, = 0);
-    DECLARE_PROPERTY(QDateTime, checkInTime, );
-    DECLARE_PROPERTY(QDateTime, checkOutTime, );
-    DECLARE_PROPERTY(int, payment, = 0);
-    DECLARE_PROPERTY(bool, paused, = false);
 };
 
 
@@ -104,12 +89,12 @@ Q_GADGET
 public:
     DECLARE_PROPERTY(GameId, gameId, = 0);
     DECLARE_PROPERTY(CourtId, courtId, = 0);
-    DECLARE_PROPERTY(PlayerId, playerId, = 0);
+    DECLARE_PROPERTY(MemberId, memberId, = 0);
 
     GameAllocation() = default;
 
-    GameAllocation(GameId gameId, CourtId courtId, PlayerId playerId)
-            : gameId(gameId), courtId(courtId), playerId(playerId) {}
+    GameAllocation(GameId gameId, CourtId courtId, MemberId memberId)
+            : gameId(gameId), courtId(courtId), memberId(memberId) {}
 };
 
 inline static QDebug operator<<(QDebug dbg, const GameAllocation &c)
@@ -118,7 +103,7 @@ inline static QDebug operator<<(QDebug dbg, const GameAllocation &c)
     dbg.nospace() << "("
         << "gameId=" << c.gameId
         << ",courtId=" << c.courtId
-        << ",playerId=" << c.playerId
+        << ",memberId=" << c.memberId
         << ")";
 
     return dbg;
