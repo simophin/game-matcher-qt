@@ -27,7 +27,10 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
 
     setEntities(d->ui.memberListLayout,
                 court.players,
-                [=] { return new QLabel(this); },
+                [=] {
+                    auto label = new QLabel(this);
+                    label->setProperty("isMember", true);
+                    return label; },
                 [](QLabel *label, const Member &player) {
                     label->setText(
                             tr("%1 (%2, %3)").arg(

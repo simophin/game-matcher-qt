@@ -74,7 +74,7 @@ void NewSessionDialog::accept() {
         d->repo->saveSettings(skLastPlace, place);
 
         emit this->sessionCreated();
-        QDialog::accepted();
+        QDialog::accept();
     } else {
         QMessageBox::warning(this, tr("Unable to start new session"), tr("Please try again"));
     }

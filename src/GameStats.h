@@ -7,42 +7,37 @@
 
 #include <QHash>
 #include <QVector>
-#include <QSet>
+#include <QThreadStorage>
+
+#include <set>
 #include <algorithm>
 
 #include "models.h"
+#include "ClubRepository.h"
+
+struct PlayerInfo {
+    MemberInfo member;
+    std::optional<int> eligibilityScore;
+
+    PlayerInfo(const MemberInfo &member, int eligibilityScore)
+            : member(member), eligibilityScore(eligibilityScore) {}
+};
 
 class GameStats {
-    struct GamePair {
-        MemberId players[2];
-
-        inline GamePair(MemberId a, MemberId b): players {a < b ? a : b, a < b ? b : a} {}
-
-        inline bool operator==(const GamePair &rhs) const {
-            return players == rhs.players;
-        }
-    };
-
-    friend int qHash(GamePair);
-
-    // Source of truth
-    QVector<QSet<MemberId>> courtPlayers;
+    QVector<QVector<MemberId>> courtPlayers;
     int numTotalGames = 0;
 
-    // Cache values
-    mutable QHash<GamePair, int> numGamesByPair;
-
 public:
-    GameStats(const QVector<GameAllocation> &pastAllocation,
-              const QVector<MemberInfo> &members) {
-        QHash<GameId, QHash<CourtId, QSet<MemberId>>> map;
+    GameStats(const QVector<GameAllocation> &pastAllocation) {
+        QHash<GameId, QHash<CourtId, QVector<MemberId>>> map;
         for (const auto &allocation : pastAllocation) {
-            map[allocation.gameId][allocation.courtId].insert(allocation.memberId);
+            map[allocation.gameId][allocation.courtId].append(allocation.memberId);
         }
 
         for (const auto &game : map) {
             for (const auto &court : game) {
                 courtPlayers.append(court);
+                std::sort(courtPlayers.rbegin()->begin(), courtPlayers.rbegin()->end());
             }
         }
 
@@ -51,24 +46,22 @@ public:
 
     int numGames() const { return this->numTotalGames; }
 
-    int numGamesBetween(MemberId a, MemberId b) const {
-        GamePair pair(a, b);
-        const auto found = numGamesByPair.find(pair);
-        if (found != numGamesByPair.cend()) {
-            return *found;
-        }
+    int similarityWithPast(const QVector<std::list<PlayerInfo>::const_iterator> &players) const {
+        QThreadStorage<QVector<MemberId>> sortedPlayers;
+        auto &sorted = sortedPlayers.localData();
+        sorted.clear();
+        for (auto p : players) sorted.push_back(p->member.id);
+        std::sort(sorted.begin(), sorted.end());
 
-        return numGamesByPair[pair] = std::reduce(
-                courtPlayers.constBegin(), courtPlayers.constEnd(), 0,
-                [a, b] (int sum, const auto &court) {
-                    return (court.contains(a) && court.contains(b)) ? (sum + 1) : sum;
-                });
+        int sum = 0;
+        for (const auto &court : courtPlayers) {
+            for (auto i = 0, size = std::min(court.size(), players.size()); i < size; i++) {
+                if (court[i] == players[i]->member.id) sum++;
+                else break;
+            }
+        }
+        return sum;
     }
 };
-
-inline int qHash(GameStats::GamePair pair) {
-    return qHash(pair.players);
-}
-
 
 #endif //GAMEMATCHER_GAMESTATS_H

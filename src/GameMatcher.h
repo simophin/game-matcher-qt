@@ -14,7 +14,7 @@ public:
             const QVector<GameAllocation> &pastAllocation,
             const QVector<MemberInfo> &eligiblePlayers,
             const QVector<CourtId> &courts,
-            int playerPerCourt,
+            size_t playerPerCourt,
             int seed);
 };
 

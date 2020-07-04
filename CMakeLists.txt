@@ -67,7 +67,7 @@ add_executable(GameMatcher
         src/NewGameDialog.ui
         src/NewGameDialog.h
         src/TypeUtils.h
-        src/ClubRepositoryInternal.h src/FlowLayout.h src/FlowLayout.cpp)
+        src/ClubRepositoryInternal.h src/FlowLayout.h src/FlowLayout.cpp src/span.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
