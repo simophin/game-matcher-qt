@@ -31,6 +31,8 @@ static const auto levelMax = 10;
 
 struct Member {
 Q_GADGET
+private:
+    mutable QString fullNameCache;
 public:
     DECLARE_PROPERTY(MemberId, id, = 0);
     DECLARE_PROPERTY(QDateTime, registerDate,);
@@ -44,8 +46,11 @@ public:
     QString displayName;
 
     QString fullName() const {
-        return QObject::tr("%1 %2 (%3, %4)", "full name")
-            .arg(firstName, lastName, QString::number(level), gender.left(1));
+        if (fullNameCache.isNull()) {
+            fullNameCache = QObject::tr("%1 %2 (%3, %4)", "full name")
+                    .arg(firstName, lastName, QString::number(level), gender.left(1));
+        }
+        return fullNameCache;
     }
 
     bool operator==(const Member &rhs) const {

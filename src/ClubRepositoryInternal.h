@@ -11,7 +11,7 @@
 #include <QObject>
 
 struct GameAllocationMember : Member {
-    Q_GADGET
+Q_GADGET
 public:
     DECLARE_PROPERTY(CourtId, courtId, )
     DECLARE_PROPERTY(QString, courtName, )

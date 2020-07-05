@@ -271,6 +271,11 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
         sql = QStringLiteral("select M.* from members M "
                              "  where id not in (select memberId from players where sessionId = ?)");
         args.push_back(nonCheckedIn->sessionId);
+    } else if (auto allSession = std::get_if<AllSession>(&filter)) {
+        sql = QStringLiteral("select M.* from members M "
+                             "inner join players P on P.memberId = M.id "
+                             "where P.sessionId = ?");
+        args.push_back(allSession->sessionId);
     }
 
     return std::make_pair(sql, args);
@@ -280,16 +285,15 @@ QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QStr
     auto[sql, args] = constructFindMembersSql(filter);
     auto trimmed = needle;
     if (!trimmed.isEmpty()) {
-        sql += QStringLiteral(" and (M.firstName like ? or M.lastName like ?)");
+        sql += QStringLiteral(" and (M.firstName like ?)");
         auto realNeedle = QStringLiteral("%1%%").arg(trimmed);
-        args.push_back(realNeedle);
         args.push_back(realNeedle);
     }
 
     return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }
 
-QVector<Member> ClubRepository::getAllMembers(MemberSearchFilter filter) const {
+QVector<Member> ClubRepository::getMembers(MemberSearchFilter filter) const {
     auto[sql, args] = constructFindMembersSql(filter);
     return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }

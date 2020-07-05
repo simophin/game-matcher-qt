@@ -55,8 +55,8 @@ void NewGameDialog::changeEvent(QEvent *evt) {
 }
 
 void NewGameDialog::refresh() {
-    auto nonPausedPeople = d->repo->getAllMembers(CheckedIn{d->session, false});
-    auto pausedPeople = d->repo->getAllMembers(CheckedIn{d->session, true});
+    auto nonPausedPeople = d->repo->getMembers(CheckedIn{d->session, false});
+    auto pausedPeople = d->repo->getMembers(CheckedIn{d->session, true});
     d->ui.playerList->clear();
     QFont font;
     font.setPointSize(16);
@@ -167,7 +167,7 @@ void NewGameDialog::accept() {
         resultWatcher->setFuture(
                 QtConcurrent::run([=] {
                     return GameMatcher::match(d->repo->getPastAllocations(d->session),
-                                       d->repo->getAllMembers(CheckedIn{d->session, false}),
+                                              d->repo->getMembers(CheckedIn{d->session, false}),
                                        courtIds,
                                        session->session.numPlayersPerCourt,
                                        QDateTime::currentMSecsSinceEpoch());

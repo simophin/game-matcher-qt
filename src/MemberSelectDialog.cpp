@@ -8,18 +8,24 @@
 #include "ClubRepository.h"
 
 #include <QPushButton>
+#include <QTimer>
 
 struct MemberSelectDialog::Impl {
     MemberSearchFilter filter;
     ClubRepository *repo;
+    QTimer *filterDebounceTimer;
     Ui::MemberSelectDialog ui;
 };
 
 MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, ClubRepository *repo, QWidget *parent)
-        : QDialog(parent), d(new Impl{filter, repo}) {
+        : QDialog(parent), d(new Impl{filter, repo, new QTimer(this)}) {
     d->ui.setupUi(this);
+    d->filterDebounceTimer->setSingleShot(true);
+    d->filterDebounceTimer->setInterval(500);
+
     applyData();
-    connect(d->ui.filterEdit, &QLineEdit::textChanged, this, &MemberSelectDialog::applyData);
+    connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::applyData);
+    connect(d->ui.filterEdit, &QLineEdit::textChanged, d->filterDebounceTimer, qOverload<>(&QTimer::start));
 
     connect(d->ui.memberList, &QListWidget::currentItemChanged, this, &MemberSelectDialog::validateForm);
     validateForm();
@@ -35,7 +41,7 @@ void MemberSelectDialog::applyData() {
     if (auto needle = d->ui.filterEdit->text().trimmed(); !needle.isEmpty()) {
         members = d->repo->findMember(d->filter, needle);
     } else {
-        members = d->repo->getAllMembers(d->filter);
+        members = d->repo->getMembers(d->filter);
     }
 
     d->ui.memberList->clear();

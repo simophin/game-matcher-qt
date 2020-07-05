@@ -96,7 +96,7 @@ public:
 
     std::optional<Member> getMember(MemberId) const;
 
-    QVector<Member> getAllMembers(MemberSearchFilter) const;
+    QVector<Member> getMembers(MemberSearchFilter) const;
 
     bool checkIn(MemberId, SessionId, bool paid) const;
 

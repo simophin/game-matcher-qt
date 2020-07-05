@@ -12,8 +12,9 @@
 struct AllMembers {};
 struct NonCheckedIn { SessionId sessionId; };
 struct CheckedIn { SessionId sessionId; std::optional<bool> paused; };
+struct AllSession { SessionId sessionId; };
 
-typedef std::variant<AllMembers, NonCheckedIn, CheckedIn> MemberSearchFilter;
+typedef std::variant<AllMembers, NonCheckedIn, CheckedIn, AllSession> MemberSearchFilter;
 
 
 #endif //GAMEMATCHER_MEMBERFILTER_H

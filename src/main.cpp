@@ -37,7 +37,7 @@ static void testMatcher() {
     }
 
     if (auto sessionId = repo.getLastSession()) {
-        auto members = repo.getAllMembers(CheckedIn{*sessionId});
+        auto members = repo.getMembers(CheckedIn{*sessionId});
         auto session = repo.getSession(*sessionId);
         QVector<CourtId> courts;
         for (const auto &court : session->courts) {
