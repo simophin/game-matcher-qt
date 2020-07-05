@@ -229,6 +229,7 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
         }
     }
 
+    emit this->sessionChanged(sessionId);
     return gameId;
 }
 
@@ -298,18 +299,24 @@ QVector<Member> ClubRepository::getMembers(MemberSearchFilter filter) const {
     return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }
 
-bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) const {
-    return DbUtils::update(
+bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) {
+    auto rc = DbUtils::update(
             d->db,
             QStringLiteral("insert into players (sessionId, memberId, paid) values (?, ?, ?)"),
             {sessionId, memberId, paid}).orDefault(0) > 0;
+    if (rc) {
+        emit this->sessionChanged(sessionId);
+    }
+    return rc;
 }
 
 bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
-    return DbUtils::update(
+    auto rc = DbUtils::update(
             d->db,
             QStringLiteral("update players set checkOutTime = current_timestamp where sessionId = ? and memberId = ?"),
             {sessionId, memberId}).orDefault(0) > 0;
+    if (rc) emit this->sessionChanged(sessionId);
+    return rc;
 }
 
 std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) const {
@@ -412,9 +419,13 @@ bool ClubRepository::saveMember(const Member &m) {
 }
 
 bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paused) {
-    return DbUtils::update(d->db,
+    if (auto rc = DbUtils::update(d->db,
                            QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
-                           {paused, sessionId, memberId}).orDefault(0) > 0;
+                           {paused, sessionId, memberId}).orDefault(0) > 0) {
+        emit this->sessionChanged(sessionId);
+        return true;
+    }
+    return false;
 }
 
 

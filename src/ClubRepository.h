@@ -98,7 +98,7 @@ public:
 
     QVector<Member> getMembers(MemberSearchFilter) const;
 
-    bool checkIn(MemberId, SessionId, bool paid) const;
+    bool checkIn(MemberId, SessionId, bool paid);
 
     bool checkOut(SessionId, MemberId);
 
@@ -118,6 +118,7 @@ public:
 signals:
 
     void clubInfoChanged();
+    void sessionChanged(SessionId);
 
 private:
     struct Impl;

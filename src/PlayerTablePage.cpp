@@ -10,6 +10,7 @@
 
 #include <QEvent>
 #include <map>
+#include <set>
 
 struct PlayerTablePage::Impl {
     const SessionId sessionId;
@@ -21,6 +22,7 @@ PlayerTablePage::PlayerTablePage(SessionId id, ClubRepository *repo, QWidget *pa
         : QWidget(parent), d(new Impl {id, repo}) {
     d->ui.setupUi(this);
     reload();
+    connect(repo, &ClubRepository::sessionChanged, this, &PlayerTablePage::reload);
 }
 
 PlayerTablePage::~PlayerTablePage() {
@@ -36,36 +38,36 @@ void PlayerTablePage::changeEvent(QEvent *evt) {
 
 void PlayerTablePage::reload() {
     d->ui.table->clear();
-    auto allocations = d->repo->getPastAllocations(d->sessionId);
     auto members = d->repo->getMembers(AllSession{d->sessionId});
-    auto memberById = associateBy<QHash<MemberId, Member>>(members, [](const Member &m) {
-        return m.id;
-    });
-    QHash<MemberId, QVector<GameAllocation>> allocationByMemberId;
-    std::map<GameId, int> gameColumns;
-    for (const auto &allocation : allocations) {
-        gameColumns[allocation.gameId] = 0;
-        allocationByMemberId[allocation.memberId].append(allocation);
+    QHash<MemberId, QHash<GameId, CourtId>> allocationMap;
+    std::set<GameId> gameIdSet;
+    for (const auto &allocation : d->repo->getPastAllocations(d->sessionId)) {
+        gameIdSet.insert(allocation.gameId);
+        allocationMap[allocation.memberId][allocation.gameId] = allocation.courtId;
     }
-
-    if (!gameColumns.empty()) {
-        int i = 1;
-        for (auto &entries : gameColumns) {
-            entries.second = i++;
-        }
-    }
+    std::vector<GameId> gameIds(gameIdSet.begin(), gameIdSet.end());
 
     std::sort(members.begin(), members.end(), [](const Member &a, const Member &b) {
-        return a.fullName().localeAwareCompare(b.fullName());
+        return a.fullName().localeAwareCompare(b.fullName()) < 0;
     });
+
+    d->ui.table->setRowCount(members.size() + 1);
+    d->ui.table->setColumnCount(gameIds.size() + 1);
 
     for (int i = 0; i < members.size(); i++) {
         d->ui.table->setItem(i + 1, 0, new QTableWidgetItem(members[i].fullName()));
-        if (auto found = allocationByMemberId.constFind(members[i].id); found != allocationByMemberId.constEnd()) {
-            for (auto alloc : *found) {
-                d->ui.table->setItem(i + 1, gameColumns[alloc.gameId],
-                        new QTableWidgetItem(QString::number(alloc.courtId)));
+        auto &memberGames = allocationMap[members[i].id];
+        for (int j = 0; j < gameIds.size(); j++) {
+            auto gameId = gameIds[j];
+            if (auto courtId = memberGames.constFind(gameId); courtId != memberGames.constEnd()) {
+                d->ui.table->setItem(i + 1, j + 1, new QTableWidgetItem(QString::number(*courtId)));
+            } else {
+                d->ui.table->setItem(i + 1, j + 1, new QTableWidgetItem(tr("-")));
             }
         }
+
     }
+
+    d->ui.table->resizeColumnsToContents();
+    d->ui.table->resizeRowsToContents();
 }

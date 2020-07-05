@@ -13,6 +13,7 @@
 #include "NewGameDialog.h"
 #include "FlowLayout.h"
 #include "CourtDisplay.h"
+#include "PlayerTablePage.h"
 
 #include <functional>
 #include <QPointer>
@@ -58,11 +59,15 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
     d->courtLayout = new FlowLayout();
     d->ui.courtFrame->setLayout(d->courtLayout->layout());
 
+    d->ui.centralLayout->addWidget(new PlayerTablePage(sessionId, repo, this), 2);
+
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
         setWindowTitle(tr("%1 game session").arg(repo->getClubInfo().name));
         onSessionDataChanged();
         onCurrentGameChanged();
+
+        connect(repo, &ClubRepository::sessionChanged, this, &SessionWindow::onCurrentGameChanged);
     } else {
         QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
         close();
