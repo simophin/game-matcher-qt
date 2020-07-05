@@ -16,6 +16,7 @@ struct NewSessionDialog::Impl {
 };
 
 static const SettingKey skLastNumCourts = QStringLiteral("last_num_courts");
+static const SettingKey skLastNumPlayersPerCourt = QStringLiteral("last_num_player_per_court");
 static const SettingKey skLastSessionFee = QStringLiteral("last_session_fee");
 static const SettingKey skLastPlace = QStringLiteral("last_place");
 static const SettingKey skLastAnnouncement = QStringLiteral("last_announcement");
@@ -32,6 +33,9 @@ NewSessionDialog::NewSessionDialog(ClubRepository *repo, QWidget *parent)
         d->ui.feeLineEdit->setText(QString::number(feeInCents / 100.0));
     }
     d->ui.numberOfCourtsSpinBox->setValue(repo->getSetting(skLastNumCourts).toInt());
+    d->ui.placeValue->setText(repo->getSetting(skLastPlace));
+    d->ui.annoucement->setText(repo->getSetting(skLastAnnouncement));
+    d->ui.numberOfPlayersPerCourtSpinBox->setValue(repo->getSetting(skLastNumPlayersPerCourt).toInt());
 
     validateForm();
     connect(d->ui.feeLineEdit, &QLineEdit::textChanged, this, &NewSessionDialog::validateForm);
@@ -54,7 +58,9 @@ void NewSessionDialog::validateForm() {
 
 void NewSessionDialog::accept() {
     QVector<CourtConfiguration> courts;
-    for (auto i = 0, size = d->ui.numberOfCourtsSpinBox->value(); i < size; i++) {
+    auto numCourts = d->ui.numberOfCourtsSpinBox->value();
+    auto numPlayersPerCourt = d->ui.numberOfPlayersPerCourtSpinBox->value();
+    for (auto i = 0, size = numCourts; i < size; i++) {
         courts.append(CourtConfiguration{tr("Court %1").arg(i + 1), -i});
     }
 
@@ -65,13 +71,14 @@ void NewSessionDialog::accept() {
             fee,
             place,
             announcement,
-            d->ui.numberOfCourtsSpinBox->value(),
+            numPlayersPerCourt,
             courts)) {
 
-        d->repo->saveSettings(skLastNumCourts, d->ui.numberOfCourtsSpinBox->value());
+        d->repo->saveSettings(skLastNumCourts, numCourts);
         d->repo->saveSettings(skLastSessionFee, fee);
         d->repo->saveSettings(skLastAnnouncement, announcement);
         d->repo->saveSettings(skLastPlace, place);
+        d->repo->saveSettings(skLastNumPlayersPerCourt, numPlayersPerCourt);
 
         emit this->sessionCreated();
         QDialog::accept();

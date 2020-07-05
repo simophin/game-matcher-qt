@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QProgressDialog>
 #include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrent>
 
 static const auto dataRoleUserId = Qt::UserRole + 1;
 static const auto dataRoleUserIsPaused = Qt::UserRole + 2;
@@ -163,11 +164,14 @@ void NewGameDialog::accept() {
             resultWatcher->deleteLater();
         });
 
-        resultWatcher->setFuture(GameMatcher::match(d->repo->getPastAllocations(d->session),
-                                                    d->repo->getAllMembers(CheckedIn{d->session, false}),
-                                                    courtIds,
-                                                    session->session.numPlayersPerCourt,
-                                                    QDateTime::currentMSecsSinceEpoch())
+        resultWatcher->setFuture(
+                QtConcurrent::run([=] {
+                    return GameMatcher::match(d->repo->getPastAllocations(d->session),
+                                       d->repo->getAllMembers(CheckedIn{d->session, false}),
+                                       courtIds,
+                                       session->session.numPlayersPerCourt,
+                                       QDateTime::currentMSecsSinceEpoch());
+                })
         );
 
         return;

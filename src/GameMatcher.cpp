@@ -1,30 +1,26 @@
 #include "GameMatcher.h"
 
-#include <QtConcurrent/QtConcurrent>
-#include <QFuture>
 #include <list>
 #include <vector>
-#include <QRandomGenerator>
 
 #include <QtDebug>
 #include <QHash>
 
 #include <algorithm>
+#include <random>
 
-#include "GameStats.h"
+#include "GameMatcherInternal.h"
 #include "ClubRepository.h"
 
-#include "span.h"
 
-
-static std::list<PlayerInfo> getEligiblePlayers(const QVector<MemberInfo> &members,
-                               int numSeats,
-                               const GameStats &stats, int randomSeed) {
+static PlayerList getEligiblePlayers(nonstd::span<const Member> members,
+                                     int numMaxSeats,
+                                     const GameStats &stats, int randomSeed) {
     std::vector<PlayerInfo> players;
     if (members.empty()) return {};
-    
+
     for (const auto &member : members) {
-        players.emplace_back(member, member.numGames < 0 ? 0 : (-member.numGames));
+        players.emplace_back(member, stats.numGamesOff(member.id));
     }
 
     // Shuffle the list so we don't end up using the same order withing same level.
@@ -35,15 +31,15 @@ static std::list<PlayerInfo> getEligiblePlayers(const QVector<MemberInfo> &membe
         return b.eligibilityScore < a.eligibilityScore;
     });
 
-    if (players.size() > numSeats && numSeats > 0) {
+    if (players.size() > numMaxSeats && numMaxSeats > 0) {
         // Find lowest score and we will cut off from there
-        int cutOffSize = numSeats;
-        const auto lowestScore = players[numSeats - 1].eligibilityScore;
+        int cutOffSize = numMaxSeats;
+        const auto lowestScore = players[numMaxSeats - 1].eligibilityScore;
         for (; cutOffSize < players.size(); cutOffSize++) {
             if (players[cutOffSize].eligibilityScore != lowestScore) break;
         }
 
-        std::list<PlayerInfo> playerList(players.begin(), players.begin() + cutOffSize);
+        PlayerList playerList(players.begin(), players.begin() + cutOffSize);
 
         if (playerList.begin()->eligibilityScore != lowestScore) {
             // The lowest score players will be re-written to invalid to indicate they are all optional, if there
@@ -57,131 +53,171 @@ static std::list<PlayerInfo> getEligiblePlayers(const QVector<MemberInfo> &membe
         return playerList;
     }
 
-    return std::list<PlayerInfo>(players.begin(), players.end());
+    return PlayerList(players.begin(), players.end());
 }
 
 struct BestScore {
-    QVector<std::list<PlayerInfo>::const_iterator> combination;
+    QVector<PlayerListIterator> combination;
     int score;
-    size_t unqualifiedQuotaUsed;
+    size_t unqualifiedQuotaLeft;
 };
 
 struct ComputeContext {
     const GameStats &stats;
     const size_t numPlayersRequired;
-    const size_t unqualifiedQuota;
-    const std::list<PlayerInfo>::const_iterator endOfPlayerList;
+    size_t unqualifiedQuota;
+    const PlayerListIterator endOfPlayerList;
 
-    QVector<std::list<PlayerInfo>::const_iterator> out;
+    QVector<PlayerListIterator> out;
     std::optional<BestScore> bestScore;
 };
 
-static int levelVariance(const QVector<std::list<PlayerInfo>::const_iterator> &members) {
-    if (members.empty()) return 0;
+static int levelRangeScore(nonstd::span<PlayerListIterator> members) {
+    if (members.size() < 2) return 0;
+    
+    int min = levelMax + 1, max = levelMin - 1;
+    for (const auto &m : members) {
+        auto level = m->member.level;
+        if (level > max) max = level;
+        if (level < min) min = level;
+    }
 
-    int sum = std::reduce(members.begin(), members.end(), 0, [](auto sum, auto info) {
+    return (max - min) * 100 / (levelMax - levelMin);
+}
+
+static int levelStdVarianceScore(nonstd::span<PlayerListIterator> members) {
+    if (members.size() < 2) return 0;
+
+    const int sum = std::reduce(members.begin(), members.end(), 0, [](auto sum, auto info) {
         return sum + info->member.level;
     });
-    auto average = sum / members.size();
-    return std::reduce(members.begin(), members.end(), 0, [average](auto sum, auto info) {
+    const double average = static_cast<double>(sum) / members.size();
+
+    return std::sqrt(std::reduce(members.begin(), members.end(), 0.0, [average](auto sum, auto info) {
         auto diff = info->member.level - average;
         return sum + diff * diff;
+    }) / (members.size() - 1)) * 100 / (levelMax - levelMin);
+}
+
+static int genderSimilarityScore(nonstd::span<PlayerListIterator> players) {
+    if (players.size() < 2) return 100;
+
+    int numMales = std::count_if(players.begin(), players.end(), [](PlayerListIterator p) {
+        return p->member.gender == genderMale;
     });
+
+    int numFemales = players.size() - numMales;
+    if (numMales == 0 || numMales == players.size() || numFemales == numMales) return 100;
+
+    int maxDiff = players.size() - 2;
+    return (maxDiff - std::abs(numMales - numFemales)) * 100 / maxDiff;
 }
 
 static void computeCourtScore(ComputeContext &ctx,
-                              std::list<PlayerInfo>::const_iterator players) {
+                              PlayerListIterator players) {
     if (ctx.out.size() == ctx.numPlayersRequired) {
-        size_t numUnqualified = std::count_if(ctx.out.begin(), ctx.out.end(), [](auto &p) {
-            return !p->eligibilityScore.has_value();
-        });
+        auto score = 0;
 
-        if (numUnqualified > ctx.unqualifiedQuota) {
-            return;
-        }
+        score -= ctx.stats.similarityScore(ctx.out) * 4;
+        score -= levelStdVarianceScore(ctx.out) * 2;
+        score -= levelRangeScore(ctx.out) * 2;
+        score += genderSimilarityScore(ctx.out);
 
-        auto score = -ctx.stats.similarityWithPast(ctx.out) - levelVariance(ctx.out);
         if (!ctx.bestScore || ctx.bestScore->score < score) {
-            ctx.bestScore = {ctx.out, score, numUnqualified};
+            ctx.bestScore = {ctx.out, score, ctx.unqualifiedQuota};
         }
     } else {
         while (players != ctx.endOfPlayerList) {
+            bool mustOn = players->eligibilityScore.has_value();
+            if (!mustOn) {
+                if (ctx.unqualifiedQuota == 0) {
+                    players++;
+                    continue;
+                }
+
+                ctx.unqualifiedQuota--;
+            }
             ctx.out.append(players);
+            
             computeCourtScore(ctx, ++players);
             ctx.out.removeLast();
+            if (!mustOn) ctx.unqualifiedQuota++;
         }
     }
 }
 
 
-QFuture<QVector<GameAllocation>> GameMatcher::match(
+QVector<GameAllocation> GameMatcher::match(
         const QVector<GameAllocation> &pastAllocation,
-        const QVector<MemberInfo> &members,
-        const QVector<CourtId> &courts,
+        const QVector<Member> & members,
+        QVector<CourtId> courts,
         size_t playerPerCourt,
         int seed) {
-    return QtConcurrent::run([=]() mutable {
-        qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << members.size()
-                 << " players and "
-                 << courts.size() << " courts";
+    qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << members.size()
+             << " players and "
+             << courts.size() << " courts";
 
-        QVector<GameAllocation> result;
+    QVector<GameAllocation> result;
 
-        const auto numMaxSeats = playerPerCourt * courts.size();
-        if (pastAllocation.isEmpty()) {
-            // First game, sort players by level and only take the top to down people
-            std::sort(const_cast<QVector<MemberInfo> &>(members).begin(),
-                      const_cast<QVector<MemberInfo> &>(members).end(), [](const auto &a, const auto &b) {
-                        return b.level < a.level;
-                    });
+    const size_t numMaxSeats = playerPerCourt * courts.size();
+    if (pastAllocation.isEmpty()) {
+        auto sortedMembers = members;
+        std::shuffle(sortedMembers.begin(), sortedMembers.end(), std::default_random_engine(seed));
 
-            const auto numMembers = std::min(numMaxSeats, members.size() / playerPerCourt * playerPerCourt);
-            result.reserve(numMembers);
-            auto courtIter = courts.begin();
-            for (int i = 0; i < numMembers; i++) {
-                result.append(GameAllocation(0, *courtIter, members[i].id));
+        // First game, sort players by level and only take the top to down people
+        std::sort(sortedMembers.begin(), sortedMembers.end(), [](const auto &a, const auto &b) {
+            return b.level < a.level;
+        });
 
-                // Advance to next court when this one is full
-                if ((i + 1) % playerPerCourt == 0) {
-                    courtIter++;
-                }
+        const auto numMembers = std::min(numMaxSeats, sortedMembers.size() / playerPerCourt * playerPerCourt);
+        result.reserve(numMembers);
+        auto courtIter = courts.begin();
+        for (int i = 0; i < numMembers; i++) {
+            result.append(GameAllocation(0, *courtIter, sortedMembers[i].id));
+
+            // Advance to next court when this one is full
+            if ((i + 1) % playerPerCourt == 0) {
+                courtIter++;
             }
+        }
+        return result;
+    }
+
+    GameStats stats(pastAllocation);
+
+
+    // Find eligible players
+    auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
+
+    // How many unqualified people can we use?
+    const auto numMustOn = std::count_if(eligiblePlayers.cbegin(), eligiblePlayers.cend(), [](auto &p) {
+        return p.eligibilityScore.has_value();
+    });
+
+    size_t unqualifiedQuota = numMaxSeats > numMustOn ? (numMaxSeats - numMustOn) : 0;
+
+//    std::shuffle(courts.begin(), courts.end(), std::default_random_engine(seed + 1));
+
+    for (const auto &courtId : courts) {
+        ComputeContext ctx = {stats, playerPerCourt, unqualifiedQuota, eligiblePlayers.cend()};
+        ctx.out.reserve(playerPerCourt);
+
+        computeCourtScore(ctx, eligiblePlayers.begin());
+        if (!ctx.bestScore) {
+            qWarning() << "Unable to find best score";
             return result;
         }
 
-        GameStats stats(pastAllocation);
+        unqualifiedQuota = ctx.bestScore->unqualifiedQuotaLeft;
 
-
-        // Find eligible players
-        auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
-
-        // How many unqualified people can we use?
-        size_t unqualifiedQuota =
-                numMaxSeats - std::count_if(eligiblePlayers.cbegin(), eligiblePlayers.cend(), [](auto &p) {
-                    return p.eligibilityScore;
-                });
-
-        for (const auto &courtId : courts) {
-            ComputeContext ctx = {stats, playerPerCourt, unqualifiedQuota, eligiblePlayers.cend()};
-            ctx.out.reserve(playerPerCourt);
-
-            computeCourtScore(ctx, eligiblePlayers.begin());
-            if (!ctx.bestScore) {
-                qWarning() << "Unable to find best score";
-                return result;
-            }
-
-            unqualifiedQuota -= ctx.bestScore->unqualifiedQuotaUsed;
-
-            for (const auto &p : ctx.bestScore->combination) {
-                result.append(GameAllocation(0, courtId, p->member.id));
-                eligiblePlayers.erase(p);
-            }
+        for (const auto &p : ctx.bestScore->combination) {
+            result.append(GameAllocation(0, courtId, p->member.id));
+            eligiblePlayers.erase(p);
         }
-        qDebug() << "Matched result has " << result.size() << " allocations";
+    }
+    qDebug() << "Matched result has " << result.size() << " allocations";
 
-        return result;
-    });
+    return result;
 
 }
 

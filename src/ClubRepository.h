@@ -19,13 +19,6 @@ struct SessionData {
     QVector<Court> courts;
 };
 
-struct MemberInfo : Member {
-Q_GADGET
-public:
-    // These fields above can be optional...
-    DECLARE_PROPERTY(int, numGames, = -1);
-};
-
 
 struct ClubInfo {
 Q_GADGET
@@ -39,7 +32,7 @@ Q_GADGET
 public:
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
-    DECLARE_PROPERTY(QVector<MemberInfo>, players,);
+    DECLARE_PROPERTY(QVector<Member>, players,);
 
     bool operator==(const CourtPlayers &rhs) const {
         return courtId == rhs.courtId &&
@@ -97,13 +90,13 @@ public:
 
     bool saveMember(const Member &);
 
-    QVector<MemberInfo> findMember(MemberSearchFilter, const QString &needle) const;
+    QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 
     std::optional<MemberId> findMemberBy(const QString &firstName, const QString &lastName);
 
     std::optional<Member> getMember(MemberId) const;
 
-    QVector<MemberInfo> getAllMembers(MemberSearchFilter) const;
+    QVector<Member> getAllMembers(MemberSearchFilter) const;
 
     bool checkIn(MemberId, SessionId, bool paid) const;
 

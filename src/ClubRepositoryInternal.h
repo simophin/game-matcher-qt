@@ -10,7 +10,7 @@
 
 #include <QObject>
 
-struct GameAllocationMember : MemberInfo {
+struct GameAllocationMember : Member {
     Q_GADGET
 public:
     DECLARE_PROPERTY(CourtId, courtId, )

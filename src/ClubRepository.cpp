@@ -276,7 +276,7 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
     return std::make_pair(sql, args);
 }
 
-QVector<MemberInfo> ClubRepository::findMember(MemberSearchFilter filter, const QString &needle) const {
+QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QString &needle) const {
     auto[sql, args] = constructFindMembersSql(filter);
     auto trimmed = needle;
     if (!trimmed.isEmpty()) {
@@ -286,12 +286,12 @@ QVector<MemberInfo> ClubRepository::findMember(MemberSearchFilter filter, const 
         args.push_back(realNeedle);
     }
 
-    return DbUtils::queryList<MemberInfo>(d->db, sql, args).orDefault();
+    return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }
 
-QVector<MemberInfo> ClubRepository::getAllMembers(MemberSearchFilter filter) const {
+QVector<Member> ClubRepository::getAllMembers(MemberSearchFilter filter) const {
     auto[sql, args] = constructFindMembersSql(filter);
-    return DbUtils::queryList<MemberInfo>(d->db, sql, args).orDefault();
+    return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }
 
 bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) const {
@@ -323,9 +323,9 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
             QStringLiteral("select M.*, C.id as courtId, C.name as courtName from game_allocations GA "
                            "inner join games G on G.id = GA.gameId "
                            "inner join players P on P.memberId = M.id and P.id = GA.playerId "
-                           "inner join member_session_info M on M.id = P.memberId "
+                           "inner join members M on M.id = P.memberId "
                            "inner join courts C on C.id = GA.courtId "
-                           "where G.id = ? and M.sessionId = ? "
+                           "where G.id = ? "
                            "order by C.sortOrder"),
             {gameResult->id, sessionId});
 

@@ -6,14 +6,12 @@
 #include <QVector>
 #include <QFuture>
 
-class MemberInfo;
-
 class GameMatcher {
 public:
-    static QFuture<QVector<GameAllocation>> match(
+    static QVector<GameAllocation> match(
             const QVector<GameAllocation> &pastAllocation,
-            const QVector<MemberInfo> &eligiblePlayers,
-            const QVector<CourtId> &courts,
+            const QVector<Member> &eligiblePlayers,
+            QVector<CourtId> courts,
             size_t playerPerCourt,
             int seed);
 };

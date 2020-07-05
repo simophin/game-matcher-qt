@@ -82,7 +82,7 @@ void EmptySessionPage::on_createFakeButton_clicked() {
 void EmptySessionPage::on_checkInRandomButton_clicked() {
     if (auto lastSessionId = d->repo->getLastSession()) {
         auto members = d->repo->getAllMembers(NonCheckedIn{*lastSessionId});
-        auto size = 20 - d->repo->getAllMembers(CheckedIn{*lastSessionId}).size();
+        auto size = 40 - d->repo->getAllMembers(CheckedIn{*lastSessionId}).size();
         std::shuffle(members.begin(), members.end(), std::default_random_engine());
         for (int i = 0; i < size; i++) {
             d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);

@@ -30,7 +30,7 @@ MemberSelectDialog::~MemberSelectDialog() {
 }
 
 void MemberSelectDialog::applyData() {
-    QVector<MemberInfo> members;
+    QVector<Member> members;
 
     if (auto needle = d->ui.filterEdit->text().trimmed(); !needle.isEmpty()) {
         members = d->repo->findMember(d->filter, needle);

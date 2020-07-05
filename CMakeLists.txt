@@ -23,7 +23,7 @@ add_executable(GameMatcher
         src/models.h
         src/GameMatcher.cpp
         src/GameMatcher.h
-        src/GameStats.h
+        src/GameMatcherInternal.h
         src/DbUtils.h
         src/DbUtils.cpp
         src/MainWindow.h
