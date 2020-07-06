@@ -10,6 +10,7 @@
 
 
 #include "DbUtils.h"
+#include "NameFormatUtils.h"
 
 static struct {
     int schemaVersion;
@@ -196,13 +197,19 @@ ClubRepository::createSession(int fee, const QString &place, const QString &anno
     return std::nullopt;
 }
 
-QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id) const {
-    return DbUtils::queryList<GameAllocation>(
-            d->db,
-            QStringLiteral("select GA.gameId, GA.courtId, P.memberId from game_allocations GA "
-                           "inner join players P on P.id = GA.playerId "
-                           "where GA.gameId in (select id from games where sessionId = ?) "),
-            {id}).orDefault();
+QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::optional<size_t> numGames) const {
+    auto sql = QStringLiteral("select GA.gameId, GA.courtId, P.memberId from game_allocations GA "
+                   "inner join players P on P.id = GA.playerId "
+                   "where GA.gameId in ( "
+                   "select id from games where sessionId = ? ");
+
+    if (numGames) {
+        sql += QStringLiteral("order by startTime desc limit %1 ").arg(*numGames);
+    }
+
+    sql += QStringLiteral(")");
+
+    return DbUtils::queryList<GameAllocation>(d->db, sql,{id}).orDefault();
 }
 
 std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
@@ -342,15 +349,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
 
     if (!members) return std::nullopt;
 
-    QHash<QString, Member *> firstNames;
-    for (auto &member : *members) {
-        if (auto found = firstNames.constFind(member.firstName); found != firstNames.constEnd()) {
-            found.value()->displayName = found.value()->fullName();
-            member.displayName = member.fullName();
-        }
-        firstNames[member.firstName] = &member;
-    }
-    firstNames.clear();
+    formatMemberDisplayNames(*members);
 
     for (auto &member : *members) {
         if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {

@@ -61,7 +61,7 @@ void NewSessionDialog::accept() {
     auto numCourts = d->ui.numberOfCourtsSpinBox->value();
     auto numPlayersPerCourt = d->ui.numberOfPlayersPerCourtSpinBox->value();
     for (auto i = 0, size = numCourts; i < size; i++) {
-        courts.append(CourtConfiguration{tr("Court %1").arg(i + 1), -i});
+        courts.append(CourtConfiguration{QString::number(i + 1), -i});
     }
 
     int fee = d->ui.feeLineEdit->text().toDouble() * 100;
