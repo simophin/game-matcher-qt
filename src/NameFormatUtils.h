@@ -26,24 +26,24 @@ static void formatMemberDisplayNames(Col &members, const ReferenceCol &ref) {
     QHash<FirstName, FirstNameInfo> nameMap;
 
     for (const Member &m : ref) {
-        auto lowerFirstName = m.firstName.toLower();
-        auto &firstNameInfo = nameMap[lowerFirstName];
+        auto upperFirstName = m.firstName.toUpper();
+        auto &firstNameInfo = nameMap[upperFirstName];
         firstNameInfo.times++;
-        firstNameInfo.lastNameInitials[m.lastName.left(1).toLower()].times++;
+        firstNameInfo.lastNameInitials[m.lastName.left(1).toUpper()].times++;
     }
 
     for (Member &m : members) {
-        auto lowerFirstName = m.firstName.toLower();
-        if (auto firstNameInfo = getMapValue(nameMap, lowerFirstName); firstNameInfo && firstNameInfo->times > 1) {
-            auto lastNameInitial = m.lastName.left(1).toLower();
+        auto upperFirstName = m.firstName.toUpper();
+        if (auto firstNameInfo = getMapValue(nameMap, upperFirstName); firstNameInfo && firstNameInfo->times > 1) {
+            auto lastNameInitial = m.lastName.left(1).toUpper();
             if (auto nameInfo = getMapValue(firstNameInfo->lastNameInitials, lastNameInitial); nameInfo && nameInfo->times > 1) {
-                m.displayName = m.fullName();
+                m.displayName = m.fullName().toUpper();
             } else {
-                m.displayName = QObject::tr("%1 %2", "first/last name initial").arg(m.firstName, lastNameInitial.toUpper());
+                m.displayName = QObject::tr("%1 %2", "first/last name initial").arg(m.firstName.toUpper(), lastNameInitial.toUpper());
             }
 
         } else {
-            m.displayName = m.firstName;
+            m.displayName = m.firstName.toUpper();
         }
     }
 }
