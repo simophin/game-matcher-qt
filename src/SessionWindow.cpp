@@ -11,9 +11,7 @@
 #include "CheckInDialog.h"
 #include "EditMemberDialog.h"
 #include "NewGameDialog.h"
-#include "FlowLayout.h"
 #include "CourtDisplay.h"
-#include "PlayerTablePage.h"
 
 #include <functional>
 #include <QPointer>
@@ -22,7 +20,6 @@ struct SessionWindow::Impl {
     ClubRepository *repo;
     SessionData session;
     Ui::SessionWindow ui;
-    QPointer<FlowLayout> courtLayout;
 
     void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter, std::function<bool(const Member &)> cb) {
         auto dialog = new MemberSelectDialog(filter, repo, parent);
@@ -49,17 +46,10 @@ struct SessionWindow::Impl {
     }
 };
 
-static const auto minCourtDisplayWidth = 90;
-static const auto maxCourtDisplayWidth = 120;
-
-
 SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
         : QMainWindow(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
-    d->courtLayout = new FlowLayout();
-    d->ui.courtFrame->setLayout(d->courtLayout->layout());
-
-    d->ui.centralLayout->addWidget(new PlayerTablePage(sessionId, repo, this), 2);
+    d->ui.playerTable->load(sessionId, repo);
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
@@ -82,7 +72,7 @@ void SessionWindow::onSessionDataChanged() {
 }
 
 void SessionWindow::onCurrentGameChanged() {
-    if (auto courtLayout = d->courtLayout.data()) {
+    if (auto courtLayout = d->ui.courtLayout) {
         auto game = d->repo->getLastGameInfo(d->session.session.id);
         
         auto createWidget = [this]() {

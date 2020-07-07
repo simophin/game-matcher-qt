@@ -15,16 +15,14 @@
 #include <set>
 
 struct PlayerTablePage::Impl {
-    const SessionId sessionId;
-    ClubRepository *const repo;
+    SessionId sessionId = 0;
+    ClubRepository *repo = nullptr;
     Ui::PlayerTablePage ui;
 };
 
-PlayerTablePage::PlayerTablePage(SessionId id, ClubRepository *repo, QWidget *parent)
-        : QWidget(parent), d(new Impl {id, repo}) {
+PlayerTablePage::PlayerTablePage(QWidget *parent)
+        : QWidget(parent), d(new Impl) {
     d->ui.setupUi(this);
-    reload();
-    connect(repo, &ClubRepository::sessionChanged, this, &PlayerTablePage::reload);
 }
 
 PlayerTablePage::~PlayerTablePage() {
@@ -39,6 +37,8 @@ void PlayerTablePage::changeEvent(QEvent *evt) {
 }
 
 void PlayerTablePage::reload() {
+    if (!d->repo) return;
+
     d->ui.table->clear();
     auto members = d->repo->getMembers(AllSession{d->sessionId});
     formatMemberDisplayNames(members);
@@ -134,4 +134,16 @@ void PlayerTablePage::on_table_customContextMenuRequested(const QPoint &pt) {
     menu->addAction(tr("Change name"));
     menu->addAction(tr("Mark as paid"));
     menu->popup(d->ui.table->mapToGlobal(pt));
+}
+
+void PlayerTablePage::load(SessionId id, ClubRepository *repo) {
+    if (d->repo != repo) {
+        if (d->repo) disconnect(d->repo, &ClubRepository::sessionChanged, this, &PlayerTablePage::reload);
+        if (repo) {
+            connect(repo, &ClubRepository::sessionChanged, this, &PlayerTablePage::reload);
+        }
+        d->repo = repo;
+    }
+    d->sessionId = id;
+    reload();
 }

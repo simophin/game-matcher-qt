@@ -40,7 +40,7 @@ void ClubPage::openLastSession() {
 
 void ClubPage::openSession(SessionId sessionId) {
     auto session = new SessionWindow(&d->repo, sessionId, this);
-    session->show();
+    session->showMaximized();
 }
 
 ClubPage::~ClubPage() {

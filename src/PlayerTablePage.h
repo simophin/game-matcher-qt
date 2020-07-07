@@ -14,7 +14,9 @@ class ClubRepository;
 class PlayerTablePage : public QWidget {
 Q_OBJECT
 public:
-    explicit PlayerTablePage(SessionId, ClubRepository *, QWidget *parent = nullptr);
+    explicit PlayerTablePage(QWidget *parent = nullptr);
+
+    void load(SessionId, ClubRepository *);
 
     ~PlayerTablePage() override;
 

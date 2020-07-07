@@ -32,11 +32,6 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                     label->setProperty("isMember", true);
                     return label; },
                 [](QLabel *label, const Member &player) {
-                    label->setText(
-                            tr("%1 (%2, %3)").arg(
-                                    player.displayName.isEmpty() ? player.firstName : player.displayName,
-                                    QString::number(player.level),
-                                    player.gender.left(1))
-                            );
+                    label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
                 });
 }

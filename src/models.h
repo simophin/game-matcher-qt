@@ -55,8 +55,7 @@ public:
 
     QString fullName() const {
         if (fullNameCache.isNull()) {
-            fullNameCache = QObject::tr("%1 %2 (%3, %4)", "full name")
-                    .arg(firstName, lastName, QString::number(level), gender.left(1));
+            fullNameCache = QObject::tr("%1 %2", "full name").arg(firstName, lastName);
         }
         return fullNameCache;
     }

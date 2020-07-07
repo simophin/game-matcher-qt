@@ -277,7 +277,7 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
             args.push_back(*checkedIn->paused);
         }
     } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
-        sql += QStringLiteral("select M.*, %1 as status, P.paid as paid from members M "
+        sql += QStringLiteral("select M.*, %1 as status from members M "
                               "  where id not in (select memberId from players where sessionId = ?)")
                 .arg(Member::NotCheckedIn);
         args.push_back(nonCheckedIn->sessionId);
@@ -361,7 +361,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
 
     if (!members) return std::nullopt;
 
-    formatMemberDisplayNames(*members);
+    formatMemberDisplayNames(*members, getMembers(AllSession{sessionId}));
 
     for (auto &member : *members) {
         if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {

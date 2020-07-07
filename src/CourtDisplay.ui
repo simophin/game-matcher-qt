@@ -21,7 +21,8 @@
 
 QLabel[isMember=&quot;true&quot;] {
 	text-align: center;
-	font-size: 16px;
+	font-size: 24px;
+	padding: 4px;
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">

@@ -79,5 +79,6 @@ add_executable(GameMatcher
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
+target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(GameMatcher
         PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets)
