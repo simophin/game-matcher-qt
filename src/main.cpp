@@ -5,6 +5,7 @@
 #include "ClubRepository.h"
 
 #include "GameMatcher.h"
+#include "CollectionUtils.h"
 
 
 static void printAllocations(const QString &prefix, QVector<GameAllocation> &allocations, const QHash<MemberId, Member> &members) {
@@ -44,11 +45,7 @@ static void testMatcher() {
             courts.append(court.id);
         }
 
-        auto memberById = std::reduce(members.constBegin(), members.constEnd(), QHash<MemberId, Member>(),
-                                      [](auto &map, auto &m) {
-                                          map[m.id] = m;
-                                          return map;
-                                      });
+        auto memberById = associateBy<QHash<MemberId, Member>>(members, [](auto &m) { return m.id; });
 
         QVector<GameAllocation> allocations;
 

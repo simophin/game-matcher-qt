@@ -11,6 +11,7 @@
 
 #include "GameMatcherInternal.h"
 #include "ClubRepository.h"
+#include "CollectionUtils.h"
 
 
 static PlayerList getEligiblePlayers(nonstd::span<const Member> members,
@@ -88,12 +89,12 @@ static int levelRangeScore(nonstd::span<PlayerListIterator> members) {
 static int levelStdVarianceScore(nonstd::span<PlayerListIterator> members) {
     if (members.size() < 2) return 0;
 
-    const int sum = std::reduce(members.begin(), members.end(), 0, [](auto sum, auto info) {
+    const int sum = reduceCollection(members, 0, [](auto sum, auto info) {
         return sum + info->member.level;
     });
     const double average = static_cast<double>(sum) / members.size();
 
-    return std::sqrt(std::reduce(members.begin(), members.end(), 0.0, [average](auto sum, auto info) {
+    return std::sqrt(reduceCollection(members, 0.0, [average](auto sum, auto info) {
         auto diff = info->member.level - average;
         return sum + diff * diff;
     }) / (members.size() - 1)) * 100 / (levelMax - levelMin);

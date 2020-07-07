@@ -6,6 +6,7 @@
 #define GAMEMATCHER_COLLECTIONUTILS_H
 
 #include <optional>
+#include <functional>
 
 template<typename Map, typename Col, typename ByFunc>
 static inline Map associateBy(const Col &collection, ByFunc keySelector) {
@@ -23,6 +24,14 @@ static inline std::optional<typename Map::mapped_type> getMapValue(const Map &m,
     }
 
     return std::nullopt;
+}
+
+template <typename Col, typename T, typename Reducer>
+static inline T reduceCollection(const Col &col, T initialValue, Reducer reducer) {
+    for (const auto & e : col) {
+        initialValue = reducer(initialValue, e);
+    }
+    return initialValue;
 }
 
 #endif //GAMEMATCHER_COLLECTIONUTILS_H
