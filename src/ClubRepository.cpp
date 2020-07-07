@@ -17,7 +17,6 @@ static struct {
     QString sqlFile;
 } schemas[] = {
         {1, QStringLiteral(":/sql/db_v1.sql")},
-        {2, QStringLiteral(":/sql/db_v2.sql")},
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");

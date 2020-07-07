@@ -86,6 +86,9 @@ void SessionWindow::onSessionDataChanged() {
 void SessionWindow::onCurrentGameChanged() {
     if (auto courtLayout = d->ui.courtLayout) {
         auto game = d->repo->getLastGameInfo(d->session.session.id);
+        if (!game) {
+            return;
+        }
 
         if (d->lastGameStarted != game->startTime) {
             d->lastGameStarted = game->startTime;
