@@ -25,6 +25,7 @@ protected:
 private slots:
     void onSessionDataChanged();
     void onCurrentGameChanged();
+    void updateElapseTime();
 
     void on_checkInButton_clicked();
     void on_checkOutButton_clicked();

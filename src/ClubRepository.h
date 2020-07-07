@@ -53,10 +53,7 @@ public:
     DECLARE_PROPERTY(GameId, id,);
     DECLARE_PROPERTY(QDateTime, startTime,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
-
-    Q_INVOKABLE bool empty() const {
-        return startTime.isNull() || courts.empty();
-    }
+    DECLARE_PROPERTY(QVector<Member>, waiting,);
 };
 
 class ClubRepository : public QObject {

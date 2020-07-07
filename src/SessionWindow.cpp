@@ -15,13 +15,18 @@
 
 #include <functional>
 #include <QPointer>
+#include <QTimer>
 
 struct SessionWindow::Impl {
     ClubRepository *repo;
     SessionData session;
     Ui::SessionWindow ui;
 
-    void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter, std::function<bool(const Member &)> cb) {
+    QDateTime lastGameStarted;
+    QTimer gameTimer = QTimer();
+
+    void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter,
+                        std::function<bool(const Member &)> cb) {
         auto dialog = new MemberSelectDialog(filter, repo, parent);
         dialog->setWindowTitle(tr("Select yourself to %1...").arg(action));
         dialog->show();
@@ -33,13 +38,16 @@ struct SessionWindow::Impl {
                 return;
 
             }
-            if (QMessageBox::question(parent, tr("Check out"), tr("Are you sure to %1 %2").arg(action, member->fullName())) ==
+            if (QMessageBox::question(parent, tr("Check out"),
+                                      tr("Are you sure to %1 %2").arg(action, member->fullName())) ==
                 QMessageBox::Yes) {
                 if (cb(*member)) {
-                    QMessageBox::information(parent, tr("Success"), tr("%1 as %2: success").arg(action, member->fullName()));
+                    QMessageBox::information(parent, tr("Success"),
+                                             tr("%1 as %2: success").arg(action, member->fullName()));
                 } else {
                     QMessageBox::critical(parent, tr("Error"),
-                                          tr("Unable to %1 as %2. Maybe you have already done so.").arg(action, member->fullName()));
+                                          tr("Unable to %1 as %2. Maybe you have already done so.").arg(action,
+                                                                                                        member->fullName()));
                 }
             }
         });
@@ -50,6 +58,10 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
         : QMainWindow(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
     d->ui.playerTable->load(sessionId, repo);
+
+    d->gameTimer.setInterval(1000);
+    d->gameTimer.setSingleShot(true);
+    connect(&d->gameTimer, &QTimer::timeout, this, &SessionWindow::updateElapseTime);
 
     if (auto session = repo->getSession(sessionId)) {
         d->session = *session;
@@ -74,7 +86,12 @@ void SessionWindow::onSessionDataChanged() {
 void SessionWindow::onCurrentGameChanged() {
     if (auto courtLayout = d->ui.courtLayout) {
         auto game = d->repo->getLastGameInfo(d->session.session.id);
-        
+
+        if (d->lastGameStarted != game->startTime) {
+            d->lastGameStarted = game->startTime;
+            updateElapseTime();
+        }
+
         auto createWidget = [this]() {
             return new CourtDisplay(this);
         };
@@ -83,15 +100,21 @@ void SessionWindow::onCurrentGameChanged() {
             widget->setCourt(court);
         };
 
-        if (!game || game->empty()) {
-            setEntities(courtLayout, QVector<CourtPlayers>(), createWidget, updateWidget);
-        } else {
-            setEntities(courtLayout, game->courts, createWidget, updateWidget);
-            statusBar()->showMessage(tr("Game id = %1").arg(game->id));
+        setEntities(courtLayout, game->courts, createWidget, updateWidget);
+
+        d->ui.benchList->clear();
+
+        QFont itemFont;
+        itemFont.setPointSize(18);
+
+        for (const auto &item : game->waiting) {
+            auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
+            listItem->setFont(itemFont);
         }
+
+        statusBar()->showMessage(tr("Game started = %1").arg(game->id));
     }
 }
-
 
 
 void SessionWindow::on_checkInButton_clicked() {
@@ -127,8 +150,8 @@ void SessionWindow::on_registerButton_clicked() {
     dialog->show();
     connect(dialog, &EditMemberDialog::newMemberCreated, [=](auto memberId) {
         if (QMessageBox::question(this, tr("Success"),
-                tr("Register successfully. \nDo you want to check in for the game?"),
-                QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
+                                  tr("Register successfully. \nDo you want to check in for the game?"),
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
             (new CheckInDialog(memberId, d->session.session.id, d->repo, this))->show();
         }
     });
@@ -160,4 +183,30 @@ void SessionWindow::on_actionStartNewGame_triggered() {
     auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
     dialog->show();
     connect(dialog, &NewGameDialog::newGameMade, this, &SessionWindow::onCurrentGameChanged);
+}
+
+void SessionWindow::updateElapseTime() {
+    QString value;
+    if (d->lastGameStarted.isValid()) {
+        auto now = QDateTime::currentDateTimeUtc();
+        auto totalSeconds = std::abs(d->lastGameStarted.secsTo(now));
+        auto hours = totalSeconds / 3600;
+        auto minutes = (totalSeconds - hours * 3600) / 60;
+        auto seconds = totalSeconds % 60;
+        std::array<char, 24> buf;
+
+        if (hours < 1) {
+            snprintf(buf.data(), buf.size(), "%02lld:%02lld", minutes, seconds);
+        } else {
+            snprintf(buf.data(), buf.size(), "%lld:%02lld:%02lld", hours, minutes, seconds);
+        }
+
+        value = QLatin1String(buf.data());
+        d->gameTimer.start();
+    } else {
+        value = tr("n/a");
+        d->gameTimer.stop();
+    }
+
+    d->ui.timeLabel->setText(tr("Time since last game: %1").arg(value));
 }

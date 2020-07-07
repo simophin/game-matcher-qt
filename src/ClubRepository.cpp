@@ -348,28 +348,47 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
 
     if (!gameResult) return std::nullopt;
 
-    auto members = DbUtils::queryList<GameAllocationMember>(
+    auto onMembers = DbUtils::queryList<GameAllocationMember>(
             d->db,
-            QStringLiteral("select M.*, C.id as courtId, C.name as courtName from game_allocations GA "
+            QStringLiteral("select M.*, P.paid as paid, "
+                           "(case when (P.checkOutTime is not null) then %1 "
+                           "when P.paused then %2 "
+                           "else %3 "
+                           "end) as status, C.id as courtId, C.name as courtName from game_allocations GA "
                            "inner join games G on G.id = GA.gameId "
                            "inner join players P on P.memberId = M.id and P.id = GA.playerId "
                            "inner join members M on M.id = P.memberId "
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
-                           "order by C.sortOrder"),
+                           "order by C.sortOrder").arg(
+                                   QString::number(Member::CheckedOut),
+                                   QString::number(Member::CheckedInPaused),
+                                   QString::number(Member::CheckedIn)),
             {gameResult->id, sessionId});
 
-    if (!members) return std::nullopt;
+    if (!onMembers) return std::nullopt;
 
-    formatMemberDisplayNames(*members, getMembers(AllSession{sessionId}));
+    const auto allPlayers = getMembers(AllSession{sessionId});
+    formatMemberDisplayNames(*onMembers, allPlayers);
 
-    for (auto &member : *members) {
+    for (auto &member : *onMembers) {
         if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {
             gameResult->courts.append(CourtPlayers{member.courtId, member.courtName});
         }
 
         gameResult->courts.last().players.append(member);
     }
+
+    QSet<MemberId> onMemberIds;
+    for (const auto &m : *onMembers) {
+        onMemberIds.insert(m.id);
+    }
+    for (const auto &item : allPlayers) {
+        if (!onMemberIds.contains(item.id)) {
+            gameResult->waiting.append(item);
+        }
+    }
+    formatMemberDisplayNames(gameResult->waiting, allPlayers);
 
     return *gameResult;
 }

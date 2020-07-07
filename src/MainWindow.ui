@@ -11,7 +11,13 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>GameMatcher</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+* {
+	font-size: 16px;
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QStatusBar" name="statusbar"/>

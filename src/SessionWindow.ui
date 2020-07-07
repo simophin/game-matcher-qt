@@ -102,7 +102,19 @@
        <attribute name="title">
         <string>Court allocation</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout" stretch="4,2">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,4,2">
+        <item>
+         <widget class="QLabel" name="timeLabel">
+          <property name="font">
+           <font>
+            <pointsize>18</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Time since last game started: </string>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QGroupBox" name="courtGroupBox">
           <property name="font">
@@ -154,8 +166,41 @@
            </font>
           </property>
           <property name="title">
-           <string>On the bench</string>
+           <string>Having a break..</string>
           </property>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QListWidget" name="benchList">
+             <property name="autoFillBackground">
+              <bool>false</bool>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::Box</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Sunken</enum>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>false</bool>
+             </property>
+             <property name="isWrapping" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="resizeMode">
+              <enum>QListView::Adjust</enum>
+             </property>
+             <property name="layoutMode">
+              <enum>QListView::SinglePass</enum>
+             </property>
+             <property name="spacing">
+              <number>4</number>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
