@@ -75,7 +75,7 @@ add_executable(GameMatcher
         src/PlayerTablePage.h
         src/PlayerTablePage.ui
         src/CollectionUtils.h
-        src/NameFormatUtils.h)
+        src/NameFormatUtils.h src/ToastEvent.cpp src/ToastEvent.h src/ToastDialog.cpp src/ToastDialog.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

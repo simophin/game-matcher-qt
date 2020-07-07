@@ -383,7 +383,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
         onMemberIds.insert(m.id);
     }
     for (const auto &item : allPlayers) {
-        if (!onMemberIds.contains(item.id)) {
+        if (!onMemberIds.contains(item.id) && item.status != Member::CheckedOut) {
             gameResult->waiting.append(item);
         }
     }

@@ -22,6 +22,9 @@ public:
 protected:
     void changeEvent(QEvent *event) override;
 
+public:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
     void onSessionDataChanged();
     void onCurrentGameChanged();
@@ -31,7 +34,6 @@ private slots:
     void on_checkOutButton_clicked();
     void on_pauseButton_clicked();
     void on_resumeButton_clicked();
-    void on_registerButton_clicked();
     void on_updateButton_clicked();
 
     void on_actionStartNewGame_triggered();

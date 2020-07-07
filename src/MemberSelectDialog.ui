@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>630</width>
-    <height>506</height>
+    <width>877</width>
+    <height>683</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,17 +18,53 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
+    <widget class="QFrame" name="registerLayout">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>New member register here -&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="registerButton">
+        <property name="text">
+         <string>Register</string>
+        </property>
+        <property name="default">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Select from the list below:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLineEdit" name="filterEdit">
      <property name="font">
       <font>
-       <pointsize>24</pointsize>
+       <pointsize>20</pointsize>
       </font>
      </property>
      <property name="styleSheet">
       <string notr="true">padding: 8px</string>
      </property>
      <property name="placeholderText">
-      <string>Type here to filter</string>
+      <string>Filter by first name</string>
      </property>
      <property name="clearButtonEnabled">
       <bool>true</bool>
@@ -43,11 +79,14 @@
      <property name="isWrapping" stdset="0">
       <bool>true</bool>
      </property>
+     <property name="resizeMode">
+      <enum>QListView::Adjust</enum>
+     </property>
      <property name="layoutMode">
       <enum>QListView::Batched</enum>
      </property>
      <property name="spacing">
-      <number>4</number>
+      <number>6</number>
      </property>
      <property name="uniformItemSizes">
       <bool>false</bool>

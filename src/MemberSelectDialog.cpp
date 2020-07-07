@@ -6,6 +6,7 @@
 #include "ui_MemberSelectDialog.h"
 
 #include "ClubRepository.h"
+#include "EditMemberDialog.h"
 
 #include <QPushButton>
 #include <QTimer>
@@ -17,11 +18,15 @@ struct MemberSelectDialog::Impl {
     Ui::MemberSelectDialog ui;
 };
 
-MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, ClubRepository *repo, QWidget *parent)
+MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegister, ClubRepository *repo, QWidget *parent)
         : QDialog(parent), d(new Impl{filter, repo, new QTimer(this)}) {
     d->ui.setupUi(this);
     d->filterDebounceTimer->setSingleShot(true);
     d->filterDebounceTimer->setInterval(500);
+
+    if (!showRegister) {
+        d->ui.registerLayout->hide();
+    }
 
     applyData();
     connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::applyData);
@@ -46,7 +51,7 @@ void MemberSelectDialog::applyData() {
 
     d->ui.memberList->clear();
     QFont font;
-    font.setPointSize(16);
+    font.setPointSize(18);
     for (const auto &member : members) {
         auto item = new QListWidgetItem(member.fullName(), d->ui.memberList);
         item->setFont(font);
@@ -83,5 +88,20 @@ void MemberSelectDialog::changeEvent(QEvent *event) {
     QDialog::changeEvent(event);
     if (event->type() == QEvent::LanguageChange) {
         d->ui.retranslateUi(this);
+    }
+}
+
+void MemberSelectDialog::on_registerButton_clicked() {
+    auto dialog = new EditMemberDialog(d->repo, this);
+    connect(dialog, &EditMemberDialog::newMemberCreated, [this](auto id) {
+        emit this->memberSelected(id);
+        QDialog::accept();
+    });
+    dialog->show();
+}
+
+void MemberSelectDialog::setAcceptButtonText(const QString &text) {
+    if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
+        button->setText(text);
     }
 }

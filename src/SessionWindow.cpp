@@ -12,6 +12,8 @@
 #include "EditMemberDialog.h"
 #include "NewGameDialog.h"
 #include "CourtDisplay.h"
+#include "ToastEvent.h"
+#include "ToastDialog.h"
 
 #include <functional>
 #include <QPointer>
@@ -19,43 +21,16 @@
 
 struct SessionWindow::Impl {
     ClubRepository *repo;
+    ToastDialog *toastDialog;
     SessionData session;
     Ui::SessionWindow ui;
 
     QDateTime lastGameStarted;
     QTimer gameTimer = QTimer();
-
-    void selectMemberTo(QWidget *parent, const QString &action, MemberSearchFilter filter,
-                        std::function<bool(const Member &)> cb) {
-        auto dialog = new MemberSelectDialog(filter, repo, parent);
-        dialog->setWindowTitle(tr("Select yourself to %1...").arg(action));
-        dialog->show();
-
-        connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-            auto member = repo->getMember(id);
-            if (!member) {
-                QMessageBox::critical(parent, tr("Error"), tr("Unable to find given member to %1").arg(action));
-                return;
-
-            }
-            if (QMessageBox::question(parent, tr("Check out"),
-                                      tr("Are you sure to %1 %2").arg(action, member->fullName())) ==
-                QMessageBox::Yes) {
-                if (cb(*member)) {
-                    QMessageBox::information(parent, tr("Success"),
-                                             tr("%1 as %2: success").arg(action, member->fullName()));
-                } else {
-                    QMessageBox::critical(parent, tr("Error"),
-                                          tr("Unable to %1 as %2. Maybe you have already done so.").arg(action,
-                                                                                                        member->fullName()));
-                }
-            }
-        });
-    }
 };
 
 SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
-        : QMainWindow(parent), d(new Impl{repo}) {
+        : QMainWindow(parent), d(new Impl{repo, new ToastDialog(this)}) {
     d->ui.setupUi(this);
     d->ui.playerTable->load(sessionId, repo);
 
@@ -69,7 +44,13 @@ SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget 
         onSessionDataChanged();
         onCurrentGameChanged();
 
-        connect(repo, &ClubRepository::sessionChanged, this, &SessionWindow::onCurrentGameChanged);
+        connect(repo, &ClubRepository::sessionChanged, [=](auto sessionId) {
+            if (d->session.session.id == sessionId) {
+                onCurrentGameChanged();
+            }
+        });
+
+        QCoreApplication::instance()->installEventFilter(this);
     } else {
         QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
         close();
@@ -121,8 +102,9 @@ void SessionWindow::onCurrentGameChanged() {
 
 
 void SessionWindow::on_checkInButton_clicked() {
-    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, d->repo, this);
-    dialog->setWindowTitle(tr("Select yourself to check in..."));
+    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, d->repo, this);
+    dialog->setWindowTitle(tr("Who is checking in?"));
+    dialog->setAcceptButtonText(tr("Check in"));
     dialog->show();
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
         auto checkInDialog = new CheckInDialog(id, d->session.session.id, d->repo, this);
@@ -131,45 +113,57 @@ void SessionWindow::on_checkInButton_clicked() {
 }
 
 void SessionWindow::on_checkOutButton_clicked() {
-    d->selectMemberTo(this, tr("check out"), CheckedIn{d->session.session.id}, [=](const Member &m) {
-        return d->repo->checkOut(d->session.session.id, m.id);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id}, false, d->repo, this);
+    dialog->setWindowTitle(tr("Who is leaving the game?"));
+    dialog->setAcceptButtonText(tr("Check out"));
+    dialog->show();
+    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
+        if (auto member = d->repo->getMember(id)) {
+            if (QMessageBox::question(this, tr("Confirm checking out"),
+                                      tr("Are you sure to check out %1").arg(member->fullName())) == QMessageBox::Yes) {
+                d->repo->checkOut(d->session.session.id, id);
+                ToastEvent::show(tr("%1 checked out").arg(member->fullName()));
+            }
+        }
     });
 }
 
 void SessionWindow::on_pauseButton_clicked() {
-    d->selectMemberTo(this, tr("pause"), CheckedIn{d->session.session.id, false}, [=](const Member &m) {
-        return d->repo->setPaused(d->session.session.id, m.id, true);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, false}, false, d->repo, this);
+    dialog->setWindowTitle(tr("Who is pausing?"));
+    dialog->setAcceptButtonText(tr("Pause playing"));
+    dialog->show();
+    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
+        if (auto member = d->repo->getMember(id)) {
+            d->repo->setPaused(d->session.session.id, id, true);
+            ToastEvent::show(tr("%1 paused playing").arg(member->fullName()));
+        }
     });
 }
 
 void SessionWindow::on_resumeButton_clicked() {
-    d->selectMemberTo(this, tr("resume"), CheckedIn{d->session.session.id, true}, [=](const Member &m) {
-        return d->repo->setPaused(d->session.session.id, m.id, false);
-    });
-}
-
-void SessionWindow::on_registerButton_clicked() {
-    auto dialog = new EditMemberDialog(d->repo, this);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, true}, false, d->repo, this);
+    dialog->setWindowTitle(tr("Who is resuming?"));
+    dialog->setAcceptButtonText(tr("Resume playing"));
     dialog->show();
-    connect(dialog, &EditMemberDialog::newMemberCreated, [=](auto memberId) {
-        if (QMessageBox::question(this, tr("Success"),
-                                  tr("Register successfully. \nDo you want to check in for the game?"),
-                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
-            (new CheckInDialog(memberId, d->session.session.id, d->repo, this))->show();
+    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
+        if (auto member = d->repo->getMember(id)) {
+            d->repo->setPaused(d->session.session.id, id, false);
+            ToastEvent::show(tr("%1 resumed playing").arg(member->fullName()));
         }
     });
 }
 
 void SessionWindow::on_updateButton_clicked() {
-    auto dialog = new MemberSelectDialog(AllMembers{}, d->repo, this);
-    dialog->setWindowTitle(tr("Select yourself to edit..."));
+    auto dialog = new MemberSelectDialog(AllMembers{}, false, d->repo, this);
+    dialog->setWindowTitle(tr("Whom to update?"));
     dialog->show();
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
         auto editDialog = new EditMemberDialog(d->repo, this);
         editDialog->setMember(id);
         editDialog->show();
         connect(editDialog, &EditMemberDialog::memberUpdated, [=] {
-            QMessageBox::information(this, tr("Success"), tr("Member information updated successfully"));
+            ToastEvent::show(tr("Information updated"));
         });
     });
 
@@ -212,4 +206,13 @@ void SessionWindow::updateElapseTime() {
     }
 
     d->ui.timeLabel->setText(tr("Time since last game: %1").arg(value));
+}
+
+bool SessionWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (auto toast = dynamic_cast<ToastEvent*>(event)) {
+        d->toastDialog->showMessage(toast->msg(), toast->delayMills());
+        return true;
+    }
+
+    return QObject::eventFilter(watched, event);
 }

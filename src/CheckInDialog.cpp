@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <set>
 
+#include "ToastEvent.h"
+
 struct CheckInDialog::Impl {
     MemberId id;
     ClubRepository *repo;
@@ -62,7 +64,7 @@ void CheckInDialog::accept() {
     }
 
     if (auto member = d->repo->getMember(d->id)) {
-        QMessageBox::information(this, tr("Success"), tr("You have successfully checked in as %1.\nYou'll be on from next game.").arg(member->fullName()));
+        ToastEvent::show(tr("%1 checked in successfully").arg(member->fullName()));
     }
 
     emit this->memberCheckedIn(d->id);

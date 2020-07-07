@@ -50,20 +50,49 @@
        </item>
        <item>
         <widget class="QPushButton" name="checkInButton">
+         <property name="toolTip">
+          <string>Check in the game</string>
+         </property>
          <property name="text">
           <string>Check in</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="checkOutButton">
+         <property name="toolTip">
+          <string>Leaving the game</string>
+         </property>
          <property name="text">
           <string>Check out</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QPushButton" name="pauseButton">
+         <property name="toolTip">
+          <string>Temporarily pause playing</string>
+         </property>
+         <property name="text">
+          <string>Pause playing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="resumeButton">
+         <property name="toolTip">
+          <string>Resume playing</string>
+         </property>
+         <property name="text">
+          <string>Resume playing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="updateButton">
+         <property name="toolTip">
+          <string>Update playing level, name, gender, etc.</string>
+         </property>
          <property name="text">
           <string>Adjust my level</string>
          </property>
