@@ -23,6 +23,9 @@ public:
 public slots:
     void reload();
 
+private slots:
+    void on_table_customContextMenuRequested(const QPoint &pt);
+
 private:
     struct Impl;
     Impl *d;

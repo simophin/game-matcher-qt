@@ -10,6 +10,7 @@
 #include "NameFormatUtils.h"
 
 #include <QEvent>
+#include <QMenu>
 #include <map>
 #include <set>
 
@@ -49,7 +50,7 @@ void PlayerTablePage::reload() {
             });
     QHash<MemberId, QHash<GameId, CourtId>> allocationMap;
     std::set<GameId> gameIdSet;
-    for (const auto &allocation : d->repo->getPastAllocations(d->sessionId, 3)) {
+    for (const auto &allocation : d->repo->getPastAllocations(d->sessionId)) {
         gameIdSet.insert(allocation.gameId);
         allocationMap[allocation.memberId][allocation.gameId] = allocation.courtId;
     }
@@ -59,23 +60,78 @@ void PlayerTablePage::reload() {
         return a.fullName().localeAwareCompare(b.fullName()) < 0;
     });
 
-    d->ui.table->setRowCount(members.size() + 1);
+    d->ui.table->setRowCount(members.size());
     d->ui.table->setColumnCount(gameIds.size() + 1);
 
+    QFont memberFont;
+    memberFont.setPointSize(18);
+    
+    auto courtFont = memberFont;
+    memberFont.setBold(true);
+
+    d->ui.table->setHorizontalHeaderItem(0, new QTableWidgetItem(tr("Paid?")));
+    for (int i = 1, size = d->ui.table->columnCount(); i < size; i++) {
+        QTableWidgetItem *hdrItem;
+        if (i == size - 1) {
+            hdrItem = new QTableWidgetItem(QIcon(QStringLiteral(":images/down.png")), QString());
+        } else {
+            hdrItem = new QTableWidgetItem(QString());
+        }
+        d->ui.table->setHorizontalHeaderItem(i, hdrItem);
+    }
+
     for (int i = 0; i < members.size(); i++) {
-        d->ui.table->setItem(i + 1, 0, new QTableWidgetItem(members[i].displayName));
-        auto &memberGames = allocationMap[members[i].id];
+        const auto &member = members[i];
+        auto memberItem = new QTableWidgetItem(member.displayName);
+        auto status = member.status.value<Member::Status>();
+
+        memberFont.setStrikeOut(status == Member::CheckedOut);
+        memberItem->setFont(memberFont);
+        memberItem->setData(Qt::UserRole, member.id);
+
+        if (status == Member::CheckedOut || status == Member::CheckedInPaused) {
+            memberItem->setForeground(QApplication::palette().mid());
+        }
+
+        const auto row = i;
+
+        d->ui.table->setVerticalHeaderItem(row, memberItem);
+
+        if (member.paid.isValid() && member.paid.toBool()) {
+            auto checkMark = new QTableWidgetItem(QIcon(QStringLiteral(":images/checkmark.svg")), QString());
+            d->ui.table->setItem(row, 0, checkMark);
+        }
+
+        auto &memberGames = allocationMap[member.id];
         for (int j = 0; j < gameIds.size(); j++) {
             auto gameId = gameIds[j];
+                QTableWidgetItem *courtItem;
             if (auto courtId = memberGames.constFind(gameId); courtId != memberGames.constEnd()) {
-                d->ui.table->setItem(i + 1, j + 1, new QTableWidgetItem(courtById[*courtId].name.trimmed()));
+                courtItem = new QTableWidgetItem(courtById[*courtId].name.trimmed());
             } else {
-                d->ui.table->setItem(i + 1, j + 1, new QTableWidgetItem(tr("-")));
+                courtItem = new QTableWidgetItem(tr("-"));
             }
+
+            courtItem->setFont(courtFont);
+            courtItem->setData(Qt::UserRole, member.id);
+            d->ui.table->setItem(row, j + 1, courtItem);
         }
 
     }
 
     d->ui.table->resizeColumnsToContents();
-    d->ui.table->resizeRowsToContents();
+}
+
+void PlayerTablePage::on_table_customContextMenuRequested(const QPoint &pt) {
+    if (auto item = d->ui.table->itemAt(pt); item) {
+        d->ui.table->selectRow(item->row());
+    }
+
+    auto menu = new QMenu(tr("Player option"), d->ui.table);
+    menu->addAction(tr("Pause"));
+    menu->addAction(tr("Check out"));
+    menu->addAction(tr("Change level"));
+    menu->addAction(tr("Change name"));
+    menu->addAction(tr("Mark as paid"));
+    menu->popup(d->ui.table->mapToGlobal(pt));
 }

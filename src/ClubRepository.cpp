@@ -199,9 +199,9 @@ ClubRepository::createSession(int fee, const QString &place, const QString &anno
 
 QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::optional<size_t> numGames) const {
     auto sql = QStringLiteral("select GA.gameId, GA.courtId, P.memberId from game_allocations GA "
-                   "inner join players P on P.id = GA.playerId "
-                   "where GA.gameId in ( "
-                   "select id from games where sessionId = ? ");
+                              "inner join players P on P.id = GA.playerId "
+                              "where GA.gameId in ( "
+                              "select id from games where sessionId = ? ");
 
     if (numGames) {
         sql += QStringLiteral("order by startTime desc limit %1 ").arg(*numGames);
@@ -209,7 +209,7 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::op
 
     sql += QStringLiteral(")");
 
-    return DbUtils::queryList<GameAllocation>(d->db, sql,{id}).orDefault();
+    return DbUtils::queryList<GameAllocation>(d->db, sql, {id}).orDefault();
 }
 
 std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
@@ -263,12 +263,13 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
     QString sql;
     QVector<QVariant> args;
     if (std::get_if<AllMembers>(&filter)) {
-        sql = QStringLiteral("select * from members M where 1");
+        sql += QStringLiteral("select * from members M where 1");
     } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
-        sql = QStringLiteral("select M.* from members M "
-                             "inner join players P on P.memberId = M.id "
-                             "where P.checkOutTime is null "
-                             " and P.sessionId = ? ");
+        auto status = (checkedIn->paused && *(checkedIn->paused)) ? Member::CheckedInPaused : Member::CheckedIn;
+        sql += QStringLiteral("select M.*, %1 as status, P.paid as paid from members M "
+                              "inner join players P on P.memberId = M.id "
+                              "where P.checkOutTime is null "
+                              " and P.sessionId = ? ").arg(status);
         args.push_back(checkedIn->sessionId);
 
         if (checkedIn->paused) {
@@ -276,13 +277,24 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
             args.push_back(*checkedIn->paused);
         }
     } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
-        sql = QStringLiteral("select M.* from members M "
-                             "  where id not in (select memberId from players where sessionId = ?)");
+        sql += QStringLiteral("select M.*, %1 as status, P.paid as paid from members M "
+                              "  where id not in (select memberId from players where sessionId = ?)")
+                .arg(Member::NotCheckedIn);
         args.push_back(nonCheckedIn->sessionId);
     } else if (auto allSession = std::get_if<AllSession>(&filter)) {
-        sql = QStringLiteral("select M.* from members M "
-                             "inner join players P on P.memberId = M.id "
-                             "where P.sessionId = ?");
+        sql += QStringLiteral("select M.*, "
+                              " (case "
+                              "     when (P.checkoutTime is not null) then %1 "
+                              "     when P.paused then %2 "
+                              "     else %3 "
+                              " end) as status, "
+                              "P.paid as paid "
+                              "from members M "
+                              "inner join players P on P.memberId = M.id "
+                              "where P.sessionId = ?").arg(
+                QString::number(Member::CheckedOut),
+                QString::number(Member::CheckedInPaused),
+                QString::number(Member::CheckedIn));
         args.push_back(allSession->sessionId);
     }
 
@@ -419,8 +431,8 @@ bool ClubRepository::saveMember(const Member &m) {
 
 bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paused) {
     if (auto rc = DbUtils::update(d->db,
-                           QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
-                           {paused, sessionId, memberId}).orDefault(0) > 0) {
+                                  QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
+                                  {paused, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);
         return true;
     }

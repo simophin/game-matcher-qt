@@ -43,6 +43,14 @@ public:
     DECLARE_PROPERTY(QString, phone,);
     DECLARE_PROPERTY(int, level, = 0);
 
+    enum Status {
+        NotCheckedIn, CheckedIn, CheckedInPaused, CheckedOut
+    };
+    Q_ENUM(Status);
+
+    DECLARE_PROPERTY(QVariant, status, );
+    DECLARE_PROPERTY(QVariant, paid, );
+
     QString displayName;
 
     QString fullName() const {

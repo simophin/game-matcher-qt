@@ -16,8 +16,8 @@ find_package(Qt5 COMPONENTS Core Sql Widgets REQUIRED)
 
 add_executable(GameMatcher
         src/main.cpp
-        res/qml/qml.qrc
         res/db/queries.qrc
+        res/images/images.qrc
         src/ClubRepository.cpp
         src/ClubRepository.h
         src/models.h
@@ -67,7 +67,15 @@ add_executable(GameMatcher
         src/NewGameDialog.ui
         src/NewGameDialog.h
         src/TypeUtils.h
-        src/ClubRepositoryInternal.h src/FlowLayout.h src/FlowLayout.cpp src/span.h src/PlayerTablePage.cpp src/PlayerTablePage.h src/CollectionUtils.h src/NameFormatUtils.h)
+        src/ClubRepositoryInternal.h
+        src/FlowLayout.h
+        src/FlowLayout.cpp
+        src/span.h
+        src/PlayerTablePage.cpp
+        src/PlayerTablePage.h
+        src/PlayerTablePage.ui
+        src/CollectionUtils.h
+        src/NameFormatUtils.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

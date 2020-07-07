@@ -199,6 +199,14 @@ QVector<GameAllocation> GameMatcher::match(
 //    std::shuffle(courts.begin(), courts.end(), std::default_random_engine(seed + 1));
 
     for (const auto &courtId : courts) {
+        if (eligiblePlayers.size() < playerPerCourt) break;
+        if (eligiblePlayers.size() == playerPerCourt) {
+            for (const auto &player : eligiblePlayers) {
+                result.append(GameAllocation(0, courtId, player.member.id));
+            }
+            break;
+        }
+
         ComputeContext ctx = {stats, playerPerCourt, unqualifiedQuota, eligiblePlayers.cend()};
         ctx.out.reserve(playerPerCourt);
 
