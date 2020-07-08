@@ -42,6 +42,8 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
     d->ui.nameValueLabel->setText(member->fullName());
     auto sessionFee = d->session.session.fee;
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
+    d->ui.annoucement->setText(d->session.session.announcement);
+    d->ui.annoucement->setVisible(!d->session.session.announcement.isEmpty());
     connect(d->ui.paidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
     connect(d->ui.unpaidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
     validateForm();

@@ -71,8 +71,10 @@ void SessionWindow::onCurrentGameChanged() {
             return;
         }
 
-        if (d->lastGameStarted != game->startTime) {
-            d->lastGameStarted = game->startTime;
+        auto startTime = QDateTime::fromSecsSinceEpoch(game->startTime);
+
+        if (d->lastGameStarted != startTime) {
+            d->lastGameStarted = startTime;
             updateElapseTime();
         }
 

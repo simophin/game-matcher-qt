@@ -51,7 +51,7 @@ struct GameInfo {
 Q_GADGET
 public:
     DECLARE_PROPERTY(GameId, id,);
-    DECLARE_PROPERTY(QDateTime, startTime,);
+    DECLARE_PROPERTY(qlonglong, startTime,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
     DECLARE_PROPERTY(QVector<Member>, waiting,);
 };
