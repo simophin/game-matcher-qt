@@ -19,7 +19,10 @@ class ClubRepository;
 class MemberSelectDialog : public QDialog {
 Q_OBJECT
 public:
-    explicit MemberSelectDialog(MemberSearchFilter, bool showRegister, ClubRepository *, QWidget *parent = nullptr);
+    explicit MemberSelectDialog(MemberSearchFilter,
+            bool showRegister,
+            bool closeWhenSelected,
+            ClubRepository *, QWidget *parent = nullptr);
 
     ~MemberSelectDialog() override;
 
@@ -35,7 +38,7 @@ signals:
     void memberSelected(MemberId);
 
 private slots:
-    void applyData();
+    void reload();
     void on_memberList_itemDoubleClicked(QListWidgetItem *item);
     void on_registerButton_clicked();
     void validateForm();

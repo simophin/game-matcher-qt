@@ -15,11 +15,12 @@ struct MemberSelectDialog::Impl {
     MemberSearchFilter filter;
     ClubRepository *repo;
     QTimer *filterDebounceTimer;
+    bool closeWhenSelected;
     Ui::MemberSelectDialog ui;
 };
 
-MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegister, ClubRepository *repo, QWidget *parent)
-        : QDialog(parent), d(new Impl{filter, repo, new QTimer(this)}) {
+MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegister, bool closeWhenSelected, ClubRepository *repo, QWidget *parent)
+        : QDialog(parent), d(new Impl{filter, repo, new QTimer(this), closeWhenSelected}) {
     d->ui.setupUi(this);
     d->filterDebounceTimer->setSingleShot(true);
     d->filterDebounceTimer->setInterval(500);
@@ -28,11 +29,12 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
         d->ui.registerLayout->hide();
     }
 
-    applyData();
-    connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::applyData);
+    reload();
+    connect(d->repo, &ClubRepository::sessionChanged, this, &MemberSelectDialog::reload);
+    connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::reload);
     connect(d->ui.filterEdit, &QLineEdit::textChanged, d->filterDebounceTimer, qOverload<>(&QTimer::start));
 
-    connect(d->ui.memberList, &QListWidget::currentItemChanged, this, &MemberSelectDialog::validateForm);
+    connect(d->ui.memberList, &QListWidget::itemSelectionChanged, this, &MemberSelectDialog::validateForm);
     validateForm();
 }
 
@@ -40,7 +42,7 @@ MemberSelectDialog::~MemberSelectDialog() {
     delete d;
 }
 
-void MemberSelectDialog::applyData() {
+void MemberSelectDialog::reload() {
     QVector<Member> members;
 
     if (auto needle = d->ui.filterEdit->text().trimmed(); !needle.isEmpty()) {
@@ -60,27 +62,29 @@ void MemberSelectDialog::applyData() {
 }
 
 void MemberSelectDialog::on_memberList_itemDoubleClicked(QListWidgetItem *item) {
-    if (auto data = item->data(Qt::UserRole); data.isValid()) {
-        emit this->memberSelected(data.toLongLong());
-        close();
-    }
+    item->setSelected(true);
+    accept();
 }
 
 void MemberSelectDialog::validateForm() {
     if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
-        button->setEnabled(d->ui.memberList->currentItem() != nullptr);
+        button->setEnabled(!d->ui.memberList->selectedItems().isEmpty());
     }
 }
 
 void MemberSelectDialog::accept() {
-    auto currentItem = d->ui.memberList->currentItem();
+    auto items = d->ui.memberList->selectedItems();
+    auto currentItem = items.isEmpty() ? nullptr : items.first();
     if (!currentItem) {
         return;
     }
 
     if (auto data = currentItem->data(Qt::UserRole); data.isValid()) {
         emit this->memberSelected(data.toLongLong());
-        QDialog::accept();
+        if (d->closeWhenSelected) QDialog::accept();
+        else {
+            d->ui.memberList->clearSelection();
+        }
     }
 }
 
@@ -95,7 +99,7 @@ void MemberSelectDialog::on_registerButton_clicked() {
     auto dialog = new EditMemberDialog(d->repo, this);
     connect(dialog, &EditMemberDialog::newMemberCreated, [this](auto id) {
         emit this->memberSelected(id);
-        QDialog::accept();
+        if (d->closeWhenSelected) QDialog::accept();
     });
     dialog->show();
 }

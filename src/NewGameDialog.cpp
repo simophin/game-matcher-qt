@@ -7,6 +7,8 @@
 
 #include "ClubRepository.h"
 #include "GameMatcher.h"
+#include "NameFormatUtils.h"
+#include "ToastEvent.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -23,6 +25,7 @@ struct NewGameDialog::Impl {
     SessionId const session;
     ClubRepository *const repo;
     Ui::NewGameDialog ui;
+    QSet<MemberId> temporarilyPaused;
 
     int countNonPausedPlayers() const {
         int rc = 0;
@@ -55,26 +58,27 @@ void NewGameDialog::changeEvent(QEvent *evt) {
 }
 
 void NewGameDialog::refresh() {
-    auto nonPausedPeople = d->repo->getMembers(CheckedIn{d->session, false});
-    auto pausedPeople = d->repo->getMembers(CheckedIn{d->session, true});
-    d->ui.playerList->clear();
-    QFont font;
-    font.setPointSize(16);
-    for (const auto &item : nonPausedPeople) {
-        auto widgetItem = new QListWidgetItem(item.fullName(), d->ui.playerList);
-        widgetItem->setData(dataRoleUserId, item.id);
-        widgetItem->setData(dataRoleUserIsPaused, false);
-        widgetItem->setFont(font);
-    }
+    auto players = d->repo->getMembers(AllSession{d->session});
+    formatMemberDisplayNames(players);
 
-    font.setStrikeOut(true);
-    QPalette palette;
-    for (const auto &item : pausedPeople) {
-        auto widgetItem = new QListWidgetItem(item.fullName(), d->ui.playerList);
-        widgetItem->setData(dataRoleUserId, item.id);
-        widgetItem->setData(dataRoleUserIsPaused, true);
-        widgetItem->setFont(font);
-        widgetItem->setForeground(palette.midlight());
+    QFont font;
+    font.setPointSize(20);
+
+    auto pausedFont = font;
+    pausedFont.setStrikeOut(true);
+    auto pausedForeground = QApplication::palette().mid();
+
+    d->ui.playerList->clear();
+    for (const auto &p : players) {
+        auto widgetItem = new QListWidgetItem(p.displayName, d->ui.playerList);
+        widgetItem->setData(dataRoleUserId, p.id);
+
+        auto paused = p.status == Member::CheckedInPaused || d->temporarilyPaused.contains(p.id);
+        widgetItem->setData(dataRoleUserIsPaused, paused);
+        widgetItem->setFont(paused ? pausedFont : font);
+        if (paused) {
+            widgetItem->setForeground(pausedForeground);
+        }
     }
 
     validateForm();
@@ -96,30 +100,27 @@ void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
             }
         });
 
-        if (item->data(dataRoleUserIsPaused).toBool()) {
-            action = menu->addAction(tr("Resume"));
-            connect(action, &QAction::triggered, [=] {
-                if (d->repo->setPaused(d->session, memberId, false)) {
-                    refresh();
-                }
-            });
-        } else {
-            action = menu->addAction(tr("Pause"));
-            connect(action, &QAction::triggered, [=] {
-                if (d->repo->setPaused(d->session, memberId, true)) {
-                    refresh();
-                }
-            });
-        }
         menu->popup(d->ui.playerList->mapToGlobal(pt));
     }
 }
 
 void NewGameDialog::on_playerList_itemDoubleClicked(QListWidgetItem *item) {
-    bool paused = !item->data(dataRoleUserIsPaused).toBool();
-    if (d->repo->setPaused(d->session, item->data(dataRoleUserId).value<MemberId>(), paused)) {
-        refresh();
+    auto memberId = item->data(dataRoleUserId).value<MemberId>();
+    bool isPausing = !item->data(dataRoleUserIsPaused).toBool();
+    if (isPausing) {
+        d->temporarilyPaused.insert(memberId);
+        if (auto member = d->repo->getMember(memberId)) {
+            ToastEvent::show(tr("%1 paused for 1 game").arg(member->fullName()), 1000);
+        }
+    } else {
+        d->temporarilyPaused.remove(memberId);
+        d->repo->setPaused(d->session, memberId, false);
+        if (auto member = d->repo->getMember(memberId)) {
+            ToastEvent::show(tr("%1 resumes playing").arg(member->fullName()), 1000);
+        }
     }
+    
+    refresh();
 }
 
 void NewGameDialog::validateForm() {
@@ -146,8 +147,7 @@ void NewGameDialog::accept() {
         for (const auto &court : session->courts) {
             courtIds.push_back(court.id);
         }
-
-
+        
         auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
         progressDialog->open();
 
@@ -164,13 +164,20 @@ void NewGameDialog::accept() {
             resultWatcher->deleteLater();
         });
 
+        auto players = d->repo->getMembers(CheckedIn{d->session, false});
+        for (auto iter = players.begin(); iter != players.end(); ++iter) {
+            if (d->temporarilyPaused.contains(iter->id)) {
+                iter = players.erase(iter);
+            }
+        }
+
         resultWatcher->setFuture(
                 QtConcurrent::run([=] {
                     return GameMatcher::match(d->repo->getPastAllocations(d->session),
-                                              d->repo->getMembers(CheckedIn{d->session, false}),
-                                       courtIds,
-                                       session->session.numPlayersPerCourt,
-                                       QDateTime::currentMSecsSinceEpoch());
+                                              players,
+                                              courtIds,
+                                              session->session.numPlayersPerCourt,
+                                              QDateTime::currentMSecsSinceEpoch());
                 })
         );
 

@@ -3,14 +3,14 @@
  <class>NewGameDialog</class>
  <widget class="QDialog" name="NewGameDialog">
   <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
+   <enum>Qt::ApplicationModal</enum>
   </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>844</width>
-    <height>759</height>
+    <width>1227</width>
+    <height>874</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,6 +33,12 @@
       <widget class="QListWidget" name="playerList">
        <property name="isWrapping" stdset="0">
         <bool>true</bool>
+       </property>
+       <property name="resizeMode">
+        <enum>QListView::Adjust</enum>
+       </property>
+       <property name="spacing">
+        <number>4</number>
        </property>
        <property name="sortingEnabled">
         <bool>true</bool>

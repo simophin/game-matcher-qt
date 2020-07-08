@@ -28,7 +28,9 @@ ToastDialog::ToastDialog(QWidget *parent)
     auto invisibleState = new QState(machine);
 
     visibleState->assignProperty(this, "windowOpacity", 1.0);
+    visibleState->assignProperty(this, "visible", true);
     invisibleState->assignProperty(this, "windowOpacity", 0.0);
+    invisibleState->assignProperty(this, "visible", false);
     machine->setInitialState(invisibleState);
 
     invisibleState->addTransition(this, &ToastDialog::showRequested, visibleState);
@@ -53,7 +55,6 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
     adjustSize();
     d->timer.setSingleShot(true);
     d->timer.start(delayMills);
-    show();
     raise();
     activateWindow();
     emit this->showRequested();

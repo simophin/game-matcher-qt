@@ -102,7 +102,7 @@ void SessionWindow::onCurrentGameChanged() {
 
 
 void SessionWindow::on_checkInButton_clicked() {
-    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, d->repo, this);
+    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, false, d->repo, this);
     dialog->setWindowTitle(tr("Who is checking in?"));
     dialog->setAcceptButtonText(tr("Check in"));
     dialog->show();
@@ -113,7 +113,7 @@ void SessionWindow::on_checkInButton_clicked() {
 }
 
 void SessionWindow::on_checkOutButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id}, false, d->repo, this);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is leaving the game?"));
     dialog->setAcceptButtonText(tr("Check out"));
     dialog->show();
@@ -129,7 +129,7 @@ void SessionWindow::on_checkOutButton_clicked() {
 }
 
 void SessionWindow::on_pauseButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, false}, false, d->repo, this);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, false}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is pausing?"));
     dialog->setAcceptButtonText(tr("Pause playing"));
     dialog->show();
@@ -142,7 +142,7 @@ void SessionWindow::on_pauseButton_clicked() {
 }
 
 void SessionWindow::on_resumeButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, true}, false, d->repo, this);
+    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, true}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is resuming?"));
     dialog->setAcceptButtonText(tr("Resume playing"));
     dialog->show();
@@ -155,7 +155,7 @@ void SessionWindow::on_resumeButton_clicked() {
 }
 
 void SessionWindow::on_updateButton_clicked() {
-    auto dialog = new MemberSelectDialog(AllMembers{}, false, d->repo, this);
+    auto dialog = new MemberSelectDialog(AllMembers{}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Whom to update?"));
     dialog->show();
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {

@@ -20,8 +20,8 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
         : QDialog(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
 
-    d->ui.genderComboBox->addItem(tr("Boy", "gender"), genderMale);
-    d->ui.genderComboBox->addItem(tr("Girl", "gender"), genderFemale);
+    d->ui.genderComboBox->addItem(tr("M", "gender"), genderMale);
+    d->ui.genderComboBox->addItem(tr("F", "gender"), genderFemale);
 
     for (int i = levelMin; i <= levelMax; i++) {
         QString levelDesc;
@@ -75,7 +75,7 @@ void EditMemberDialog::accept() {
         if ((d->editingMember && existingMember && d->editingMember != existingMember) ||
                 (!d->editingMember && existingMember)) {
             errors.append(
-                    tr("* The name \"%1 %2\" is taken. You can try adding a middle name to the last name")
+                    tr("* The name \"%1 %2\" is taken. If you are a registered member, try checking in directly. Otherwise you can try adding a middle name to the last name")
                     .arg(firstName, lastName));
         }
     }
