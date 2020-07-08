@@ -100,6 +100,29 @@ void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
             }
         });
 
+        if (!item->data(dataRoleUserIsPaused).toBool()) {
+            action = menu->addAction(tr("Pause for 1 game"));
+            connect(action, &QAction::triggered, [=] {
+                d->temporarilyPaused.insert(memberId);
+                refresh();
+            });
+
+            action = menu->addAction(tr("Pause until further notice"));
+            connect(action, &QAction::triggered, [=] {
+                d->temporarilyPaused.remove(memberId);
+                if (d->repo->setPaused(d->session, memberId, true)) {
+                    refresh();
+                }
+            });
+        } else {
+            action = menu->addAction(tr("Resume"));
+            connect(action, &QAction::triggered, [=] {
+                d->temporarilyPaused.remove(memberId);
+                d->repo->setPaused(d->session, memberId, false);
+                refresh();
+            });
+        }
+
         menu->popup(d->ui.playerList->mapToGlobal(pt));
     }
 }
@@ -164,17 +187,17 @@ void NewGameDialog::accept() {
             resultWatcher->deleteLater();
         });
 
-        auto players = d->repo->getMembers(CheckedIn{d->session, false});
-        for (auto iter = players.begin(); iter != players.end(); ++iter) {
-            if (d->temporarilyPaused.contains(iter->id)) {
-                iter = players.erase(iter);
+        QVector<Member> eligiblePlayers;
+        for (const auto &m : d->repo->getMembers(CheckedIn{d->session, false})) {
+            if (!d->temporarilyPaused.contains(m.id)) {
+                eligiblePlayers.append(m);
             }
         }
 
         resultWatcher->setFuture(
                 QtConcurrent::run([=] {
                     return GameMatcher::match(d->repo->getPastAllocations(d->session),
-                                              players,
+                                              eligiblePlayers,
                                               courtIds,
                                               session->session.numPlayersPerCourt,
                                               QDateTime::currentMSecsSinceEpoch());

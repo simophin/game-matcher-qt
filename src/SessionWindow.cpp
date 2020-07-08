@@ -16,8 +16,8 @@
 #include "ToastDialog.h"
 
 #include <functional>
-#include <QPointer>
 #include <QTimer>
+#include <QMenu>
 
 struct SessionWindow::Impl {
     ClubRepository *repo;
@@ -178,12 +178,6 @@ void SessionWindow::changeEvent(QEvent *event) {
     }
 }
 
-void SessionWindow::on_actionStartNewGame_triggered() {
-    auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
-    dialog->show();
-    connect(dialog, &NewGameDialog::newGameMade, this, &SessionWindow::onCurrentGameChanged);
-}
-
 void SessionWindow::updateElapseTime() {
     QString value;
     if (d->lastGameStarted.isValid()) {
@@ -217,4 +211,23 @@ bool SessionWindow::eventFilter(QObject *watched, QEvent *event) {
     }
 
     return QObject::eventFilter(watched, event);
+}
+
+void SessionWindow::on_wardenOptionButton_clicked() {
+    auto wardenMenu = new QMenu(tr("Warden options"), this);
+    auto action = wardenMenu->addAction(tr("Start a new game"));
+    connect(action, &QAction::triggered, [=] {
+        auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
+        dialog->show();
+        connect(dialog, &NewGameDialog::newGameMade, this, &SessionWindow::onCurrentGameChanged);
+    });
+
+    if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
+        action = wardenMenu->addAction(tr("Withdraw last game"));
+        connect(action, &QAction::triggered, [] {
+            //TODO:
+        });
+    }
+    wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
+            QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
 }

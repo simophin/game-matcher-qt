@@ -413,6 +413,15 @@ std::optional<Member> ClubRepository::getMember(MemberId id) const {
     return DbUtils::queryFirst<Member>(d->db, sql, args).toOptional();
 }
 
+bool ClubRepository::withdrawLastGame(SessionId sessionId) {
+    auto rc = DbUtils::update(d->db,
+            QStringLiteral("delete from games where id = (select id from games where sessionId = ? order by startTime desc limit 1)"),
+                                  {sessionId}).orDefault(0) > 0;
+    if (rc) {
+        emit this->sessionChanged(sessionId);
+    }
+}
+
 std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const {
     auto session = DbUtils::queryFirst<Session>(d->db, QStringLiteral("select * from sessions where id = ?"),
                                                 {sessionId});

@@ -160,7 +160,7 @@ QVector<GameAllocation> GameMatcher::match(
 
     QVector<GameAllocation> result;
 
-    const size_t numMaxSeats = playerPerCourt * courts.size();
+    const size_t numMaxSeats = std::min(playerPerCourt * courts.size(), members.size() / playerPerCourt * courts.size());
     if (pastAllocation.isEmpty()) {
         auto sortedMembers = members;
         std::shuffle(sortedMembers.begin(), sortedMembers.end(), std::default_random_engine(seed));

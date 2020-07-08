@@ -77,6 +77,8 @@ public:
 
     std::optional<GameInfo> getLastGameInfo(SessionId) const;
 
+    bool withdrawLastGame(SessionId);
+
     QString getSetting(const SettingKey &key) const;
 
     bool saveSettings(const SettingKey &key, const QVariant &value);

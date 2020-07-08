@@ -36,7 +36,7 @@ private slots:
     void on_resumeButton_clicked();
     void on_updateButton_clicked();
 
-    void on_actionStartNewGame_triggered();
+    void on_wardenOptionButton_clicked();
 
 private:
     struct Impl;
