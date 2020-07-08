@@ -30,6 +30,7 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
 
     applyInfo();
     connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::applyInfo);
+    connect(d->ui.closeButton, &QPushButton::clicked, this, &EmptySessionPage::clubClosed);
 }
 
 EmptySessionPage::~EmptySessionPage() {

@@ -20,6 +20,7 @@ public:
 
 public slots:
     void onClubOpened(QString path);
+    void reload();
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;

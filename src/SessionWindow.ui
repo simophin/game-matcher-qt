@@ -56,6 +56,16 @@
          <property name="text">
           <string>Check in</string>
          </property>
+         <property name="icon">
+          <iconset resource="../res/icons/icons.qrc">
+           <normaloff>:/icons/System/login-box-line.svg</normaloff>:/icons/System/login-box-line.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
         </widget>
        </item>
        <item>
@@ -65,6 +75,16 @@
          </property>
          <property name="text">
           <string>Check out</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../res/icons/icons.qrc">
+           <normaloff>:/icons/System/logout-box-line.svg</normaloff>:/icons/System/logout-box-line.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -76,6 +96,16 @@
          <property name="text">
           <string>Pause playing</string>
          </property>
+         <property name="icon">
+          <iconset resource="../res/icons/icons.qrc">
+           <normaloff>:/icons/Media/pause-fill.svg</normaloff>:/icons/Media/pause-fill.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
         </widget>
        </item>
        <item>
@@ -86,6 +116,16 @@
          <property name="text">
           <string>Resume playing</string>
          </property>
+         <property name="icon">
+          <iconset resource="../res/icons/icons.qrc">
+           <normaloff>:/icons/Media/play-line.svg</normaloff>:/icons/Media/play-line.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
         </widget>
        </item>
        <item>
@@ -95,6 +135,16 @@
          </property>
          <property name="text">
           <string>Adjust my level</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../res/icons/icons.qrc">
+           <normaloff>:/icons/Design/edit-2-line.svg</normaloff>:/icons/Design/edit-2-line.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -280,6 +330,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../res/icons/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

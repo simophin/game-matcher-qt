@@ -18,6 +18,7 @@ add_executable(GameMatcher
         src/main.cpp
         res/db/queries.qrc
         res/images/images.qrc
+        res/icons/icons.qrc
         src/ClubRepository.cpp
         src/ClubRepository.h
         src/models.h

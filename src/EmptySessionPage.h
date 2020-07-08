@@ -19,6 +19,7 @@ public:
     signals:
     void newSessionCreated();
     void lastSessionResumed();
+    void clubClosed();
 
 private slots:
     void applyInfo();

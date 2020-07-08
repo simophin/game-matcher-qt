@@ -17,6 +17,9 @@ public:
 
     ~ClubPage() override;
 
+signals:
+    void clubClosed();
+
 public slots:
     void openSession(SessionId);
     void openLastSession();

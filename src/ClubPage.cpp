@@ -28,6 +28,7 @@ ClubPage::ClubPage(const QString &path, QWidget *parent)
     auto page = new EmptySessionPage(&d->repo, this);
     connect(page, &EmptySessionPage::lastSessionResumed, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::newSessionCreated, this, &ClubPage::openLastSession);
+    connect(page, &EmptySessionPage::clubClosed, this, &ClubPage::clubClosed);
     d->ui.layout->addWidget(page);
 }
 
