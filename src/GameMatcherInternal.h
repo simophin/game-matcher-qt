@@ -9,6 +9,7 @@
 #include <QVector>
 #include <QSet>
 #include <QThreadStorage>
+#include <QSharedData>
 
 #include <list>
 #include <algorithm>
@@ -18,12 +19,29 @@
 #include "ClubRepository.h"
 #include "span.h"
 
-struct PlayerInfo {
-    Member member;
-    std::optional<int> eligibilityScore;
+class PlayerInfo {
+    class Data : public QSharedData {
+    public:
+        Member member;
+        std::optional<int> eligibilityScore;
+
+        inline Data(const Member &member, int eligibilityScore)
+            : member(member), eligibilityScore(eligibilityScore) {}
+    };
+
+    QSharedDataPointer<Data> d;
+
+public:
+    inline auto id() const { return d->member.id; }
+    inline auto level() const { return d->member.level; }
+    inline auto gender() const { return d->member.gender; }
+    inline auto eligibilityScore() const { return d->eligibilityScore; }
+    inline void clearEligibilityScore() {
+        d->eligibilityScore.reset();
+    }
 
     PlayerInfo(const Member &member, int eligibilityScore)
-            : member(member), eligibilityScore(eligibilityScore) {}
+            : d(new Data({member, eligibilityScore})){}
 };
 
 typedef std::list<PlayerInfo> PlayerList;
@@ -60,15 +78,16 @@ public:
 
     int numGames() const { return this->numTotalGames; }
 
-    int similarityScore(nonstd::span<PlayerListIterator> players) const {
-        if (courtPlayers.isEmpty()) return 0;
+    template <typename Col>
+    int similarityScore(const Col &players) const {
+        if (courtPlayers.empty()) return 0;
 
         int totalSeats = 0;
         int sum = 0;
         for (const auto &court : courtPlayers) {
             int numPlayedHere = 0;
-            for (const auto &p : players) {
-                if (court.contains(p->member.id)) {
+            for (const PlayerInfo &p : players) {
+                if (court.contains(p.id())) {
                     numPlayedHere++;
                 }
             }

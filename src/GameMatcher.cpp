@@ -35,19 +35,19 @@ static PlayerList getEligiblePlayers(nonstd::span<const Member> members,
     if (players.size() > numMaxSeats && numMaxSeats > 0) {
         // Find lowest score and we will cut off from there
         int cutOffSize = numMaxSeats;
-        const auto lowestScore = players[numMaxSeats - 1].eligibilityScore;
+        const auto lowestScore = players[numMaxSeats - 1].eligibilityScore();
         for (; cutOffSize < players.size(); cutOffSize++) {
-            if (players[cutOffSize].eligibilityScore != lowestScore) break;
+            if (players[cutOffSize].eligibilityScore() != lowestScore) break;
         }
 
         PlayerList playerList(players.begin(), players.begin() + cutOffSize);
 
-        if (playerList.begin()->eligibilityScore != lowestScore) {
+        if (playerList.begin()->eligibilityScore() != lowestScore) {
             // The lowest score players will be re-written to invalid to indicate they are all optional, if there
             // are higher score players.
             for (auto &p : playerList) {
-                if (p.eligibilityScore == lowestScore) {
-                    p.eligibilityScore = std::nullopt;
+                if (p.eligibilityScore() == lowestScore) {
+                    p.clearEligibilityScore();
                 }
             }
         }
@@ -73,12 +73,13 @@ struct ComputeContext {
     std::optional<BestScore> bestScore;
 };
 
-static int levelRangeScore(nonstd::span<PlayerListIterator> members) {
+template<typename Col>
+static int levelRangeScore(const Col &members) {
     if (members.size() < 2) return 0;
-    
+
     int min = levelMax + 1, max = levelMin - 1;
-    for (const auto &m : members) {
-        auto level = m->member.level;
+    for (const PlayerInfo &m : members) {
+        auto level = m.level();
         if (level > max) max = level;
         if (level < min) min = level;
     }
@@ -86,25 +87,27 @@ static int levelRangeScore(nonstd::span<PlayerListIterator> members) {
     return (max - min) * 100 / (levelMax - levelMin);
 }
 
-static int levelStdVarianceScore(nonstd::span<PlayerListIterator> members) {
+template<typename Col>
+static int levelStdVarianceScore(const Col &members) {
     if (members.size() < 2) return 0;
 
-    const int sum = reduceCollection(members, 0, [](auto sum, auto info) {
-        return sum + info->member.level;
+    const int sum = reduceCollection(members, 0, [](auto sum, const PlayerInfo &info) {
+        return sum + info.level();
     });
     const double average = static_cast<double>(sum) / members.size();
 
-    return std::sqrt(reduceCollection(members, 0.0, [average](auto sum, auto info) {
-        auto diff = info->member.level - average;
+    return std::sqrt(reduceCollection(members, 0.0, [average](auto sum, const PlayerInfo &info) {
+        auto diff = info.level() - average;
         return sum + diff * diff;
     }) / (members.size() - 1)) * 100 / (levelMax - levelMin);
 }
 
-static int genderSimilarityScore(nonstd::span<PlayerListIterator> players) {
+template<typename Col>
+static int genderSimilarityScore(const Col &players) {
     if (players.size() < 2) return 100;
 
-    int numMales = std::count_if(players.begin(), players.end(), [](PlayerListIterator p) {
-        return p->member.gender == genderMale;
+    int numMales = std::count_if(players.begin(), players.end(), [](const PlayerInfo &p) {
+        return p.gender() == genderMale;
     });
 
     int numFemales = players.size() - numMales;
@@ -112,6 +115,46 @@ static int genderSimilarityScore(nonstd::span<PlayerListIterator> players) {
 
     int maxDiff = players.size() - 2;
     return (maxDiff - std::abs(numMales - numFemales)) * 100 / maxDiff;
+}
+
+struct CourtInfo {
+    nonstd::span<PlayerInfo> const players;
+    int const numUneligible;
+    int score = 0;
+
+    inline CourtInfo(const nonstd::span<PlayerInfo> &players)
+            : players(players), numUneligible(reduceCollection(players, 0,
+                                                               [](int sum, const PlayerInfo &p) {
+                                                                   return sum +
+                                                                          (p.eligibilityScore().has_value() ? 1 : 0);
+                                                               })) {}
+
+};
+
+template<typename Col>
+static int computeCourtScore(const GameStats &stats, const Col &players) {
+    int score = 0;
+    score -= stats.similarityScore(players) * 4;
+    score -= levelStdVarianceScore(players) * 2;
+    score -= levelRangeScore(players) * 2;
+    score += genderSimilarityScore(players);
+    return score;
+}
+
+template<typename Col>
+static QVector<CourtInfo> findBestGame(const GameStats &stats, const int uneligibleQuota,
+                                       const int numCourtRequired, const Col &courts) {
+    QVector<CourtInfo> result;
+    result.reserve(numCourtRequired);
+
+    int score = 0;
+    for (const CourtInfo &court : courts) {
+        if (court.numUneligible <= uneligibleQuota) {
+            result.append(court);
+        }
+    }
+
+    if (result.size() < )
 }
 
 static void computeCourtScore(ComputeContext &ctx,
@@ -139,7 +182,7 @@ static void computeCourtScore(ComputeContext &ctx,
                 ctx.unqualifiedQuota--;
             }
             ctx.out.append(players);
-            
+
             computeCourtScore(ctx, ++players);
             ctx.out.removeLast();
             if (!mustOn) ctx.unqualifiedQuota++;
@@ -150,7 +193,7 @@ static void computeCourtScore(ComputeContext &ctx,
 
 QVector<GameAllocation> GameMatcher::match(
         const QVector<GameAllocation> &pastAllocation,
-        const QVector<Member> & members,
+        const QVector<Member> &members,
         QVector<CourtId> courts,
         size_t playerPerCourt,
         int seed) {
@@ -160,7 +203,8 @@ QVector<GameAllocation> GameMatcher::match(
 
     QVector<GameAllocation> result;
 
-    const size_t numMaxSeats = std::min(playerPerCourt * courts.size(), members.size() / playerPerCourt * courts.size());
+    const size_t numMaxSeats = std::min(playerPerCourt * courts.size(),
+                                        members.size() / playerPerCourt * courts.size());
     if (pastAllocation.isEmpty()) {
         auto sortedMembers = members;
         std::shuffle(sortedMembers.begin(), sortedMembers.end(), std::default_random_engine(seed));
