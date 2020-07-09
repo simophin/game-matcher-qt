@@ -22,7 +22,7 @@ public:
     void clubClosed();
 
 private slots:
-    void applyInfo();
+    void reload();
     void on_startButton_clicked();
     void on_resumeButton_clicked();
     void on_updateButton_clicked();

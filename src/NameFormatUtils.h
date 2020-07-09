@@ -45,6 +45,7 @@ static void formatMemberDisplayNames(Col &members, const ReferenceCol &ref) {
         } else {
             m.displayName = m.firstName.toUpper();
         }
+        m.displayName += QStringLiteral("(%1, %2)").arg(QString::number(m.level), m.gender.left(1).toUpper());
     }
 }
 

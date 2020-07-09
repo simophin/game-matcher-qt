@@ -19,31 +19,81 @@
   <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Player list (double click the player to toggle, right click to see more options):</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QListWidget" name="playerList">
+     <property name="isWrapping" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="resizeMode">
+      <enum>QListView::Adjust</enum>
+     </property>
+     <property name="spacing">
+      <number>4</number>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Player list (double click the player to toggle, right click to see more options):</string>
+        <string>Game duration</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QListWidget" name="playerList">
-       <property name="isWrapping" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="resizeMode">
-        <enum>QListView::Adjust</enum>
-       </property>
-       <property name="spacing">
-        <number>4</number>
-       </property>
-       <property name="sortingEnabled">
-        <bool>true</bool>
+      <widget class="QSpinBox" name="hourBox">
+       <property name="suffix">
+        <string>h</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="minuteBox">
+       <property name="suffix">
+        <string>m</string>
+       </property>
+       <property name="prefix">
+        <string/>
+       </property>
+       <property name="maximum">
+        <number>59</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="secondBox">
+       <property name="suffix">
+        <string>s</string>
+       </property>
+       <property name="maximum">
+        <number>59</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>

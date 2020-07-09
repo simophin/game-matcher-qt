@@ -28,14 +28,13 @@ NewSessionDialog::NewSessionDialog(ClubRepository *repo, QWidget *parent)
     validator->setDecimals(2);
     validator->setNotation(QDoubleValidator::StandardNotation);
     d->ui.feeLineEdit->setValidator(validator);
-    bool ok;
-    if (int feeInCents = repo->getSetting(skLastSessionFee).toInt(&ok); ok) {
-        d->ui.feeLineEdit->setText(QString::number(feeInCents / 100.0));
+    if (auto feeInCents = repo->getSettingValue<int>(skLastSessionFee); feeInCents) {
+        d->ui.feeLineEdit->setText(QString::number(*feeInCents / 100.0));
     }
-    d->ui.numberOfCourtsSpinBox->setValue(repo->getSetting(skLastNumCourts).toInt());
-    d->ui.placeValue->setText(repo->getSetting(skLastPlace));
-    d->ui.annoucement->setText(repo->getSetting(skLastAnnouncement));
-    d->ui.numberOfPlayersPerCourtSpinBox->setValue(repo->getSetting(skLastNumPlayersPerCourt).toInt());
+    d->ui.numberOfCourtsSpinBox->setValue(repo->getSettingValue<int>(skLastNumCourts).value_or(0));
+    d->ui.placeValue->setText(repo->getSetting(skLastPlace).value_or(QString()));
+    d->ui.annoucement->setText(repo->getSetting(skLastAnnouncement).value_or(QString()));
+    d->ui.numberOfPlayersPerCourtSpinBox->setValue(repo->getSettingValue<int>(skLastNumPlayersPerCourt).value_or(0));
 
     validateForm();
     connect(d->ui.feeLineEdit, &QLineEdit::textChanged, this, &NewSessionDialog::validateForm);

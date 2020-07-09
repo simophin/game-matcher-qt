@@ -28,8 +28,9 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
     d->ui.checkInRandomButton->setVisible(true);
 #endif
 
-    applyInfo();
-    connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::applyInfo);
+    reload();
+    connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::reload);
+    connect(d->repo, &ClubRepository::sessionChanged, this, &EmptySessionPage::reload);
     connect(d->ui.closeButton, &QPushButton::clicked, this, &EmptySessionPage::clubClosed);
 }
 
@@ -37,7 +38,7 @@ EmptySessionPage::~EmptySessionPage() {
     delete d;
 }
 
-void EmptySessionPage::applyInfo() {
+void EmptySessionPage::reload() {
     d->ui.clubNameLabel->setText(tr("Welcome to %1").arg(d->repo->getClubInfo().name));
     d->ui.resumeButton->setEnabled(d->repo->getLastSession().has_value());
 }

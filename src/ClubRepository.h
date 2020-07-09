@@ -24,7 +24,6 @@ struct ClubInfo {
 Q_GADGET
 public:
     DECLARE_PROPERTY(QString, name,);
-    DECLARE_PROPERTY(QDateTime, creationDate,);
 };
 
 struct CourtPlayers {
@@ -52,6 +51,7 @@ Q_GADGET
 public:
     DECLARE_PROPERTY(GameId, id,);
     DECLARE_PROPERTY(qlonglong, startTime,);
+    DECLARE_PROPERTY(qlonglong, durationSeconds,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
     DECLARE_PROPERTY(QVector<Member>, waiting,);
 };
@@ -79,7 +79,21 @@ public:
 
     bool withdrawLastGame(SessionId);
 
-    QString getSetting(const SettingKey &key) const;
+    std::optional<QString> getSetting(const SettingKey &key) const;
+
+    template<typename T>
+    std::optional<T> getSettingValue(const SettingKey &k) const {
+        auto v = getSetting(k);
+        if (!v || v->isNull()) return std::nullopt;
+
+        QVariant variant = *v;
+        static auto typeId = qMetaTypeId<T>();
+        if (variant.convert(typeId)) {
+            return variant.value<T>();
+        }
+
+        return std::nullopt;
+    }
 
     bool saveSettings(const SettingKey &key, const QVariant &value);
 
@@ -112,7 +126,7 @@ public:
 
     QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
 
-    std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &);
+    std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &, uint64_t durationSeconds);
 
 signals:
 

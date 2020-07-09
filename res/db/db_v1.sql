@@ -17,8 +17,8 @@ create table members
     level        integer  not null,
     email        text,
     phone        text,
-    check ( gender = 'male' or gender = 'female' ),
-    check ( level >= 0 and level <= 10 )
+    check (gender in ('male', 'female')),
+    check (level >= 0)
 );
 ---
 create unique index member_unique_names on members (firstName, lastName);
@@ -55,7 +55,7 @@ create table players
     checkInTime  datetime not null default current_timestamp,
     checkOutTime datetime,
     paused       boolean  not null default false,
-    unique (sessionId, memberId) on conflict fail
+    unique (sessionId, memberId) on conflict replace
 );
 ---
 create index player_sessions on players (sessionId);
@@ -66,7 +66,9 @@ create table games
 (
     id        integer  not null primary key autoincrement,
     sessionId integer  not null references sessions (id) on delete cascade,
-    startTime datetime not null default current_timestamp
+    startTime datetime not null default current_timestamp,
+    durationSeconds integer not null,
+    check ( durationSeconds > 0 )
 );
 ---
 create index game_sessions on games (sessionId);

@@ -134,16 +134,14 @@ bool ClubRepository::isValid() const {
 ClubInfo ClubRepository::getClubInfo() const {
     SQLTransaction tx(d->db);
     return {
-            getSetting(skClubName),
-            QDateTime::fromString(getSetting(skClubCreationDate))
+            getSetting(skClubName).value_or(QString()),
     };
 }
 
 bool ClubRepository::saveClubInfo(const ClubInfo &info) {
     SQLTransaction tx(d->db);
 
-    if (!saveSettings(skClubName, info.name) ||
-        !saveSettings(skClubCreationDate, info.creationDate.toString())) {
+    if (!saveSettings(skClubName, info.name)) {
         tx.setError();
         return false;
     }
@@ -211,11 +209,15 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::op
     return DbUtils::queryList<GameAllocation>(d->db, sql, {id}).orDefault();
 }
 
-std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations) {
+std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations,
+                                                 uint64_t durationSeconds) {
     SQLTransaction tx(d->db);
 
-    auto gameId = DbUtils::insert<GameId>(d->db, QStringLiteral("insert into games (sessionId) values (?)"),
-                                          {sessionId});
+    auto gameId = DbUtils::insert<GameId>(
+            d->db,
+            QStringLiteral("insert into games (sessionId, durationSeconds) values (?, ?)"),
+            {sessionId, durationSeconds});
+
     if (!gameId) {
         tx.setError();
         return std::nullopt;
@@ -360,9 +362,9 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
                            "order by C.sortOrder").arg(
-                                   QString::number(Member::CheckedOut),
-                                   QString::number(Member::CheckedInPaused),
-                                   QString::number(Member::CheckedIn)),
+                    QString::number(Member::CheckedOut),
+                    QString::number(Member::CheckedInPaused),
+                    QString::number(Member::CheckedIn)),
             {gameResult->id, sessionId});
 
     if (!onMembers) return std::nullopt;
@@ -392,10 +394,10 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
     return *gameResult;
 }
 
-QString ClubRepository::getSetting(const SettingKey &key) const {
+std::optional<QString> ClubRepository::getSetting(const SettingKey &key) const {
     return DbUtils::queryFirst<QString>(
             d->db, QStringLiteral("select value from settings where name = ?"), {key})
-            .orDefault();
+            .toOptional();
 }
 
 bool ClubRepository::saveSettings(const SettingKey &key, const QVariant &value) {
@@ -415,11 +417,13 @@ std::optional<Member> ClubRepository::getMember(MemberId id) const {
 
 bool ClubRepository::withdrawLastGame(SessionId sessionId) {
     auto rc = DbUtils::update(d->db,
-            QStringLiteral("delete from games where id = (select id from games where sessionId = ? order by startTime desc limit 1)"),
-                                  {sessionId}).orDefault(0) > 0;
+                              QStringLiteral(
+                                      "delete from games where id = (select id from games where sessionId = ? order by startTime desc limit 1)"),
+                              {sessionId}).orDefault(0) > 0;
     if (rc) {
         emit this->sessionChanged(sessionId);
     }
+    return rc;
 }
 
 std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const {

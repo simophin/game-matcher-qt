@@ -29,8 +29,7 @@ NewClubDialog::NewClubDialog(QWidget *parent)
 
         ClubRepository club;
         ClubInfo info = {
-                ui->clubNameLineEdit->text().trimmed(),
-                QDateTime::currentDateTimeUtc()
+                ui->clubNameLineEdit->text().trimmed()
         };
         if (!club.open(path) || !club.saveClubInfo(info)) {
             (new QErrorMessage(this))->showMessage(tr("Unable to create \"%1\"").arg(path));

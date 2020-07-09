@@ -21,6 +21,10 @@
 static const auto dataRoleUserId = Qt::UserRole + 1;
 static const auto dataRoleUserIsPaused = Qt::UserRole + 2;
 
+static const SettingKey settingsKeyDurationSeconds = QStringLiteral("last_game_duration");
+static const auto defaultGameDurationSeconds = 15 * 60;
+static const auto minGameDurationSeconds = 30;
+
 struct NewGameDialog::Impl {
     SessionId const session;
     ClubRepository *const repo;
@@ -36,12 +40,31 @@ struct NewGameDialog::Impl {
         }
         return rc;
     }
+
+    void updateDuration(uint64_t durationSeconds) {
+        auto hours = durationSeconds / 3600;
+        auto minutes = (durationSeconds - hours * 3600) / 60;
+        auto seconds = durationSeconds - hours * 3600 - minutes * 60;
+        ui.hourBox->setValue(hours);
+        ui.minuteBox->setValue(minutes);
+        ui.secondBox->setValue(seconds);
+    }
+
+    uint64_t readDurationSeconds() {
+        return ui.hourBox->value() * 3600 + ui.minuteBox->value() * 60 + ui.secondBox->value();
+    }
 };
 
 NewGameDialog::NewGameDialog(SessionId session, ClubRepository *repo, QWidget *parent)
         : QDialog(parent), d(new Impl{session, repo}) {
     d->ui.setupUi(this);
     d->ui.playerList->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    d->updateDuration(repo->getSettingValue<uint64_t>(settingsKeyDurationSeconds).value_or(defaultGameDurationSeconds));
+
+    connect(d->ui.hourBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+    connect(d->ui.minuteBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+    connect(d->ui.secondBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
 
     refresh();
 }
@@ -155,7 +178,11 @@ void NewGameDialog::validateForm() {
         } else if (d->countNonPausedPlayers() < session->session.numPlayersPerCourt) {
             button->setEnabled(false);
             button->setText(tr("Not enough people to play"));
-        } else {
+        } else if (d->readDurationSeconds() < minGameDurationSeconds) {
+            button->setEnabled(false);
+            button->setText(tr("Game duration is too short"));
+        }
+        else {
             button->setEnabled(true);
             button->setText(tr("Start"));
         }
@@ -178,7 +205,7 @@ void NewGameDialog::accept() {
         connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
             progressDialog->close();
 
-            if (d->repo->createGame(d->session, resultWatcher->result())) {
+            if (d->repo->createGame(d->session, resultWatcher->result(), d->readDurationSeconds())) {
                 emit this->newGameMade();
                 QDialog::accept();
                 return;
