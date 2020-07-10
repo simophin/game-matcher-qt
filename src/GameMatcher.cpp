@@ -105,8 +105,8 @@ static int genderSimilarityScore(const Col &players) {
 }
 
 struct CourtInfo {
-    nonstd::span<PlayerInfo> const players;
-    int const numUneligible;
+    nonstd::span<PlayerInfo> players;
+    int numUneligible;
     int score = 0;
 
     inline void copy(std::vector<PlayerInfo> &out) const {
@@ -119,7 +119,7 @@ struct CourtInfo {
             : players(players), numUneligible(reduceCollection(players, 0,
                                                                [](int sum, const PlayerInfo &p) {
                                                                    return sum +
-                                                                          (p.eligibilityScore().has_value() ? 1 : 0);
+                                                                          (p.eligibilityScore().has_value() ? 0 : 1);
                                                                })) {}
 
 };
@@ -128,8 +128,8 @@ template<typename Col>
 static int computeCourtScore(const GameStats &stats, const Col &players) {
     int score = 0;
     score -= stats.similarityScore(players) * 4;
-    score -= levelStdVarianceScore(players) * 2;
-    score -= levelRangeScore(players) * 2;
+//    score -= levelStdVarianceScore(players) * 2;
+    score -= levelRangeScore(players) * 4;
     score += genderSimilarityScore(players);
     return score;
 }
@@ -157,34 +157,37 @@ protected:
 static std::vector<std::vector<PlayerInfo>> findBestGame(const GameStats &stats,
         nonstd::span<PlayerInfo> players, const int uneligibleQuota,
         const int numPerCourt, const int numCourtRequired) {
-    assert(players.size() % numPerCourt == 0);
     BestCourtCombinationsFinder finder(stats, numCourtRequired, uneligibleQuota);
     std::vector<std::vector<PlayerInfo>> bestResult;
     std::optional<int> bestResultScore;
 
     std::vector<CourtInfo> courts;
     for (size_t i = 0, size = players.size(); i < size; i += numPerCourt) {
+        if (i + numPerCourt >= size) {
+            break;
+        }
+
         courts.emplace_back(players.subspan(i, numPerCourt));
     }
     bestResult.resize(courts.size());
 
-    for (size_t i = 0, numCourts = players.size() / numPerCourt; i < numCourts; i++) {
-        for (size_t j = 0; j < numPerCourt; j++) {
-            auto firstIndex = i * numPerCourt + j;
+    for (size_t i = 0, numCourts = courts.size(); i < numCourts - 1; i++) {
+        for (size_t j = 0, firstCourtSize = courts[i].players.size(); j < firstCourtSize; j++) {
+            auto &firstPlayer = courts[i].players[j];
 
             for (size_t k = i + 1; k < numCourts; k++) {
-                for (size_t m = 0; m < numPerCourt; m++) {
-                    auto secondIndex = k * numPerCourt + m;
-                    swap(players[firstIndex], players[secondIndex]);
+                for (size_t m = 0, secondCourtSize = courts[k].players.size(); m < secondCourtSize; m++) {
+                    auto &secondPlayer = courts[k].players[m];
+                    firstPlayer.swap(secondPlayer);
                     if (auto result = finder.find(courts.begin(), courts.end())) {
                         if (!bestResultScore || result->score > *bestResultScore) {
                             bestResultScore = result->score;
                             for (size_t n = 0, size = result->data.size(); n < size; n++) {
-                                result->data[n].copy(bestResult[0]);
+                                result->data[n].copy(bestResult[n]);
                             }
                         }
                     }
-                    swap(players[firstIndex], players[secondIndex]);
+                    firstPlayer.swap(secondPlayer);
                 }
             }
         }
@@ -233,7 +236,6 @@ QVector<GameAllocation> GameMatcher::match(
 
     GameStats stats(pastAllocation);
 
-
     // Find eligible players
     auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
 
@@ -242,35 +244,16 @@ QVector<GameAllocation> GameMatcher::match(
         return p.eligibilityScore().has_value();
     });
 
-    size_t unqualifiedQuota = numMaxSeats > numMustOn ? (numMaxSeats - numMustOn) : 0;
+    size_t uneligibleQuota = numMaxSeats > numMustOn ? (numMaxSeats - numMustOn) : 0;
 
-//    std::shuffle(courts.begin(), courts.end(), std::default_random_engine(seed + 1));
+    auto courtIter = courts.begin();
+    for (const auto &court : findBestGame(stats, eligiblePlayers, uneligibleQuota, playerPerCourt, courts.size())) {
+        for (const auto &p : court) {
+            result.push_back(GameAllocation(0, *courtIter, p.id()));
+        }
+        courtIter++;
+    }
 
-//    for (const auto &courtId : courts) {
-//        if (eligiblePlayers.size() < playerPerCourt) break;
-//        if (eligiblePlayers.size() == playerPerCourt) {
-//            for (const auto &player : eligiblePlayers) {
-//                result.append(GameAllocation(0, courtId, player.id()));
-//            }
-//            break;
-//        }
-//
-//        ComputeContext ctx = {stats, playerPerCourt, unqualifiedQuota, eligiblePlayers.cend()};
-//        ctx.out.reserve(playerPerCourt);
-//
-//        computeCourtScore(ctx, eligiblePlayers.begin());
-//        if (!ctx.bestScore) {
-//            qWarning() << "Unable to find best score";
-//            return result;
-//        }
-//
-//        unqualifiedQuota = ctx.bestScore->unqualifiedQuotaLeft;
-//
-//        for (const auto &p : ctx.bestScore->combination) {
-//            result.append(GameAllocation(0, courtId, p.id()));
-//            eligiblePlayers.erase(p);
-//        }
-//    }
     qDebug() << "Matched result has " << result.size() << " allocations";
 
     return result;

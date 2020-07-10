@@ -45,9 +45,9 @@ private:
 
             if (!bestResult_) {
                 bestResult_ = { out_, *score };
-            } else if (!bestResult_->score < *score) {
+            } else if (bestResult_->score < *score) {
                 bestResult_->data.clear();
-                bestResult_->data.insert(bestResult_->end(), out_.begin(), out_.end());
+                bestResult_->data.insert(bestResult_->data.end(), out_.begin(), out_.end());
                 bestResult_->score = *score;
             }
         } else {
