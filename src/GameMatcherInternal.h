@@ -14,6 +14,7 @@
 #include <list>
 #include <algorithm>
 #include <map>
+#include <memory>
 
 #include "models.h"
 #include "ClubRepository.h"
@@ -42,10 +43,26 @@ public:
 
     PlayerInfo(const Member &member, int eligibilityScore)
             : d(new Data({member, eligibilityScore})){}
+
+    PlayerInfo(PlayerInfo &&) = default;
+    PlayerInfo(const PlayerInfo &) = default;
+    inline PlayerInfo& operator=(const PlayerInfo &rhs) {
+        d = rhs.d;
+        return *this;
+    }
+    inline PlayerInfo& operator=(PlayerInfo &&rhs) {
+        d = std::move(rhs.d);
+        return *this;
+    }
+
+    void swap(PlayerInfo& other) {
+        d.swap(other.d);
+    }
 };
 
-typedef std::list<PlayerInfo> PlayerList;
-typedef typename PlayerList::const_iterator PlayerListIterator;
+inline void swap(PlayerInfo &a, PlayerInfo &b) {
+    a.swap(b);
+}
 
 class GameStats {
     QVector<QSet<MemberId>> courtPlayers;

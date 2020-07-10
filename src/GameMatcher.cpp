@@ -12,9 +12,10 @@
 #include "GameMatcherInternal.h"
 #include "ClubRepository.h"
 #include "CollectionUtils.h"
+#include "CombinationsFinder.h"
 
 
-static PlayerList getEligiblePlayers(nonstd::span<const Member> members,
+static std::vector<PlayerInfo> getEligiblePlayers(nonstd::span<const Member> members,
                                      int numMaxSeats,
                                      const GameStats &stats, int randomSeed) {
     std::vector<PlayerInfo> players;
@@ -40,21 +41,22 @@ static PlayerList getEligiblePlayers(nonstd::span<const Member> members,
             if (players[cutOffSize].eligibilityScore() != lowestScore) break;
         }
 
-        PlayerList playerList(players.begin(), players.begin() + cutOffSize);
+        while (players.size() > cutOffSize) {
+            players.pop_back();
+        }
 
-        if (playerList.begin()->eligibilityScore() != lowestScore) {
+        if (players.begin()->eligibilityScore() != lowestScore) {
             // The lowest score players will be re-written to invalid to indicate they are all optional, if there
             // are higher score players.
-            for (auto &p : playerList) {
+            for (auto &p : players) {
                 if (p.eligibilityScore() == lowestScore) {
                     p.clearEligibilityScore();
                 }
             }
         }
-        return playerList;
     }
 
-    return PlayerList(players.begin(), players.end());
+    return players;
 }
 
 
@@ -107,7 +109,13 @@ struct CourtInfo {
     int const numUneligible;
     int score = 0;
 
-    inline CourtInfo(const nonstd::span<PlayerInfo> &players)
+    inline void copy(std::vector<PlayerInfo> &out) const {
+        out.clear();
+        out.reserve(players.size());
+        out.insert(out.end(), players.begin(), players.end());
+    }
+
+    inline CourtInfo(nonstd::span<PlayerInfo> players)
             : players(players), numUneligible(reduceCollection(players, 0,
                                                                [](int sum, const PlayerInfo &p) {
                                                                    return sum +
@@ -126,73 +134,65 @@ static int computeCourtScore(const GameStats &stats, const Col &players) {
     return score;
 }
 
-struct BestCourtCombinationsResult {
-    QVector<CourtInfo> courts;
-    int score;
-};
-
-class BestCourtCombinationsFinder {
-    const int numCourtRequired;
-    int uneligiblePlayerQuota;
-
-    QVector<CourtInfo> out;
-
-    QVector<CourtInfo> best;
-    int bestScore = 0;
-
-    void doFind(nonstd::span<CourtInfo> courts) {
-        if (out.size() == numCourtRequired) {
-
-        }
-    }
-
+class BestCourtCombinationsFinder : public CombinationsFinder<CourtInfo> {
+    const GameStats &stats_;
+    const int uneligibleQuota;
 public:
-    BestCourtCombinationsFinder(const int numCourtRequired, int uneligibleQuota)
-            : numCourtRequired(numCourtRequired),
-              uneligiblePlayerQuota(uneligibleQuota) {}
+    BestCourtCombinationsFinder(const GameStats &stats, const int numCourtRequired, const int uneligibleQuota)
+            : CombinationsFinder(numCourtRequired), stats_(stats), uneligibleQuota(uneligibleQuota) {}
 
+protected:
+    std::optional<int> computeScore(nonstd::span<CourtInfo> courts) override {
+        // Check for uneligible people
+        if (sumBy(courts, numUneligible) > uneligibleQuota) {
+            return std::nullopt;
+        }
 
-    std::optional<BestCourtCombinationsResult> find(nonstd::span<CourtInfo> courts) {
-
+        return reduceCollection(courts, 0, [this](int sum, const CourtInfo &c) {
+            return computeCourtScore(stats_, c.players);
+        });
     }
 };
 
-template<typename Col>
-static std::optional<BestCourtCombinationsResult> findBestCourtCombinations(const GameStats &stats, const int uneligibleQuota,
-                                                    const int numCourtRequired, const Col &courts) {
-    QVector<CourtInfo> result;
-    result.reserve(numCourtRequired);
+static std::vector<std::vector<PlayerInfo>> findBestGame(const GameStats &stats,
+        nonstd::span<PlayerInfo> players, const int uneligibleQuota,
+        const int numPerCourt, const int numCourtRequired) {
+    assert(players.size() % numPerCourt == 0);
+    BestCourtCombinationsFinder finder(stats, numCourtRequired, uneligibleQuota);
+    std::vector<std::vector<PlayerInfo>> bestResult;
+    std::optional<int> bestResultScore;
 
-    int score = 0;
-    for (const CourtInfo &court : courts) {
-        if (court.numUneligible <= uneligibleQuota) {
-            result.append(court);
+    std::vector<CourtInfo> courts;
+    for (size_t i = 0, size = players.size(); i < size; i += numPerCourt) {
+        courts.emplace_back(players.subspan(i, numPerCourt));
+    }
+    bestResult.resize(courts.size());
+
+    for (size_t i = 0, numCourts = players.size() / numPerCourt; i < numCourts; i++) {
+        for (size_t j = 0; j < numPerCourt; j++) {
+            auto firstIndex = i * numPerCourt + j;
+
+            for (size_t k = i + 1; k < numCourts; k++) {
+                for (size_t m = 0; m < numPerCourt; m++) {
+                    auto secondIndex = k * numPerCourt + m;
+                    swap(players[firstIndex], players[secondIndex]);
+                    if (auto result = finder.find(courts.begin(), courts.end())) {
+                        if (!bestResultScore || result->score > *bestResultScore) {
+                            bestResultScore = result->score;
+                            for (size_t n = 0, size = result->data.size(); n < size; n++) {
+                                result->data[n].copy(bestResult[0]);
+                            }
+                        }
+                    }
+                    swap(players[firstIndex], players[secondIndex]);
+                }
+            }
         }
     }
 
-    if (result.size() < numCourtRequired) {
-        // It's impossible to arrange a game with these courts
-        return std::nullopt;
-    }
-
-    int totalUneligible = 0;
-
-    for (auto &item : result) {
-        item.score = computeCourtScore(stats, item.players);
-        totalUneligible += item.numUneligible;
-    }
-
-    std::sort(result.begin(), result.end(), [](const auto &a, const auto &b) {
-        return b.score < a.score;
-    });
-
-    if (totalUneligible <= uneligibleQuota) {
-        while (result.size() >= numCourtRequired) result.removeLast();
-        return result;
-    }
-
+    if (bestResultScore) return bestResult;
+    return {};
 }
-
 
 QVector<GameAllocation> GameMatcher::match(
         const QVector<GameAllocation> &pastAllocation,

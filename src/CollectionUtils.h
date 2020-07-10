@@ -34,4 +34,7 @@ static inline T reduceCollection(const Col &col, T initialValue, Reducer reducer
     return initialValue;
 }
 
+#define sumBy(collection, fieldName) \
+    reduceCollection(collection, 0, [](int sum, const auto &ele) { return sum + ele.fieldName; })
+
 #endif //GAMEMATCHER_COLLECTIONUTILS_H
