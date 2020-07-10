@@ -8,6 +8,10 @@
 #include <optional>
 #include <functional>
 
+#include <QtDebug>
+
+#include "span.h"
+
 template<typename Map, typename Col, typename ByFunc>
 static inline Map associateBy(const Col &collection, ByFunc keySelector) {
     Map m;
@@ -28,7 +32,7 @@ static inline std::optional<typename Map::mapped_type> getMapValue(const Map &m,
 
 template <typename Col, typename T, typename Reducer>
 static inline T reduceCollection(const Col &col, T initialValue, Reducer reducer) {
-    for (const auto & e : col) {
+    for (auto & e : col) {
         initialValue = reducer(initialValue, e);
     }
     return initialValue;
@@ -36,5 +40,19 @@ static inline T reduceCollection(const Col &col, T initialValue, Reducer reducer
 
 #define sumBy(collection, fieldName) \
     reduceCollection(collection, 0, [](int sum, const auto &ele) { return sum + ele.fieldName; })
+
+template <typename T>
+inline QDebug operator<<(QDebug debug, nonstd::span<T> c)
+{
+    QDebugStateSaver saver(debug);
+
+    debug.noquote().nospace() << '[';
+    for (size_t i = 0, size = c.size(); i < size; i++) {
+        debug << c[i];
+        if (i < size - 1) debug << ",";
+    }
+    debug << ']';
+    return debug;
+}
 
 #endif //GAMEMATCHER_COLLECTIONUTILS_H

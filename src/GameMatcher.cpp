@@ -107,7 +107,7 @@ static int genderSimilarityScore(const Col &players) {
 struct CourtInfo {
     nonstd::span<PlayerInfo> players;
     int numUneligible;
-    int score = 0;
+    std::optional<int> score;
 
     inline void copy(std::vector<PlayerInfo> &out) const {
         out.clear();
@@ -124,13 +124,21 @@ struct CourtInfo {
 
 };
 
+
+
 template<typename Col>
 static int computeCourtScore(const GameStats &stats, const Col &players) {
-    int score = 0;
-    score -= stats.similarityScore(players) * 4;
-//    score -= levelStdVarianceScore(players) * 2;
-    score -= levelRangeScore(players) * 4;
-    score += genderSimilarityScore(players);
+    auto simScore = -stats.similarityScore(players) * 2;
+    auto varianceScore = -levelStdVarianceScore(players) * 2;
+    auto levelScore = -levelRangeScore(players) * 8;
+    auto genderScore = genderSimilarityScore(players);
+    int score = simScore + varianceScore + levelScore + genderScore;
+    qDebug().noquote().nospace() << "Evaluating court " << players
+            << ",similarityScore=" << simScore
+            << ",varianceScore=" << varianceScore
+            << ",levelScore=" << levelScore
+            << ",genderScore=" << genderScore
+            << ",totalScore = " << score;
     return score;
 }
 
@@ -148,8 +156,11 @@ protected:
             return std::nullopt;
         }
 
-        return reduceCollection(courts, 0, [this](int sum, const CourtInfo &c) {
-            return computeCourtScore(stats_, c.players);
+        return reduceCollection(courts, 0, [this](int sum, CourtInfo &c) {
+            if (!c.score) {
+                c.score = computeCourtScore(stats_, c.players);
+            }
+            return *c.score;
         });
     }
 };
@@ -161,25 +172,22 @@ static std::vector<std::vector<PlayerInfo>> findBestGame(const GameStats &stats,
     std::vector<std::vector<PlayerInfo>> bestResult;
     std::optional<int> bestResultScore;
 
-    std::vector<CourtInfo> courts;
+    std::vector<CourtInfo> allCourts;
     for (size_t i = 0, size = players.size(); i < size; i += numPerCourt) {
-        if (i + numPerCourt >= size) {
-            break;
-        }
-
-        courts.emplace_back(players.subspan(i, numPerCourt));
+        allCourts.emplace_back(players.subspan(i, std::min<size_t>(numPerCourt, size - i)));
     }
-    bestResult.resize(courts.size());
+    nonstd::span<CourtInfo> fullCourts(allCourts.data(), players.size() / numPerCourt);
+    bestResult.resize(fullCourts.size());
 
-    for (size_t i = 0, numCourts = courts.size(); i < numCourts - 1; i++) {
-        for (size_t j = 0, firstCourtSize = courts[i].players.size(); j < firstCourtSize; j++) {
-            auto &firstPlayer = courts[i].players[j];
+    for (size_t i = 0, numCourts = allCourts.size(); i < numCourts - 1; i++) {
+        for (size_t j = 0, firstCourtSize = allCourts[i].players.size(); j < firstCourtSize; j++) {
+            auto &firstPlayer = allCourts[i].players[j];
 
             for (size_t k = i + 1; k < numCourts; k++) {
-                for (size_t m = 0, secondCourtSize = courts[k].players.size(); m < secondCourtSize; m++) {
-                    auto &secondPlayer = courts[k].players[m];
+                for (size_t m = 0, secondCourtSize = allCourts[k].players.size(); m < secondCourtSize; m++) {
+                    auto &secondPlayer = allCourts[k].players[m];
                     firstPlayer.swap(secondPlayer);
-                    if (auto result = finder.find(courts.begin(), courts.end())) {
+                    if (auto result = finder.find(fullCourts.begin(), fullCourts.end())) {
                         if (!bestResultScore || result->score > *bestResultScore) {
                             bestResultScore = result->score;
                             for (size_t n = 0, size = result->data.size(); n < size; n++) {

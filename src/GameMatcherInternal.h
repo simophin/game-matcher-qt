@@ -40,6 +40,7 @@ public:
     inline void clearEligibilityScore() {
         d->eligibilityScore.reset();
     }
+    inline const auto &member() const { return d->member; }
 
     PlayerInfo(const Member &member, int eligibilityScore)
             : d(new Data({member, eligibilityScore})){}
@@ -62,6 +63,12 @@ public:
 
 inline void swap(PlayerInfo &a, PlayerInfo &b) {
     a.swap(b);
+}
+
+inline QDebug operator<<(QDebug debug, const PlayerInfo &p) {
+    QDebugStateSaver saver(debug);
+    debug.nospace().noquote() << p.member().firstName << '(' << p.level() << ')';
+    return debug;
 }
 
 class GameStats {
