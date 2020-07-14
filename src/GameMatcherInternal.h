@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "models.h"
 #include "ClubRepository.h"
@@ -25,12 +26,13 @@ class PlayerInfo {
     public:
         Member member;
         std::optional<int> eligibilityScore;
+        int index = -1;
 
-        inline Data(const Member &member, int eligibilityScore)
-            : member(member), eligibilityScore(eligibilityScore) {}
+        inline Data(Member member, int eligibilityScore)
+            : member(std::move(member)), eligibilityScore(eligibilityScore) {}
     };
 
-    QSharedDataPointer<Data> d;
+    QExplicitlySharedDataPointer<Data> d;
 
 public:
     inline auto id() const { return d->member.id; }
@@ -41,20 +43,22 @@ public:
         d->eligibilityScore.reset();
     }
     inline const auto &member() const { return d->member; }
+    inline auto index() const { return d->index; }
+    inline void setIndex(int i) { d->index = i; }
+
+    PlayerInfo copy() const {
+        PlayerInfo ret = *this;
+        ret.d.detach();
+        return ret;
+    }
 
     PlayerInfo(const Member &member, int eligibilityScore)
-            : d(new Data({member, eligibilityScore})){}
+            : d(new Data(member, eligibilityScore)){}
 
     PlayerInfo(PlayerInfo &&) = default;
     PlayerInfo(const PlayerInfo &) = default;
-    inline PlayerInfo& operator=(const PlayerInfo &rhs) {
-        d = rhs.d;
-        return *this;
-    }
-    inline PlayerInfo& operator=(PlayerInfo &&rhs) {
-        d = std::move(rhs.d);
-        return *this;
-    }
+    inline PlayerInfo& operator=(const PlayerInfo &) = default;
+    inline PlayerInfo& operator=(PlayerInfo &&) noexcept = default;
 
     void swap(PlayerInfo& other) {
         d.swap(other.d);

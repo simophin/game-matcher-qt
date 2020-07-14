@@ -5,6 +5,7 @@
 
 #include <QtDebug>
 #include <QHash>
+#include <QMap>
 
 #include <algorithm>
 #include <random>
@@ -14,10 +15,10 @@
 #include "CollectionUtils.h"
 #include "CombinationsFinder.h"
 
+using nonstd::span;
 
-static std::vector<PlayerInfo> getEligiblePlayers(nonstd::span<const Member> members,
-                                     int numMaxSeats,
-                                     const GameStats &stats, int randomSeed) {
+static std::vector<PlayerInfo> getEligiblePlayers(
+        span<const Member> members, int numMaxSeats, const GameStats &stats, int randomSeed) {
     std::vector<PlayerInfo> players;
     if (members.empty()) return {};
 
@@ -105,7 +106,7 @@ static int genderSimilarityScore(const Col &players) {
 }
 
 struct CourtInfo {
-    nonstd::span<PlayerInfo> players;
+    span<PlayerInfo> players;
     int numUneligible;
     std::optional<int> score;
 
@@ -115,7 +116,7 @@ struct CourtInfo {
         out.insert(out.end(), players.begin(), players.end());
     }
 
-    inline CourtInfo(nonstd::span<PlayerInfo> players)
+    inline CourtInfo(span<PlayerInfo> players)
             : players(players), numUneligible(reduceCollection(players, 0,
                                                                [](int sum, const PlayerInfo &p) {
                                                                    return sum +
@@ -142,6 +143,21 @@ static int computeCourtScore(const GameStats &stats, const Col &players) {
     return score;
 }
 
+struct Context {
+    const int numPerCourt;
+    const int courtsRequired;
+    const int uneligibleQuota;
+
+    QMap<int, PlayerInfo> players;
+
+    QVector<PlayerInfo> arranged;
+};
+
+static int findBestCourtCombinations(Context &ctx) {
+
+}
+
+
 class BestCourtCombinationsFinder : public CombinationsFinder<CourtInfo> {
     const GameStats &stats_;
     const int uneligibleQuota;
@@ -150,7 +166,7 @@ public:
             : CombinationsFinder(numCourtRequired), stats_(stats), uneligibleQuota(uneligibleQuota) {}
 
 protected:
-    std::optional<int> computeScore(nonstd::span<CourtInfo> courts) override {
+    std::optional<int> computeScore(span<CourtInfo> courts) override {
         // Check for uneligible people
         if (sumBy(courts, numUneligible) > uneligibleQuota) {
             return std::nullopt;
@@ -166,8 +182,8 @@ protected:
 };
 
 static std::vector<std::vector<PlayerInfo>> findBestGame(const GameStats &stats,
-        nonstd::span<PlayerInfo> players, const int uneligibleQuota,
-        const int numPerCourt, const int numCourtRequired) {
+                                                         span<PlayerInfo> players, const int uneligibleQuota,
+                                                         const int numPerCourt, const int numCourtRequired) {
     BestCourtCombinationsFinder finder(stats, numCourtRequired, uneligibleQuota);
     std::vector<std::vector<PlayerInfo>> bestResult;
     std::optional<int> bestResultScore;
