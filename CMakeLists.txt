@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
+add_subdirectory(third_party/spdlog)
+
 project(GameMatcher LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -24,7 +26,7 @@ add_executable(GameMatcher
         src/models.h
         src/GameMatcher.cpp
         src/GameMatcher.h
-        src/GameMatcherInternal.h
+        src/GameStats.h
         src/DbUtils.h
         src/DbUtils.cpp
         src/MainWindow.h
@@ -76,10 +78,16 @@ add_executable(GameMatcher
         src/PlayerTablePage.h
         src/PlayerTablePage.ui
         src/CollectionUtils.h
-        src/NameFormatUtils.h src/ToastEvent.cpp src/ToastEvent.h src/ToastDialog.cpp src/ToastDialog.h src/CombinationsFinder.h src/AvailableLinkedList.h)
+        src/NameFormatUtils.h
+        src/ToastEvent.cpp
+        src/ToastEvent.h
+        src/ToastDialog.cpp
+        src/ToastDialog.h
+        src/CombinationsFinder.h
+        src/FastIntVector.h src/MatchingScore.h src/PlayerInfo.h src/MatchingScore.cpp src/CourtCombinationFinder.h src/CourtCombinationFinder.cpp src/SortingCourtCombinationFinder.cpp src/SortingCourtCombinationFinder.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets spdlog)

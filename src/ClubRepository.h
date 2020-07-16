@@ -6,6 +6,7 @@
 
 #include "models.h"
 #include "MemberFilter.h"
+#include "span.h"
 
 class QFile;
 
@@ -99,7 +100,7 @@ public:
 
     std::optional<Member> createMember(
             const QString &fistName, const QString &lastName,
-            const QString &gender, int level);
+            const Member::Gender &gender, int level);
 
     bool saveMember(const Member &);
 
@@ -126,7 +127,7 @@ public:
 
     QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
 
-    std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &, uint64_t durationSeconds);
+    std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, uint64_t durationSeconds);
 
 signals:
 

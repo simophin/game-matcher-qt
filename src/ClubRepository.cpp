@@ -209,7 +209,7 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::op
     return DbUtils::queryList<GameAllocation>(d->db, sql, {id}).orDefault();
 }
 
-std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVector<GameAllocation> &allocations,
+std::optional<GameId> ClubRepository::createGame(SessionId sessionId, nonstd::span<const GameAllocation> allocations,
                                                  uint64_t durationSeconds) {
     SQLTransaction tx(d->db);
 
@@ -243,13 +243,16 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, const QVec
 
 std::optional<Member>
 ClubRepository::createMember(const QString &fistName,
-                             const QString &lastName, const QString &gender, int level) {
+                             const QString &lastName,
+                             const Member::Gender &gender,
+                             int level) {
     SQLTransaction tx(d->db);
 
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
             QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
-            {fistName, lastName, gender, level});
+            {fistName, lastName,
+             QLatin1String(QMetaEnum::fromType<Member::Gender>().valueToKey(gender)), level});
 
     if (!memberId) {
         qWarning() << "Error inserting member";

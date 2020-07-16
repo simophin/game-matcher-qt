@@ -20,8 +20,8 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
         : QDialog(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
 
-    d->ui.genderComboBox->addItem(tr("M", "gender"), genderMale);
-    d->ui.genderComboBox->addItem(tr("F", "gender"), genderFemale);
+    d->ui.genderComboBox->addItem(tr("M", "gender"), Member::Male);
+    d->ui.genderComboBox->addItem(tr("F", "gender"), Member::Female);
 
     for (int i = levelMin; i <= levelMax; i++) {
         QString levelDesc;
@@ -111,7 +111,8 @@ void EditMemberDialog::accept() {
         m.phone = d->ui.phoneLineEdit->text();
         m.email = d->ui.emailLineEdit->text();
         m.level = level.toInt();
-        m.gender = gender.toString();
+        m.gender = static_cast<Member::Gender>(QMetaEnum::fromType<Member::Gender>()
+                .keyToValue(gender.toString().toStdString().data()));
         if (!d->repo->saveMember(m)) {
             QMessageBox::warning(this, tr("Unable to save to database"),
                     tr("Probably nothing you can do about this. You can ignore this."));
@@ -119,7 +120,7 @@ void EditMemberDialog::accept() {
             emit this->memberUpdated(*d->editingMember);
             QDialog::accept();
         }
-    } else if (auto newMember = d->repo->createMember(firstName, lastName, gender.toString(), level.toInt())) {
+    } else if (auto newMember = d->repo->createMember(firstName, lastName, gender.value<Member::Gender>(), level.toInt())) {
         emit this->newMemberCreated(newMember->id);
         QDialog::accept();
     } else {

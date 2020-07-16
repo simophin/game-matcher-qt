@@ -106,10 +106,26 @@ public:
                 value = record.value(i);
             }
 
+            if (prop->isEnumType()) {
+                auto valueAsString = value.toString();
+                bool converted = false;
+                QMetaEnum e = prop->enumerator();
+                for (int j = 0, size = e.keyCount(); j < size; j++) {
+                    if (valueAsString.compare(QLatin1String(e.key(j)), Qt::CaseInsensitive) == 0) {
+                        value = e.value(j);
+                        converted = true;
+                        break;
+                    }
+                }
+                if (!converted) {
+                    qWarning().nospace() << "Unable to convert " << valueAsString << " to " << prop->type();
+                }
+            }
+
             if (!prop->writeOnGadget(&entity, value)) {
-                qWarning() << "Unable to write to property: " << key
-                           << " in the entity: " << Entity::staticMetaObject.className()
-                           << ", withValue = " << value;
+                qWarning().nospace() << "Unable to write to property: " << key
+                                     << " in the entity: " << Entity::staticMetaObject.className()
+                                     << ", withValue = " << value;
             }
         }
         return true;

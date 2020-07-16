@@ -201,7 +201,7 @@ void NewGameDialog::accept() {
         auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
         progressDialog->open();
 
-        auto resultWatcher = new QFutureWatcher<QVector<GameAllocation>>(this);
+        auto resultWatcher = new QFutureWatcher<std::vector<GameAllocation>>(this);
         connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
             progressDialog->close();
 
