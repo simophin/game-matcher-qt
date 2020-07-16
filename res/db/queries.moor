@@ -1,7 +1,0 @@
-import 'tables.moor';
-
-newSession: INSERT INTO sessions(fee) VALUES (:fee);
-newMember: INSERT INTO members(first_name, last_name, gender, level) VALUES (:firstName, :lastName, :gender, :level);
-newGame: INSERT INTO games(session_id) VALUES (:sessionId);
-checkIn: INSERT INTO players(session_id, member_id, payment) VALUES (:sessionId, :memberId, :payment);
-checkOut: UPDATE players SET check_out_time = current_timestamp WHERE session_id = :sessionId AND member_id = :memberId;

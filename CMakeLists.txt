@@ -84,7 +84,7 @@ add_executable(GameMatcher
         src/ToastDialog.cpp
         src/ToastDialog.h
         src/CombinationsFinder.h
-        src/FastIntVector.h src/MatchingScore.h src/PlayerInfo.h src/MatchingScore.cpp src/CourtCombinationFinder.h src/CourtCombinationFinder.cpp src/SortingCourtCombinationFinder.cpp src/SortingCourtCombinationFinder.h)
+        src/FastIntVector.h src/MatchingScore.h src/PlayerInfo.h src/MatchingScore.cpp src/CourtCombinationFinder.h src/CourtCombinationFinder.cpp src/SortingCourtCombinationFinder.cpp src/SortingCourtCombinationFinder.h src/BruteForceCombinationFinder.cpp src/BruteForceCombinationFinder.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

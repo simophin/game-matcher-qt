@@ -8,14 +8,16 @@
 std::vector<GameAllocation> CourtCombinationFinder::find(nonstd::span<const CourtId> courts, nonstd::span<const PlayerInfo> players) {
     std::vector<GameAllocation> result;
 
-    auto found = doFind(players, courts.size());
+    auto allocations = doFind(players, courts.size());
     auto courtId = courts.begin();
-    result.reserve(found.size());
-    for (size_t i = 0, size = found.size(); i < size && courtId != courts.end(); i++) {
-        result.emplace_back(0, *courtId, players[found[i]].memberId);
-        if ((i + 1) % numPlayersPerCourt_ == 0) {
-            courtId++;
+    auto allocation = allocations.begin();
+
+    while (courtId != courts.end() && allocation != allocations.end()) {
+        for (auto p : allocation->players) {
+            result.emplace_back(0, *courtId, p.memberId, allocation->quality);
         }
+        courtId++;
+        allocation++;
     }
 
     return result;

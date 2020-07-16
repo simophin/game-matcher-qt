@@ -19,7 +19,11 @@ public:
     std::vector<GameAllocation> find(nonstd::span<const CourtId> courts, nonstd::span<const PlayerInfo> players);
 
 protected:
-    virtual std::vector<int> doFind(nonstd::span<const PlayerInfo>, size_t numCourtAvailable) const = 0;
+    struct CourtAllocation {
+        std::vector<PlayerInfo> players;
+        int quality;
+    };
+    virtual std::vector<CourtAllocation> doFind(nonstd::span<const PlayerInfo>, size_t numCourtAvailable) const = 0;
 
     GameStats const &stats_;
     int const numPlayersPerCourt_;

@@ -44,15 +44,16 @@ public:
 
     int numGames() const { return this->numTotalGames; }
 
-    int similarityScore(nonstd::span<const PlayerInfo> players) const {
+    template<typename PlayerInfoList>
+    int similarityScore(const PlayerInfoList &players) const {
         if (courtPlayers.empty()) return 0;
 
         int totalSeats = 0;
         int sum = 0;
         for (const auto &court : courtPlayers) {
             int numPlayedHere = 0;
-            for (const PlayerInfo &p : players) {
-                if (court.find(p.memberId) != court.end()) {
+            for (const auto &p : players) {
+                if (court.find(p->memberId) != court.end()) {
                     numPlayedHere++;
                 }
             }

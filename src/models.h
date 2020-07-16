@@ -110,11 +110,12 @@ public:
     DECLARE_PROPERTY(GameId, gameId, = 0);
     DECLARE_PROPERTY(CourtId, courtId, = 0);
     DECLARE_PROPERTY(MemberId, memberId, = 0);
+    DECLARE_PROPERTY(int, quality, = 0);
 
     GameAllocation() = default;
 
-    GameAllocation(GameId gameId, CourtId courtId, MemberId memberId)
-            : gameId(gameId), courtId(courtId), memberId(memberId) {}
+    GameAllocation(GameId gameId, CourtId courtId, MemberId memberId, int quality)
+            : gameId(gameId), courtId(courtId), memberId(memberId), quality(quality) {}
 };
 
 inline static QDebug operator<<(QDebug dbg, const GameAllocation &c)

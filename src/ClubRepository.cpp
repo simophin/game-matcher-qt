@@ -17,6 +17,7 @@ static struct {
     QString sqlFile;
 } schemas[] = {
         {1, QStringLiteral(":/sql/db_v1.sql")},
+        {2, QStringLiteral(":/sql/db_v2.sql")},
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");
@@ -209,7 +210,8 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::op
     return DbUtils::queryList<GameAllocation>(d->db, sql, {id}).orDefault();
 }
 
-std::optional<GameId> ClubRepository::createGame(SessionId sessionId, nonstd::span<const GameAllocation> allocations,
+std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
+                                                 nonstd::span<const GameAllocation> allocations,
                                                  uint64_t durationSeconds) {
     SQLTransaction tx(d->db);
 
@@ -226,10 +228,10 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId, nonstd::sp
     for (const auto &ga : allocations) {
         auto insertResult = DbUtils::update(
                 d->db,
-                QStringLiteral("insert into game_allocations (gameId, courtId, playerId) values (?, ?, "
+                QStringLiteral("insert into game_allocations (gameId, courtId, playerId, quality) values (?, ?, "
                                "(select P.id from players P where P.memberId = ?) "
-                               ")"),
-                {*gameId, ga.courtId, ga.memberId});
+                               "), ?"),
+                {*gameId, ga.courtId, ga.memberId, ga.quality});
 
         if (!insertResult) {
             tx.setError();

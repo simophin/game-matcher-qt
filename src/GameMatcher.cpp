@@ -125,7 +125,7 @@ std::vector<GameAllocation> GameMatcher::match(
         result.reserve(numMembers);
         auto courtIter = courts.begin();
         for (int i = 0; i < numMembers; i++) {
-            result.emplace_back(0, *courtIter, sortedMembers[i].id);
+            result.emplace_back(0, *courtIter, sortedMembers[i].id, 100);
 
             // Advance to next court when this one is full
             if ((i + 1) % playerPerCourt == 0) {
