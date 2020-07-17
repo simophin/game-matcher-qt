@@ -11,7 +11,7 @@
 #include "GameStats.h"
 #include "CombinationsFinder.h"
 #include "FastIntVector.h"
-#include "SortingCourtCombinationFinder.h"
+#include "BruteForceCombinationFinder.h"
 
 using nonstd::span;
 
@@ -47,9 +47,9 @@ static std::vector<PlayerInfo> getEligiblePlayers(
         if (players.begin()->eligibilityScore.value() != lowestScore) {
             // The lowest score players will be re-written to invalid to indicate they are all optional, if there
             // are higher score players.
-            for (auto &p : players) {
-                if (p.eligibilityScore.value() == lowestScore) {
-                    p.eligibilityScore = std::nullopt;
+            for (auto iter = players.rbegin(); iter != players.rend(); ++iter) {
+                if (iter->eligibilityScore.value() == lowestScore) {
+                    iter->eligibilityScore = std::nullopt;
                 }
             }
         }
@@ -57,45 +57,6 @@ static std::vector<PlayerInfo> getEligiblePlayers(
 
     return players;
 }
-
-//
-//struct Context {
-//    const size_t numPerCourt;
-//    const size_t courtsRequired;
-//    const size_t uneligibleQuota;
-//    span<PlayerInfo> players;
-//
-//    FastIntVector arranged;
-//    uint64_t numEstimated = 0;
-//
-//    int findNextAvailablePlayer(int startIndex) {
-//        for (int i = startIndex, size = players.size(); i < size; i++) {
-//            if (players[i].used) continue;
-//            return i;
-//        }
-//        return -1;
-//    }
-//};
-//
-//static void findBestCourtCombinations(Context &ctx, int index) {
-//    auto numInLastCourt = ctx.arranged.size() % ctx.numPerCourt;
-//    if (numInLastCourt == 0 &&
-//        (ctx.players.size() < ctx.numPerCourt || ctx.arranged.size() / ctx.numPerCourt >= ctx.courtsRequired)) {
-//        // TODO: Compute score for all courts
-////        qDebug().noquote() << "Estimating " << ctx.arranged;
-//        ctx.numEstimated++;
-//    } else {
-//        while (index >= 0) {
-//            ctx.players[index].used = true;
-//            ctx.arranged.push_back(index);
-//            auto nextIndex = ctx.findNextAvailablePlayer(index + 1);
-//            findBestCourtCombinations(ctx, nextIndex);
-//            ctx.players[index].used = false;
-//            ctx.arranged.pop_back();
-//            index = nextIndex;
-//        }
-//    }
-//}
 
 
 std::vector<GameAllocation> GameMatcher::match(
@@ -140,6 +101,6 @@ std::vector<GameAllocation> GameMatcher::match(
     // Find eligible players
     auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
 
-    return SortingCourtCombinationFinder(stats, playerPerCourt).find(courts, eligiblePlayers);
+    return BruteForceCombinationFinder(stats, playerPerCourt).find(courts, eligiblePlayers);
 }
 

@@ -61,9 +61,9 @@ public:
 
     template <typename PlayerInfoList>
     static int computeCourtScore(const GameStats &stats, const PlayerInfoList &players, int minLevel, int maxLevel) {
-        auto simScore = -stats.similarityScore(players) * 2;
+        auto simScore = -stats.similarityScore(players) * 3;
         auto varianceScore = -levelStdVarianceScore(players, minLevel, maxLevel) * 2;
-        auto levelScore = -levelRangeScore(players, minLevel, maxLevel) * 8;
+        auto levelScore = -levelRangeScore(players, minLevel, maxLevel) * 2;
         auto genderScore = genderSimilarityScore(players);
         int score = simScore + varianceScore + levelScore + genderScore;
         return score;

@@ -16,7 +16,6 @@ struct PlayerInfo {
     int level;
     std::optional<int> eligibilityScore;
 
-    inline bool mustOn() const { return eligibilityScore.has_value(); }
     inline bool optionalOn() const { return !eligibilityScore.has_value(); }
 
     inline PlayerInfo(const Member &m, int score)

@@ -20,22 +20,25 @@ struct BestCombination {
 };
 
 struct BestCourtFinder {
-    PlayerInfoIterator const end;
     int const numRequired;
     GameStats const &stats;
     int const minLevel, maxLevel;
     int const numMaxOptional;
+
+    int numEstimated = 0;
 
     std::vector<PlayerInfoIterator> players;
     int numOptional = 0;
 
     std::optional<BestCombination> best;
 
-    void find(PlayerInfoIterator begin) {
+    void find(PlayerInfoIterator begin, PlayerInfoIterator end) {
         if (players.size() == numRequired) {
             if (numOptional > numMaxOptional) {
                 return;
             }
+
+            numEstimated++;
 
             int score = MatchingScore::computeCourtScore(stats, players, minLevel, maxLevel);
             bool update;
@@ -52,12 +55,12 @@ struct BestCourtFinder {
                 best->score = score;
                 best->numOptional = numOptional;
             }
-        } else  {
+        } else {
             while (begin != end) {
                 bool isOptional = begin->optionalOn();
                 players.emplace_back(begin++);
                 if (isOptional) numOptional++;
-                find(begin);
+                find(begin, end);
                 players.pop_back();
                 if (isOptional) numOptional--;
             }
@@ -75,8 +78,24 @@ BruteForceCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourt
         if (item.optionalOn()) numOptional++;
     }
 
-    int i = 0;
-    while (!players.end())
+    std::vector<CourtAllocation> result;
 
-    return std::vector<CourtAllocation>();
+    for (int i = 0; i < numCourtAvailable && !players.empty(); i++) {
+        BestCourtFinder finder = {numPlayersPerCourt_, stats_, levelMin, levelMax, numOptional};
+        finder.find(players.begin(), players.end());
+        if (!finder.best) {
+            qWarning() << "Unable to find best court";
+            break;
+        }
+
+        auto &allocation = result.emplace_back();
+        for (const auto &player : finder.best->players) {
+            allocation.players.emplace_back(*player);
+            players.erase(player);
+        }
+        allocation.quality = finder.best->score;
+        numOptional -= finder.best->numOptional;
+    }
+
+    return result;
 }

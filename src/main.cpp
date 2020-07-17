@@ -40,7 +40,7 @@ static void testMatcher() {
 
     if (auto sessionId = repo.getLastSession()) {
         auto members = repo.getMembers(CheckedIn{*sessionId});
-        while (members.size() > 20) {
+        while (members.size() > 50) {
             members.pop_back();
         }
 
@@ -92,10 +92,10 @@ int main(int argc, char **argv) {
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
 
-    testMatcher();
+//    testMatcher();
 
-//    MainWindow main(nullptr);
-//    main.show();
+    MainWindow main(nullptr);
+    main.show();
 
     return app.exec();
 }
