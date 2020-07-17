@@ -5,8 +5,8 @@
 #ifndef GAMEMATCHER_GAMESTATS_H
 #define GAMEMATCHER_GAMESTATS_H
 
-#include <set>
 #include <map>
+#include <QSet>
 
 #include "models.h"
 #include "span.h"
@@ -14,31 +14,30 @@
 
 
 class GameStats {
-    std::vector<std::set<MemberId>> courtPlayers;
+    std::map<GameId, std::map<CourtId, QSet<MemberId>>> games;
     int numTotalGames = 0;
 
 public:
     explicit GameStats(nonstd::span<const GameAllocation> pastAllocation) {
-        std::map<GameId, std::map<CourtId, std::set<MemberId>>> map;
         for (const auto &allocation : pastAllocation) {
-            map[allocation.gameId][allocation.courtId].insert(allocation.memberId);
+            games[allocation.gameId][allocation.courtId].insert(allocation.memberId);
         }
 
-        numTotalGames = map.size();
-
-        for (auto &[gameId, game] : map) {
-            for (auto &[courtId, players] : game) {
-                courtPlayers.emplace_back(std::move(players));
-            }
-        }
+        numTotalGames = games.size();
     }
 
 
     int numGamesOff(MemberId memberId) const {
         int i = 0;
-        for (auto iter = courtPlayers.crbegin(); iter != courtPlayers.crend(); iter++, i++) {
-            if (iter->find(memberId) != iter->end()) break;
+        for (auto iter = games.rbegin(); iter != games.rend(); ++iter) {
+            for (const auto &court : iter->second) {
+                if (court.second.contains(memberId)) {
+                    return i;
+                }
+            }
+            i++;
         }
+
         return i;
     }
 
@@ -46,21 +45,23 @@ public:
 
     template<typename PlayerInfoList>
     int similarityScore(const PlayerInfoList &players) const {
-        if (courtPlayers.empty()) return 0;
+        if (games.empty()) return 0;
 
         int totalSeats = 0;
         int sum = 0;
-        for (const auto &court : courtPlayers) {
-            int numPlayedHere = 0;
-            for (const auto &p : players) {
-                if (court.find(p->memberId) != court.end()) {
-                    numPlayedHere++;
+        for (const auto &[gameId, game] : games) {
+            for (const auto &[courtId, court] : game) {
+                int numPlayedHere = 0;
+                for (const auto &p : players) {
+                    if (court.contains(p->memberId)) {
+                        numPlayedHere++;
+                    }
                 }
-            }
 
-            if (numPlayedHere >= 2) {
-                totalSeats += std::min(static_cast<size_t>(court.size()), players.size());
-                sum += numPlayedHere;
+                if (numPlayedHere >= 2) {
+                    totalSeats += std::min(static_cast<size_t>(court.size()), players.size());
+                    sum += numPlayedHere;
+                }
             }
         }
 

@@ -47,10 +47,10 @@ static std::vector<PlayerInfo> getEligiblePlayers(
         if (players.begin()->eligibilityScore.value() != lowestScore) {
             // The lowest score players will be re-written to invalid to indicate they are all optional, if there
             // are higher score players.
-            for (auto iter = players.rbegin(); iter != players.rend(); ++iter) {
-                if (iter->eligibilityScore.value() == lowestScore) {
-                    iter->eligibilityScore = std::nullopt;
-                }
+            for (auto iter = players.rbegin();
+                 iter != players.rend() && iter->eligibilityScore.value() == lowestScore;
+                 ++iter) {
+                iter->eligibilityScore = std::nullopt;
             }
         }
     }
