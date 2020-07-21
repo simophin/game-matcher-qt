@@ -9,11 +9,12 @@
 #include <QFrame>
 #include "models.h"
 
+class ClubRepository;
 
 class ClubPage : public QFrame {
 Q_OBJECT
 public:
-    explicit ClubPage(const QString &path, QWidget *parent = nullptr);
+    static ClubPage *create(const QString &dbPath, QWidget *parent);
 
     ~ClubPage() override;
 
@@ -25,6 +26,8 @@ public slots:
     void openLastSession();
 
 private:
+    explicit ClubPage(ClubRepository *, QWidget *parent);
+
     struct Impl;
     Impl *d;
 };

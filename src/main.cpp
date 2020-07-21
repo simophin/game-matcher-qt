@@ -35,18 +35,18 @@ static void printAllocations(const QString &prefix, nonstd::span<GameAllocation>
 
 
 static void testMatcher() {
-    ClubRepository repo;
-    if (!repo.open(QStringLiteral("/Users/fanchao/Temp/badmintonclub"))) {
+    std::unique_ptr<ClubRepository> repo(ClubRepository::open(nullptr, QStringLiteral("/Users/fanchao/Temp/badmintonclub")));
+    if (!repo) {
         throw "Unable to open repo";
     }
 
-    if (auto sessionId = repo.getLastSession()) {
-        auto members = repo.getMembers(CheckedIn{*sessionId});
+    if (auto sessionId = repo->getLastSession()) {
+        auto members = repo->getMembers(CheckedIn{*sessionId});
         while (members.size() > 50) {
             members.pop_back();
         }
 
-        auto session = repo.getSession(*sessionId);
+        auto session = repo->getSession(*sessionId);
         QVector<CourtId> courts;
         for (const auto &court : session->courts) {
             courts.append(court.id);

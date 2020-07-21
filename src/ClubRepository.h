@@ -9,6 +9,7 @@
 #include "span.h"
 
 class QFile;
+class QSqlDatabase;
 
 struct CourtConfiguration {
     QString name;
@@ -60,17 +61,9 @@ public:
 class ClubRepository : public QObject {
 Q_OBJECT
 public:
-    explicit ClubRepository(QObject *parent = nullptr);
+    static ClubRepository *open(QObject *parent, const QString &path);
 
     ~ClubRepository() override;
-
-    bool open(const QString &);
-
-    Q_INVOKABLE void close();
-
-    bool isValid() const;
-
-    Q_PROPERTY(bool isValid READ isValid);
 
     ClubInfo getClubInfo() const;
 
@@ -135,6 +128,8 @@ signals:
     void sessionChanged(SessionId);
 
 private:
+    ClubRepository(QObject *parent, const QSqlDatabase &);
+
     struct Impl;
     Impl *d;
 };

@@ -9,23 +9,19 @@
 #include "SessionWindow.h"
 #include "EmptySessionPage.h"
 
-#include <QErrorMessage>
 #include <QDialog>
+#include <QMessageBox>
 
 struct ClubPage::Impl {
-    ClubRepository repo;
+    ClubRepository * const repo;
     Ui::ClubPage ui;
 };
 
-ClubPage::ClubPage(const QString &path, QWidget *parent)
-        : QFrame(parent), d(new Impl) {
+ClubPage::ClubPage(ClubRepository *repo, QWidget *parent)
+        : QFrame(parent), d(new Impl{repo}) {
+    d->repo->setParent(this);
     d->ui.setupUi(this);
-    if (!d->repo.open(path)) {
-        (new QErrorMessage(this))->showMessage(tr("Unable to open club file \"%1\"").arg(path));
-        deleteLater();
-    }
-
-    auto page = new EmptySessionPage(&d->repo, this);
+    auto page = new EmptySessionPage(d->repo, this);
     connect(page, &EmptySessionPage::lastSessionResumed, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::newSessionCreated, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::clubClosed, this, &ClubPage::clubClosed);
@@ -34,16 +30,26 @@ ClubPage::ClubPage(const QString &path, QWidget *parent)
 
 
 void ClubPage::openLastSession() {
-    if (auto lastSession = d->repo.getLastSession()) {
+    if (auto lastSession = d->repo->getLastSession()) {
         openSession(*lastSession);
     }
 }
 
 void ClubPage::openSession(SessionId sessionId) {
-    auto session = new SessionWindow(&d->repo, sessionId, this);
+    auto session = new SessionWindow(d->repo, sessionId, this);
     session->showMaximized();
 }
 
 ClubPage::~ClubPage() {
     delete d;
+}
+
+ClubPage *ClubPage::create(const QString &dbPath, QWidget *parent) {
+    std::unique_ptr<ClubRepository> repo(ClubRepository::open(nullptr, dbPath));
+    if (!repo) {
+        QMessageBox::warning(parent, tr("Error"), tr("Unable to open \"%1\"").arg(dbPath));
+        return nullptr;
+    }
+
+    return new ClubPage(repo.release(), parent);
 }

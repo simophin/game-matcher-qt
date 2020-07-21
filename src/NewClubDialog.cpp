@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QFileDialog>
 #include <QErrorMessage>
+#include <QWidget>
+#include <QMessageBox>
 
 #include "NewClubDialog.h"
 #include "ui_NewClubDialog.h"
@@ -27,16 +29,24 @@ NewClubDialog::NewClubDialog(QWidget *parent)
     connect(ui->buttonBox, &QDialogButtonBox::accepted, [=] {
         auto path = QFileDialog::getSaveFileName(this);
 
-        ClubRepository club;
-        ClubInfo info = {
-                ui->clubNameLineEdit->text().trimmed()
-        };
-        if (!club.open(path) || !club.saveClubInfo(info)) {
-            (new QErrorMessage(this))->showMessage(tr("Unable to create \"%1\"").arg(path));
-            return;
-        }
+        {
+            std::unique_ptr<ClubRepository> club(ClubRepository::open(nullptr, path));
+            if (!club) {
+                QMessageBox::warning(this, tr("Unable to create club"),
+                        tr("Unable to create \"%1\"").arg(path));
+                return;
+            }
 
-        club.close();
+            ClubInfo info = {
+                    ui->clubNameLineEdit->text().trimmed()
+            };
+            if (!club->saveClubInfo(info)) {
+                QMessageBox::warning(this, tr("Unable to create club"),
+                                     tr("Unable to create \"%1\"").arg(path));
+                return;
+            }
+
+        }
         emit clubCreated(path);
         close();
     });

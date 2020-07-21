@@ -21,7 +21,6 @@ static struct {
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");
-static const SettingKey skClubCreationDate = QStringLiteral("club_creation_date");
 
 class SQLTransaction {
     QSqlDatabase &db_;
@@ -46,26 +45,21 @@ struct ClubRepository::Impl {
     QSqlDatabase db;
 };
 
-ClubRepository::ClubRepository(QObject *parent) : QObject(parent), d(new Impl) {
-
-}
+ClubRepository::ClubRepository(QObject *parent, const QSqlDatabase &db)
+    : QObject(parent), d(new Impl{db}) {}
 
 ClubRepository::~ClubRepository() {
     delete d;
 }
 
-static std::optional<QSqlDatabase> openDatabase(const QString &dbPath, QString *errorString = nullptr) {
+ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
     auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
-    db.setDatabaseName(dbPath);
-    if (!db.open()) {
-        if (errorString) {
-            *errorString = db.lastError().text();
-        }
-
-        qWarning() << "Error opening: " << dbPath << ":" << db.lastError();
-        return std::nullopt;
+    db.setDatabaseName(path);
+    db.open();
+    if (!db.isValid()) {
+        qCritical().noquote() << "Error opening: " << path << " : " << db.lastError();
+        return nullptr;
     }
-
 
     int currSchemaVersion = 0;
 
@@ -87,7 +81,7 @@ static std::optional<QSqlDatabase> openDatabase(const QString &dbPath, QString *
             if (!schemaFile.open(QIODevice::ReadOnly)) {
                 tx.setError();
                 qCritical() << "Unable to open file: " << schema.sqlFile;
-                return std::nullopt;
+                return nullptr;
             }
 
             auto sqls = QString::fromUtf8(schemaFile.readAll()).split(QStringLiteral("---"));
@@ -97,40 +91,17 @@ static std::optional<QSqlDatabase> openDatabase(const QString &dbPath, QString *
                 if (!q.exec(sql)) {
                     tx.setError();
                     auto err = db.lastError();
-                    if (errorString) {
-                        *errorString = err.text();
-                    }
                     qCritical() << "Error executing sql " << sql << ":" << err;
-                    return std::nullopt;
+                    return nullptr;
                 }
             }
             qDebug() << "Migrated to schema version " << schema.schemaVersion;
         }
     }
 
-    return db;
+    return new ClubRepository(parent, db);
 }
 
-void ClubRepository::close() {
-    d->db.close();
-}
-
-bool ClubRepository::open(const QString &path) {
-    if (path == d->db.databaseName()) return d->db.isOpen();
-
-    if (auto db = openDatabase(path)) {
-        d->db = *db;
-        emit clubInfoChanged();
-        return true;
-    }
-
-    return false;
-}
-
-
-bool ClubRepository::isValid() const {
-    return d->db.isOpen();
-}
 
 ClubInfo ClubRepository::getClubInfo() const {
     SQLTransaction tx(d->db);

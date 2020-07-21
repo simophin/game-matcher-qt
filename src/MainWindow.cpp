@@ -22,24 +22,26 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::onClubOpened(QString path) {
-    QSettings().setValue(SETTINGS_KEY_LAST_OPEN_CLUB_FILE, path);
-    setCentralWidget(new ClubPage(path, this));
+    if (auto clubPage = ClubPage::create(path, this)) {
+        QSettings().setValue(SETTINGS_KEY_LAST_OPEN_CLUB_FILE, path);
+        setCentralWidget(clubPage);
+    }
 }
 
 void MainWindow::reload()
 {
     auto lastOpen = QSettings().value(SETTINGS_KEY_LAST_OPEN_CLUB_FILE);
-    if (lastOpen.isNull() || !QFile(lastOpen.toString()).exists()) {
+    ClubPage *clubPage;
+    if (lastOpen.isNull() || !QFile(lastOpen.toString()).exists() || !(clubPage = ClubPage::create(lastOpen.toString(), this))) {
         auto page = new WelcomePage(this);
         connect(page, &WelcomePage::clubOpened, this, &MainWindow::onClubOpened);
         setCentralWidget(page);
     } else {
-        auto page = new ClubPage(lastOpen.toString(), this);
-        connect(page, &ClubPage::clubClosed, [=] {
+        connect(clubPage, &ClubPage::clubClosed, [=] {
             QSettings().remove(SETTINGS_KEY_LAST_OPEN_CLUB_FILE);
             reload();
         });
-        setCentralWidget(page);
+        setCentralWidget(clubPage);
     }
 }
 
