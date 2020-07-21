@@ -22,6 +22,7 @@ add_executable(GameMatcher
         res/db/queries.qrc
         res/images/images.qrc
         res/icons/icons.qrc
+        res/fonts/fonts.qrc
         src/ClubRepository.cpp
         src/ClubRepository.h
         src/models.h

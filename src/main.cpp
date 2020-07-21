@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QFontDatabase>
+#include <QStyleFactory>
 
 #include "MainWindow.h"
 #include "models.h"
@@ -86,6 +88,12 @@ int main(int argc, char **argv) {
     qRegisterMetaType<CourtPlayers>();
 
     QApplication app(argc, argv);
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoMono-Regular.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Bold.ttf"));
+    auto fontId = QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Regular.ttf"));
+    QFont font(QFontDatabase::applicationFontFamilies(fontId).first(), 16);
+    QApplication::setFont(font);
+
 
     QCoreApplication::setOrganizationName(QStringLiteral("Cloudwalker"));
     QCoreApplication::setOrganizationDomain(QStringLiteral("fanchao.nz"));
