@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
-add_subdirectory(third_party/spdlog)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost 1.55.0 REQUIRED)
 
 project(GameMatcher LANGUAGES CXX)
 
@@ -10,8 +13,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Core Sql Widgets REQUIRED)
 
@@ -84,10 +85,19 @@ add_executable(GameMatcher
         src/ToastDialog.cpp
         src/ToastDialog.h
         src/CombinationsFinder.h
-        src/FastIntVector.h src/MatchingScore.h src/PlayerInfo.h src/MatchingScore.cpp src/CourtCombinationFinder.h src/CourtCombinationFinder.cpp src/SortingCourtCombinationFinder.cpp src/SortingCourtCombinationFinder.h src/BruteForceCombinationFinder.cpp src/BruteForceCombinationFinder.h)
+        src/FastIntVector.h
+        src/MatchingScore.h
+        src/PlayerInfo.h
+        src/MatchingScore.cpp
+        src/CourtCombinationFinder.h
+        src/CourtCombinationFinder.cpp
+        src/SortingCourtCombinationFinder.cpp
+        src/SortingCourtCombinationFinder.h
+        src/BruteForceCombinationFinder.cpp
+        src/BruteForceCombinationFinder.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets spdlog)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Boost::headers)

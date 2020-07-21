@@ -96,11 +96,11 @@ static std::optional<QSqlDatabase> openDatabase(const QString &dbPath, QString *
                 if (sql.isEmpty()) continue;
                 if (!q.exec(sql)) {
                     tx.setError();
+                    auto err = db.lastError();
                     if (errorString) {
-                        *errorString = db.lastError().text();
+                        *errorString = err.text();
                     }
-                    qCritical() << "Error executing sql " << sql
-                                << ":" << db.lastError();
+                    qCritical() << "Error executing sql " << sql << ":" << err;
                     return std::nullopt;
                 }
             }
@@ -254,7 +254,7 @@ ClubRepository::createMember(const QString &fistName,
             d->db,
             QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
             {fistName, lastName,
-             QLatin1String(QMetaEnum::fromType<Member::Gender>().valueToKey(gender)), level});
+             QString(QLatin1String(QMetaEnum::fromType<Member::Gender>().valueToKey(gender))).toLower(), level});
 
     if (!memberId) {
         qWarning() << "Error inserting member";

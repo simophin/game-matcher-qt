@@ -21,7 +21,7 @@ QueryResult<QSqlQuery> DbUtils::buildQuery(QSqlDatabase &db, const QString &sql,
     }
 
     if (!q.exec()) {
-        qWarning() << "Error preparing: " << q.lastQuery() << ": " << q.lastError();
+        qWarning() << "Error executing: " << q.lastQuery() << ": " << q.lastError();
         rc.result = q.lastError();
         return rc;
     }

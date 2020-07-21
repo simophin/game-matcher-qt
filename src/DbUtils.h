@@ -72,7 +72,7 @@ struct QueryResult {
 class DbUtils {
 public:
 
-    template <typename Entity, std::enable_if_t<HasMetaObject<Entity>::value, int> = 0>
+    template <typename Entity, std::enable_if_t<HasMetaObject<Entity, const QMetaObject>::value, int> = 0>
     static bool readFrom(Entity& entity, const QSqlRecord &record) {
         static auto propertyMaps = [] {
             QHash<QString, QMetaProperty> result;
@@ -131,11 +131,13 @@ public:
         return true;
     }
 
-    template <typename T, std::enable_if_t<!HasMetaObject<T>::value, int> = 0>
+    template <typename T, std::enable_if_t<!HasMetaObject<T, const QMetaObject>::value, int> = 0>
     static bool readFrom(T& out, const QSqlRecord &record) {
         if (auto v = record.value(0); v.isValid()) {
             out = v.value<T>();
             return true;
+        } else {
+            qWarning().nospace() << "Unable to convert " << v << " to " << typeid(T).name();
         }
         return false;
     }

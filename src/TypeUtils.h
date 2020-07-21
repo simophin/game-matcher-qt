@@ -5,13 +5,9 @@
 #ifndef GAMEMATCHER_TYPEUTILS_H
 #define GAMEMATCHER_TYPEUTILS_H
 
+#include <boost/tti/has_static_member_data.hpp>
 
-#include <type_traits>
+BOOST_TTI_TRAIT_HAS_STATIC_MEMBER_DATA(HasMetaObject, staticMetaObject)
 
-template<typename T, typename U = int>
-struct HasMetaObject : std::false_type {};
-
-template<typename T>
-struct HasMetaObject<T, decltype((void) T::staticMetaObject, 0)> : std::true_type {};
 
 #endif //GAMEMATCHER_TYPEUTILS_H

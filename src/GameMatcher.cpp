@@ -60,9 +60,9 @@ static std::vector<PlayerInfo> getEligiblePlayers(
 
 
 std::vector<GameAllocation> GameMatcher::match(
-        nonstd::span<const GameAllocation> pastAllocation,
-        nonstd::span<const Member> members,
-        nonstd::span<const CourtId> courts,
+        span<const GameAllocation> pastAllocation,
+        span<const Member> members,
+        span<const CourtId> courts,
         size_t playerPerCourt,
         int seed) {
     qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << members.size()
