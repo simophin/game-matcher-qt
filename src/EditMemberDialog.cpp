@@ -23,6 +23,8 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
     d->ui.genderComboBox->addItem(tr("M", "gender"), Member::Male);
     d->ui.genderComboBox->addItem(tr("F", "gender"), Member::Female);
 
+    auto [levelMin, levelMax] = repo->getLevelRange();
+
     for (int i = levelMin; i <= levelMax; i++) {
         QString levelDesc;
         if (i == levelMin) {

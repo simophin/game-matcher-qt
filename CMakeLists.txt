@@ -43,9 +43,9 @@ add_executable(GameMatcher
         src/ClubPage.cpp
         src/ClubPage.h
         src/ClubPage.ui
-        src/SessionWindow.cpp
-        src/SessionWindow.h
-        src/SessionWindow.ui
+        src/SessionPage.cpp
+        src/SessionPage.h
+        src/SessionPage.ui
         src/NewSessionDialog.cpp
         src/NewSessionDialog.h
         src/NewSessionDialog.ui
@@ -95,7 +95,10 @@ add_executable(GameMatcher
         src/SortingCourtCombinationFinder.cpp
         src/SortingCourtCombinationFinder.h
         src/BruteForceCombinationFinder.cpp
-        src/BruteForceCombinationFinder.h)
+        src/BruteForceCombinationFinder.h
+        src/ClubWindow.cpp
+        src/ClubWindow.h
+        )
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

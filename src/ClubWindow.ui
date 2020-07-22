@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ClubWindow</class>
+ <widget class="QMainWindow" name="ClubWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="actionGame">
+    <property name="title">
+     <string>Game(&amp;G)</string>
+    </property>
+    <addaction name="actionNewGame"/>
+   </widget>
+   <widget class="QMenu" name="menuAdmin">
+    <property name="title">
+     <string>Admin</string>
+    </property>
+    <widget class="QMenu" name="menuGames">
+     <property name="title">
+      <string>Games</string>
+     </property>
+     <addaction name="actionWithDrawLastGame"/>
+    </widget>
+    <addaction name="menuGames"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuClub">
+    <property name="title">
+     <string>Club</string>
+    </property>
+    <addaction name="actionOpenClub"/>
+    <addaction name="actionCloseClub"/>
+    <addaction name="actionNewClub"/>
+    <addaction name="separator"/>
+    <addaction name="actionNewSession"/>
+   </widget>
+   <addaction name="menuClub"/>
+   <addaction name="actionGame"/>
+   <addaction name="menuAdmin"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionNewGame">
+   <property name="text">
+    <string>New game</string>
+   </property>
+  </action>
+  <action name="actionOpenClub">
+   <property name="text">
+    <string>Open(&amp;O)...</string>
+   </property>
+  </action>
+  <action name="actionCloseClub">
+   <property name="text">
+    <string>Close(&amp;C)</string>
+   </property>
+  </action>
+  <action name="actionNewClub">
+   <property name="text">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionNewSession">
+   <property name="text">
+    <string>New session</string>
+   </property>
+  </action>
+  <action name="actionWithDrawLastGame">
+   <property name="text">
+    <string>Withdraw last game</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

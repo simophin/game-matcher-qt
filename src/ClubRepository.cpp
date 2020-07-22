@@ -21,6 +21,11 @@ static struct {
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");
+static const SettingKey skLevelMin = QStringLiteral("level_min");
+static const SettingKey skLevelMax = QStringLiteral("level_max");
+
+static const unsigned int defaultLevelMin = 1;
+static const unsigned int defaultLevelMax = 4;
 
 class SQLTransaction {
     QSqlDatabase &db_;
@@ -101,27 +106,6 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
 
     return new ClubRepository(parent, db);
 }
-
-
-ClubInfo ClubRepository::getClubInfo() const {
-    SQLTransaction tx(d->db);
-    return {
-            getSetting(skClubName).value_or(QString()),
-    };
-}
-
-bool ClubRepository::saveClubInfo(const ClubInfo &info) {
-    SQLTransaction tx(d->db);
-
-    if (!saveSettings(skClubName, info.name)) {
-        tx.setError();
-        return false;
-    }
-
-    emit clubInfoChanged();
-    return true;
-}
-
 
 std::optional<SessionId> ClubRepository::getLastSession() const {
     auto result = DbUtils::queryFirst<SessionId>(d->db, QStringLiteral(
@@ -446,4 +430,38 @@ bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paus
     return false;
 }
 
+QString ClubRepository::getClubName() const {
+    return getSetting(skClubName).value_or(QString());
+}
+
+bool ClubRepository::saveClubName(const QString &name) {
+    return saveSettings(skClubName, name);
+}
+
+std::pair<unsigned int, unsigned int> ClubRepository::getLevelRange() const {
+    SQLTransaction tx(d->db);
+    return std::make_pair(
+            getSettingValue<int>(skLevelMin).value_or(defaultLevelMin),
+            getSettingValue<int>(skLevelMax).value_or(defaultLevelMax)
+    );
+}
+
+bool ClubRepository::saveClubInfo(const QString &name, unsigned int levelMin, unsigned int levelMax) {
+    if (levelMax < levelMin) {
+        return false;
+    }
+
+    SQLTransaction tx(d->db);
+    if (!saveSettings(skLevelMin, levelMin) || !saveSettings(skLevelMax, levelMax)) {
+        tx.setError();
+        return false;
+    }
+
+    if (!saveSettings(skClubName, name)) {
+        tx.setError();
+        return false;
+    }
+
+    return true;
+}
 

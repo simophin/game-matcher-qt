@@ -6,11 +6,7 @@
 #define GAMEMATCHER_MAINWINDOW_H
 
 #include <QMainWindow>
-#include <memory>
 
-namespace Ui {
-    class MainWindow;
-}
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -18,12 +14,11 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
-public slots:
-    void onClubOpened(QString path);
-    void reload();
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
-    std::unique_ptr<Ui::MainWindow> ui;
+    struct Impl;
+    Impl *d;
 };
 
 #endif //GAMEMATCHER_MAINWINDOW_H

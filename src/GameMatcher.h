@@ -13,6 +13,8 @@ public:
             nonstd::span<const Member> eligiblePlayers,
             nonstd::span<const CourtId> courts,
             size_t playerPerCourt,
+            unsigned int levelMin,
+            unsigned int levelMax,
             int seed);
 };
 

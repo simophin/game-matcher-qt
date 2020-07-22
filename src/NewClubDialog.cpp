@@ -37,10 +37,9 @@ NewClubDialog::NewClubDialog(QWidget *parent)
                 return;
             }
 
-            ClubInfo info = {
-                    ui->clubNameLineEdit->text().trimmed()
-            };
-            if (!club->saveClubInfo(info)) {
+            auto [levelMin, levelMax] = club->getLevelRange();
+
+            if (!club->saveClubInfo(ui->clubNameLineEdit->text().trimmed(), levelMin, levelMax)) {
                 QMessageBox::warning(this, tr("Unable to create club"),
                                      tr("Unable to create \"%1\"").arg(path));
                 return;

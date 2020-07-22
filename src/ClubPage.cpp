@@ -6,7 +6,7 @@
 #include "ui_ClubPage.h"
 
 #include "ClubRepository.h"
-#include "SessionWindow.h"
+#include "SessionPage.h"
 #include "EmptySessionPage.h"
 
 #include <QDialog>
@@ -24,7 +24,7 @@ ClubPage::ClubPage(ClubRepository *repo, QWidget *parent)
     d->repo->setParent(this);
     d->ui.setupUi(this);
     setLayout(d->layout = new QStackedLayout());
-    d->layout->setStackingMode(QStackedLayout::StackAll);
+    d->layout->setStackingMode(QStackedLayout::StackOne);
 
     auto page = new EmptySessionPage(d->repo, this);
     connect(page, &EmptySessionPage::lastSessionResumed, this, &ClubPage::openLastSession);
@@ -41,8 +41,12 @@ void ClubPage::openLastSession() {
 }
 
 void ClubPage::openSession(SessionId sessionId) {
-    auto session = new SessionWindow(d->repo, sessionId, this);
-    d->layout->addWidget(session);
+    if (auto session = SessionPage::create(sessionId, d->repo, this)) {
+        d->layout->addWidget(session);
+        d->layout->setCurrentWidget(session);
+    } else {
+        QMessageBox::warning(this, tr("Error opening session"), tr("Unable to open session page"));
+    }
 }
 
 ClubPage::~ClubPage() {

@@ -2,28 +2,25 @@
 // Created by Fanchao Liu on 27/06/20.
 //
 
-#ifndef GAMEMATCHER_SESSIONWINDOW_H
-#define GAMEMATCHER_SESSIONWINDOW_H
+#ifndef GAMEMATCHER_SESSIONPAGE_H
+#define GAMEMATCHER_SESSIONPAGE_H
 
-#include <QMainWindow>
+#include <QWidget>
 
 #include "models.h"
 
 class ClubRepository;
 class SessionData;
 
-class SessionWindow : public QMainWindow {
+class SessionPage : public QWidget {
 Q_OBJECT
 public:
-    explicit SessionWindow(ClubRepository *, SessionId, QWidget *parent = nullptr);
+    static SessionPage *create(SessionId, ClubRepository *, QWidget *parent);
 
-    ~SessionWindow() override;
+    ~SessionPage() override;
 
 protected:
     void changeEvent(QEvent *event) override;
-
-public:
-    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void onSessionDataChanged();
@@ -41,7 +38,9 @@ private slots:
 private:
     struct Impl;
     Impl *d;
+
+    SessionPage(Impl*, QWidget *parent);
 };
 
 
-#endif //GAMEMATCHER_SESSIONWINDOW_H
+#endif //GAMEMATCHER_SESSIONPAGE_H

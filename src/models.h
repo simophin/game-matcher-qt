@@ -24,9 +24,6 @@ public:
 };
 
 
-static const auto levelMin = 0;
-static const auto levelMax = 10;
-
 struct Member {
 Q_GADGET
 private:

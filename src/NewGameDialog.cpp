@@ -221,12 +221,16 @@ void NewGameDialog::accept() {
             }
         }
 
+        auto levelRange = d->repo->getLevelRange();
+        auto pastAllocations = d->repo->getPastAllocations(d->session);
+
         resultWatcher->setFuture(
                 QtConcurrent::run([=] {
-                    return GameMatcher::match(d->repo->getPastAllocations(d->session),
+                    return GameMatcher::match(pastAllocations,
                                               eligiblePlayers,
                                               courtIds,
                                               session->session.numPlayersPerCourt,
+                                              levelRange.first, levelRange.second,
                                               QDateTime::currentMSecsSinceEpoch());
                 })
         );

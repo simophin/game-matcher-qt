@@ -2,8 +2,8 @@
 // Created by Fanchao Liu on 27/06/20.
 //
 #include <QMessageBox>
-#include "SessionWindow.h"
-#include "ui_SessionWindow.h"
+#include "SessionPage.h"
+#include "ui_SessionPage.h"
 
 #include "ClubRepository.h"
 #include "Adapter.h"
@@ -13,58 +13,48 @@
 #include "NewGameDialog.h"
 #include "CourtDisplay.h"
 #include "ToastEvent.h"
-#include "ToastDialog.h"
 
 #include <functional>
 #include <QTimer>
 #include <QMenu>
 
-struct SessionWindow::Impl {
+struct SessionPage::Impl {
     ClubRepository *repo;
-    ToastDialog *toastDialog;
+
     SessionData session;
-    Ui::SessionWindow ui;
+    Ui::SessionPage ui;
 
     QDateTime lastGameStarted;
     QTimer gameTimer = QTimer();
 };
 
-SessionWindow::SessionWindow(ClubRepository *repo, SessionId sessionId, QWidget *parent)
-        : QMainWindow(parent), d(new Impl{repo, new ToastDialog(this)}) {
+SessionPage::SessionPage(Impl *d, QWidget *parent)
+        : QWidget(parent), d(d) {
     d->ui.setupUi(this);
-    d->ui.playerTable->load(sessionId, repo);
+    setWindowTitle(tr("%1 game session").arg(d->repo->getClubName()));
+
+    connect(d->repo, &ClubRepository::sessionChanged, [=](auto sessionId) {
+        if (d->session.session.id == sessionId) {
+            onCurrentGameChanged();
+        }
+    });
 
     d->gameTimer.setInterval(1000);
     d->gameTimer.setSingleShot(true);
-    connect(&d->gameTimer, &QTimer::timeout, this, &SessionWindow::updateElapseTime);
+    connect(&d->gameTimer, &QTimer::timeout, this, &SessionPage::updateElapseTime);
 
-    if (auto session = repo->getSession(sessionId)) {
-        d->session = *session;
-        setWindowTitle(tr("%1 game session").arg(repo->getClubInfo().name));
-        onSessionDataChanged();
-        onCurrentGameChanged();
-
-        connect(repo, &ClubRepository::sessionChanged, [=](auto sessionId) {
-            if (d->session.session.id == sessionId) {
-                onCurrentGameChanged();
-            }
-        });
-
-        QCoreApplication::instance()->installEventFilter(this);
-    } else {
-        QMessageBox::warning(this, tr("Unable to open session"), tr("Please try again"));
-        close();
-    }
+    onSessionDataChanged();
+    onCurrentGameChanged();
 }
 
-SessionWindow::~SessionWindow() {
+SessionPage::~SessionPage() {
     delete d;
 }
 
-void SessionWindow::onSessionDataChanged() {
+void SessionPage::onSessionDataChanged() {
 }
 
-void SessionWindow::onCurrentGameChanged() {
+void SessionPage::onCurrentGameChanged() {
     if (auto courtLayout = d->ui.courtLayout) {
         auto game = d->repo->getLastGameInfo(d->session.session.id);
         if (!game) {
@@ -97,13 +87,11 @@ void SessionWindow::onCurrentGameChanged() {
             auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
             listItem->setFont(itemFont);
         }
-
-        statusBar()->showMessage(tr("Game started = %1").arg(game->id));
     }
 }
 
 
-void SessionWindow::on_checkInButton_clicked() {
+void SessionPage::on_checkInButton_clicked() {
     auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, false, d->repo, this);
     dialog->setWindowTitle(tr("Who is checking in?"));
     dialog->setAcceptButtonText(tr("Check in"));
@@ -114,7 +102,7 @@ void SessionWindow::on_checkInButton_clicked() {
     });
 }
 
-void SessionWindow::on_checkOutButton_clicked() {
+void SessionPage::on_checkOutButton_clicked() {
     auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is leaving the game?"));
     dialog->setAcceptButtonText(tr("Check out"));
@@ -130,7 +118,7 @@ void SessionWindow::on_checkOutButton_clicked() {
     });
 }
 
-void SessionWindow::on_pauseButton_clicked() {
+void SessionPage::on_pauseButton_clicked() {
     auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, false}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is pausing?"));
     dialog->setAcceptButtonText(tr("Pause playing"));
@@ -143,7 +131,7 @@ void SessionWindow::on_pauseButton_clicked() {
     });
 }
 
-void SessionWindow::on_resumeButton_clicked() {
+void SessionPage::on_resumeButton_clicked() {
     auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, true}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Who is resuming?"));
     dialog->setAcceptButtonText(tr("Resume playing"));
@@ -156,7 +144,7 @@ void SessionWindow::on_resumeButton_clicked() {
     });
 }
 
-void SessionWindow::on_updateButton_clicked() {
+void SessionPage::on_updateButton_clicked() {
     auto dialog = new MemberSelectDialog(AllMembers{}, false, true, d->repo, this);
     dialog->setWindowTitle(tr("Whom to update?"));
     dialog->show();
@@ -171,14 +159,14 @@ void SessionWindow::on_updateButton_clicked() {
 
 }
 
-void SessionWindow::changeEvent(QEvent *event) {
-    QMainWindow::changeEvent(event);
+void SessionPage::changeEvent(QEvent *event) {
+    QWidget::changeEvent(event);
     if (event->type() == QEvent::LanguageChange) {
         d->ui.retranslateUi(this);
     }
 }
 
-void SessionWindow::updateElapseTime() {
+void SessionPage::updateElapseTime() {
     QString value;
     if (d->lastGameStarted.isValid()) {
         auto now = QDateTime::currentDateTimeUtc();
@@ -204,22 +192,14 @@ void SessionWindow::updateElapseTime() {
     d->ui.timeLabel->setText(tr("Time since last game: %1").arg(value));
 }
 
-bool SessionWindow::eventFilter(QObject *watched, QEvent *event) {
-    if (auto toast = dynamic_cast<ToastEvent*>(event)) {
-        d->toastDialog->showMessage(toast->msg(), toast->delayMills());
-        return true;
-    }
 
-    return QObject::eventFilter(watched, event);
-}
-
-void SessionWindow::on_wardenOptionButton_clicked() {
+void SessionPage::on_wardenOptionButton_clicked() {
     auto wardenMenu = new QMenu(tr("Warden options"), this);
     auto action = wardenMenu->addAction(tr("Start a new game"));
     connect(action, &QAction::triggered, [=] {
         auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
         dialog->show();
-        connect(dialog, &NewGameDialog::newGameMade, this, &SessionWindow::onCurrentGameChanged);
+        connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });
 
     if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
@@ -230,4 +210,11 @@ void SessionWindow::on_wardenOptionButton_clicked() {
     }
     wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
             QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
+}
+
+SessionPage *SessionPage::create(SessionId id, ClubRepository *repo, QWidget *parent) {
+    if (auto session = repo->getSession(id))
+        return new SessionPage(new Impl{repo, *session}, parent);
+
+    return nullptr;
 }

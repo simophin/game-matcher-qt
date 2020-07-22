@@ -21,13 +21,6 @@ struct SessionData {
     QVector<Court> courts;
 };
 
-
-struct ClubInfo {
-Q_GADGET
-public:
-    DECLARE_PROPERTY(QString, name,);
-};
-
 struct CourtPlayers {
 Q_GADGET
 public:
@@ -65,9 +58,12 @@ public:
 
     ~ClubRepository() override;
 
-    ClubInfo getClubInfo() const;
+    QString getClubName() const;
+    bool saveClubName(const QString&);
 
-    bool saveClubInfo(const ClubInfo &);
+    std::pair<unsigned int, unsigned int> getLevelRange() const;
+
+    bool saveClubInfo(const QString &name, unsigned int levelMin, unsigned int levelMax);
 
     std::optional<GameInfo> getLastGameInfo(SessionId) const;
 

@@ -22,7 +22,7 @@ struct BestCombination {
 struct BestCourtFinder {
     int const numRequired;
     GameStats const &stats;
-    int const minLevel, maxLevel;
+    unsigned int const minLevel, maxLevel;
     int const numMaxOptional;
 
     int numEstimated = 0;
@@ -81,7 +81,7 @@ BruteForceCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourt
     std::vector<CourtAllocation> result;
 
     for (int i = 0; i < numCourtAvailable && !players.empty(); i++) {
-        BestCourtFinder finder = {numPlayersPerCourt_, stats_, levelMin, levelMax, numOptional};
+        BestCourtFinder finder = {numPlayersPerCourt_, stats_, minLevel_, maxLevel_, numOptional};
         finder.find(players.begin(), players.end());
         if (!finder.best) {
             qWarning() << "Unable to find best court";

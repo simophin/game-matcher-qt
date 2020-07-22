@@ -55,23 +55,24 @@ static void testMatcher() {
         auto memberById = associateBy<QHash<MemberId, Member>>(members, [](auto &m) { return m.id; });
 
         std::vector<GameAllocation> allocations;
+        auto [levelMin, levelMax] = repo->getLevelRange();
 
-        auto result = GameMatcher::match(allocations, members, courts, 4, 0);
+        auto result = GameMatcher::match(allocations, members, courts, 4, levelMin, levelMax, 0);
         for (auto &game : result) game.gameId = 0;
         printAllocations(QStringLiteral("Game 1"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, 4, 1);
+        result = GameMatcher::match(allocations, members, courts, 4, levelMin, levelMax, 1);
         for (auto &game : result) game.gameId = 1;
         printAllocations(QStringLiteral("Game 2"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, 4, 2);
+        result = GameMatcher::match(allocations, members, courts, 4, levelMin, levelMax, 2);
         for (auto &game : result) game.gameId = 2;
         printAllocations(QStringLiteral("Game 3"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, 4, 3);
+        result = GameMatcher::match(allocations, members, courts, 4, levelMin, levelMax, 3);
         for (auto &game : result) game.gameId = 3;
         printAllocations(QStringLiteral("Game 4"), result, memberById);
     }
@@ -84,7 +85,6 @@ int main(int argc, char **argv) {
     qRegisterMetaType<SessionId>("SessionId");
     qRegisterMetaType<MemberId>("MemberId");
     qRegisterMetaType<SettingKey>("SettingKey");
-    qRegisterMetaType<ClubInfo>();
     qRegisterMetaType<CourtPlayers>();
 
     QApplication app(argc, argv);

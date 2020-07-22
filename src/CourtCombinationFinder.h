@@ -13,8 +13,8 @@ struct PlayerInfo;
 
 class CourtCombinationFinder {
 public:
-    CourtCombinationFinder(const GameStats &stats, const int numPlayersPerCourt)
-            : stats_(stats), numPlayersPerCourt_(numPlayersPerCourt) {}
+    CourtCombinationFinder(const GameStats &stats, int numPlayersPerCourt, unsigned int minLevel, unsigned int maxLevel)
+            : stats_(stats), numPlayersPerCourt_(numPlayersPerCourt), minLevel_(minLevel), maxLevel_(maxLevel) {}
 
     std::vector<GameAllocation> find(nonstd::span<const CourtId> courts, nonstd::span<const PlayerInfo> players);
 
@@ -27,6 +27,7 @@ protected:
 
     GameStats const &stats_;
     int const numPlayersPerCourt_;
+    unsigned int const minLevel_, maxLevel_;
 };
 
 
