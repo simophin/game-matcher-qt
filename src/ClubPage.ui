@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>Frame</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
-   <item>
-    <layout class="QVBoxLayout" name="layout"/>
-   </item>
-  </layout>
  </widget>
  <resources/>
  <connections/>

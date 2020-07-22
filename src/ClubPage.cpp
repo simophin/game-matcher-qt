@@ -11,9 +11,11 @@
 
 #include <QDialog>
 #include <QMessageBox>
+#include <QStackedLayout>
 
 struct ClubPage::Impl {
     ClubRepository * const repo;
+    QStackedLayout *layout;
     Ui::ClubPage ui;
 };
 
@@ -21,11 +23,14 @@ ClubPage::ClubPage(ClubRepository *repo, QWidget *parent)
         : QFrame(parent), d(new Impl{repo}) {
     d->repo->setParent(this);
     d->ui.setupUi(this);
+    setLayout(d->layout = new QStackedLayout());
+    d->layout->setStackingMode(QStackedLayout::StackAll);
+
     auto page = new EmptySessionPage(d->repo, this);
     connect(page, &EmptySessionPage::lastSessionResumed, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::newSessionCreated, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::clubClosed, this, &ClubPage::clubClosed);
-    d->ui.layout->addWidget(page);
+    d->layout->addWidget(page);
 }
 
 
@@ -37,7 +42,7 @@ void ClubPage::openLastSession() {
 
 void ClubPage::openSession(SessionId sessionId) {
     auto session = new SessionWindow(d->repo, sessionId, this);
-    session->showMaximized();
+    d->layout->addWidget(session);
 }
 
 ClubPage::~ClubPage() {
