@@ -1,68 +1,59 @@
 //
-// Created by Fanchao Liu on 26/06/20.
+// Created by Fanchao Liu on 23/07/20.
 //
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
-
-#include "WelcomePage.h"
 #include "ClubPage.h"
-#include "ToastDialog.h"
-#include "ToastEvent.h"
-#include "ClubWindow.h"
+#include "WelcomePage.h"
 
+#include <QEvent>
 #include <QSettings>
 #include <QFile>
 
-static auto SETTINGS_KEY_LAST_OPEN_CLUB_FILE = QStringLiteral("last_open_file");
+static const auto skLastOpened = QStringLiteral("last_opened");
 
 struct MainWindow::Impl {
-    ToastDialog *toastDialog;
     Ui::MainWindow ui;
 };
 
 MainWindow::MainWindow(QWidget *parent)
-        : QMainWindow(parent), d(new Impl{new ToastDialog(this)}) {
+        : QMainWindow(parent), d(new Impl) {
     d->ui.setupUi(this);
 
-    reload();
-    QCoreApplication::instance()->installEventFilter(this);
-}
+    auto lastOpened = QSettings().value(skLastOpened).toString();
+    if (!lastOpened.isNull() && QFile(lastOpened).exists() && openClub(lastOpened)) return;
 
-void MainWindow::onClubOpened(QString path) {
-    if (auto clubWindow = ClubWindow::create(path, this)) {
-        QSettings().setValue(SETTINGS_KEY_LAST_OPEN_CLUB_FILE, path);
-        clubWindow->showMaximized();
-        hide();
-        connect(clubWindow, &QMainWindow::destroyed, this, &QMainWindow::show);
-    }
-}
-
-void MainWindow::reload()
-{
-    auto lastOpen = QSettings().value(SETTINGS_KEY_LAST_OPEN_CLUB_FILE);
-    if (lastOpen.isNull() || !QFile(lastOpen.toString()).exists()) {
-        auto page = new WelcomePage(this);
-        connect(page, &WelcomePage::clubOpened, this, &MainWindow::onClubOpened);
-        setCentralWidget(page);
-    } else {
-        connect(clubPage, &ClubPage::clubClosed, [=] {
-            QSettings().remove(SETTINGS_KEY_LAST_OPEN_CLUB_FILE);
-            reload();
-        });
-        setCentralWidget(clubPage);
-    }
-}
-
-bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
-    if (auto toast = dynamic_cast<ToastEvent*>(event)) {
-        d->toastDialog->showMessage(toast->msg(), toast->delayMills());
-        return true;
-    }
-
-    return QObject::eventFilter(watched, event);
+    openWelcomePage();
 }
 
 MainWindow::~MainWindow() {
     delete d;
+}
+
+bool MainWindow::openClub(const QString &dbPath) {
+    if (auto clubPage = ClubPage::create(dbPath, nullptr)) {
+        setCentralWidget(clubPage);
+        connect(clubPage, &ClubPage::clubClosed, this, &MainWindow::openWelcomePage);
+        QSettings().setValue(skLastOpened, dbPath);
+        setWindowTitle(clubPage->windowTitle());
+        return true;
+    }
+
+    return false;
+}
+
+void MainWindow::openWelcomePage() {
+    auto page = new WelcomePage();
+    setCentralWidget(page);
+    connect(page, &WelcomePage::clubOpened, this, &MainWindow::openClub);
+    setWindowTitle(page->windowTitle());
+    QSettings().remove(skLastOpened);
+}
+
+void MainWindow::changeEvent(QEvent *evt) {
+    QMainWindow::changeEvent(evt);
+    if (evt->type() == QEvent::LanguageChange) {
+        d->ui.retranslateUi(this);
+    }
 }

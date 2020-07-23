@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/sound">
+        <file>alarm_clock.wav</file>
+    </qresource>
+</RCC>

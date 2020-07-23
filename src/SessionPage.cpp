@@ -17,6 +17,10 @@
 #include <functional>
 #include <QTimer>
 #include <QMenu>
+#include <QSoundEffect>
+#include <QApplication>
+
+static const auto alarmDurationSeconds = 15;
 
 struct SessionPage::Impl {
     ClubRepository *repo;
@@ -24,14 +28,18 @@ struct SessionPage::Impl {
     SessionData session;
     Ui::SessionPage ui;
 
-    QDateTime lastGameStarted;
+    std::optional<GameInfo> lastGame;
     QTimer gameTimer = QTimer();
+    QSoundEffect sound = QSoundEffect();
 };
 
 SessionPage::SessionPage(Impl *d, QWidget *parent)
         : QWidget(parent), d(d) {
     d->ui.setupUi(this);
     setWindowTitle(tr("%1 game session").arg(d->repo->getClubName()));
+
+    d->sound.setSource(QUrl::fromLocalFile(QStringLiteral(":/sound/alarm_clock.wav")));
+    d->sound.setLoopCount(QSoundEffect::Infinite);
 
     connect(d->repo, &ClubRepository::sessionChanged, [=](auto sessionId) {
         if (d->session.session.id == sessionId) {
@@ -61,12 +69,8 @@ void SessionPage::onCurrentGameChanged() {
             return;
         }
 
-        auto startTime = QDateTime::fromSecsSinceEpoch(game->startTime);
-
-        if (d->lastGameStarted != startTime) {
-            d->lastGameStarted = startTime;
-            updateElapseTime();
-        }
+        d->lastGame = game;
+        updateElapseTime();
 
         auto createWidget = [this]() {
             return new CourtDisplay(this);
@@ -168,9 +172,10 @@ void SessionPage::changeEvent(QEvent *event) {
 
 void SessionPage::updateElapseTime() {
     QString value;
-    if (d->lastGameStarted.isValid()) {
+    if (d->lastGame) {
         auto now = QDateTime::currentDateTimeUtc();
-        auto totalSeconds = std::abs(d->lastGameStarted.secsTo(now));
+        auto startTime = d->lastGame->startDateTime();
+        auto totalSeconds = std::abs(startTime.secsTo(now));
         auto hours = totalSeconds / 3600;
         auto minutes = (totalSeconds - hours * 3600) / 60;
         auto seconds = totalSeconds % 60;
@@ -182,8 +187,21 @@ void SessionPage::updateElapseTime() {
             snprintf(buf.data(), buf.size(), "%lld:%02lld:%02lld", hours, minutes, seconds);
         }
 
-        value = QLatin1String(buf.data());
         d->gameTimer.start();
+        auto isTimeout = totalSeconds > d->lastGame->durationSeconds;
+
+        value = QLatin1String(buf.data());
+
+        if (isTimeout && (totalSeconds % 2 == 0)) {
+            value = QStringLiteral("<font color=\"red\">%1</font>").arg(value);
+        }
+
+        if (isTimeout && totalSeconds < d->lastGame->durationSeconds + alarmDurationSeconds) {
+            if (!d->sound.isPlaying()) d->sound.play();
+        } else {
+            d->sound.stop();
+        }
+
     } else {
         value = tr("n/a");
         d->gameTimer.stop();
@@ -202,12 +220,13 @@ void SessionPage::on_wardenOptionButton_clicked() {
         connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });
 
-    if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
-        action = wardenMenu->addAction(tr("Withdraw last game"));
-        connect(action, &QAction::triggered, [] {
-            //TODO:
-        });
-    }
+//    if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
+//        action = wardenMenu->addAction(tr("Withdraw last game"));
+//        connect(action, &QAction::triggered, [] {
+//            //TODO:
+//        });
+//    }
+
     wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
             QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
 }
@@ -217,4 +236,8 @@ SessionPage *SessionPage::create(SessionId id, ClubRepository *repo, QWidget *pa
         return new SessionPage(new Impl{repo, *session}, parent);
 
     return nullptr;
+}
+
+SessionId SessionPage::sessionId() const {
+    return d->session.session.id;
 }

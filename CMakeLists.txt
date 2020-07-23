@@ -14,8 +14,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 
-find_package(Qt5 COMPONENTS Core Sql Widgets REQUIRED)
-
+find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia REQUIRED)
 
 add_executable(GameMatcher
         src/main.cpp
@@ -23,6 +22,7 @@ add_executable(GameMatcher
         res/images/images.qrc
         res/icons/icons.qrc
         res/fonts/fonts.qrc
+        res/sound/sound.qrc
         src/ClubRepository.cpp
         src/ClubRepository.h
         src/models.h
@@ -31,9 +31,6 @@ add_executable(GameMatcher
         src/GameStats.h
         src/DbUtils.h
         src/DbUtils.cpp
-        src/MainWindow.h
-        src/MainWindow.cpp
-        src/MainWindow.ui
         src/NewClubDialog.h
         src/NewClubDialog.cpp
         src/NewClubDialog.ui
@@ -96,12 +93,11 @@ add_executable(GameMatcher
         src/SortingCourtCombinationFinder.h
         src/BruteForceCombinationFinder.cpp
         src/BruteForceCombinationFinder.h
-        src/ClubWindow.cpp
-        src/ClubWindow.h
-        )
+        src/MainWindow.cpp
+        src/MainWindow.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Boost::headers)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Boost::headers)

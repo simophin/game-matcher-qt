@@ -2,13 +2,13 @@
 #include <QFontDatabase>
 #include <QStyleFactory>
 
-#include "MainWindow.h"
 #include "models.h"
 #include "ClubRepository.h"
 
 #include "GameMatcher.h"
 #include "CollectionUtils.h"
 #include "span.h"
+#include "MainWindow.h"
 
 
 static void printAllocations(const QString &prefix, nonstd::span<GameAllocation> allocations, const QHash<MemberId, Member> &members) {
@@ -99,11 +99,8 @@ int main(int argc, char **argv) {
     QCoreApplication::setOrganizationDomain(QStringLiteral("fanchao.nz"));
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
-
-//    testMatcher();
-
-    MainWindow main(nullptr);
-    main.show();
+    MainWindow mainWindow;
+    mainWindow.showMaximized();
 
     return app.exec();
 }

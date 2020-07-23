@@ -16,6 +16,7 @@ class SessionPage : public QWidget {
 Q_OBJECT
 public:
     static SessionPage *create(SessionId, ClubRepository *, QWidget *parent);
+    SessionId sessionId() const;
 
     ~SessionPage() override;
 

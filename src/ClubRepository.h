@@ -49,6 +49,10 @@ public:
     DECLARE_PROPERTY(qlonglong, durationSeconds,);
     DECLARE_PROPERTY(QVector<CourtPlayers>, courts,);
     DECLARE_PROPERTY(QVector<Member>, waiting,);
+
+    QDateTime startDateTime() const {
+        return QDateTime::fromSecsSinceEpoch(startTime);
+    }
 };
 
 class ClubRepository : public QObject {

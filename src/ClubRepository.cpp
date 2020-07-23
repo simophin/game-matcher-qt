@@ -302,7 +302,7 @@ bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
 std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) const {
     auto gameResult = DbUtils::queryFirst<GameInfo>(
             d->db,
-            QStringLiteral("select id, cast(strftime('%s',startTime) as integer) as startTime from games "
+            QStringLiteral("select id, cast(strftime('%s',startTime) as integer) as startTime, durationSeconds from games "
                            "where sessionId = ? "
                            "order by startTime desc limit 1"),
             {sessionId});

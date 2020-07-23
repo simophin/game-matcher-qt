@@ -31,6 +31,8 @@ ClubPage::ClubPage(ClubRepository *repo, QWidget *parent)
     connect(page, &EmptySessionPage::newSessionCreated, this, &ClubPage::openLastSession);
     connect(page, &EmptySessionPage::clubClosed, this, &ClubPage::clubClosed);
     d->layout->addWidget(page);
+
+    setWindowTitle(repo->getClubName());
 }
 
 
