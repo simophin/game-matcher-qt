@@ -53,6 +53,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
 
     onSessionDataChanged();
     onCurrentGameChanged();
+
 }
 
 SessionPage::~SessionPage() {
@@ -219,6 +220,10 @@ void SessionPage::on_wardenOptionButton_clicked() {
         dialog->show();
         connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });
+
+    auto adminMenu = wardenMenu->addMenu(tr("Admin"));
+    connect(adminMenu->addAction(tr("Close current session")), &QAction::triggered,
+            this, &SessionPage::closeSessionRequested);
 
 //    if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
 //        action = wardenMenu->addAction(tr("Withdraw last game"));

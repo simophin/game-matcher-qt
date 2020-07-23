@@ -20,6 +20,9 @@ public:
 
     ~SessionPage() override;
 
+    signals:
+    void closeSessionRequested();
+
 protected:
     void changeEvent(QEvent *event) override;
 

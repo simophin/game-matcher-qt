@@ -46,6 +46,9 @@ void ClubPage::openSession(SessionId sessionId) {
     if (auto session = SessionPage::create(sessionId, d->repo, this)) {
         d->layout->addWidget(session);
         d->layout->setCurrentWidget(session);
+        connect(session, &SessionPage::closeSessionRequested, [=] {
+            d->layout->removeWidget(session);
+        });
     } else {
         QMessageBox::warning(this, tr("Error opening session"), tr("Unable to open session page"));
     }

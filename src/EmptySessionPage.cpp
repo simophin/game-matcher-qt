@@ -78,7 +78,7 @@ void EmptySessionPage::on_createFakeButton_clicked() {
         const auto components = name.split(QStringLiteral(" "));
         d->repo->createMember(components[0], components[1],
                               QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male,
-                              QRandomGenerator::global()->bounded(levelMin, levelMax));
+                              QRandomGenerator::global()->bounded(levelMin, levelMax + 1));
     }
 }
 
