@@ -12,7 +12,7 @@
 #include "EditMemberDialog.h"
 #include "NewGameDialog.h"
 #include "CourtDisplay.h"
-#include "ToastEvent.h"
+#include "ToastDialog.h"
 
 #include <functional>
 #include <QTimer>
@@ -117,7 +117,7 @@ void SessionPage::on_checkOutButton_clicked() {
             if (QMessageBox::question(this, tr("Confirm checking out"),
                                       tr("Are you sure to check out %1").arg(member->fullName())) == QMessageBox::Yes) {
                 d->repo->checkOut(d->session.session.id, id);
-                ToastEvent::show(tr("%1 checked out").arg(member->fullName()));
+                ToastDialog::show(tr("%1 checked out").arg(member->fullName()));
             }
         }
     });
@@ -131,7 +131,7 @@ void SessionPage::on_pauseButton_clicked() {
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
         if (auto member = d->repo->getMember(id)) {
             d->repo->setPaused(d->session.session.id, id, true);
-            ToastEvent::show(tr("%1 paused playing").arg(member->fullName()));
+            ToastDialog::show(tr("%1 paused playing").arg(member->fullName()));
         }
     });
 }
@@ -144,7 +144,7 @@ void SessionPage::on_resumeButton_clicked() {
     connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
         if (auto member = d->repo->getMember(id)) {
             d->repo->setPaused(d->session.session.id, id, false);
-            ToastEvent::show(tr("%1 resumed playing").arg(member->fullName()));
+            ToastDialog::show(tr("%1 resumed playing").arg(member->fullName()));
         }
     });
 }
@@ -158,7 +158,7 @@ void SessionPage::on_updateButton_clicked() {
         editDialog->setMember(id);
         editDialog->show();
         connect(editDialog, &EditMemberDialog::memberUpdated, [=] {
-            ToastEvent::show(tr("Information updated"));
+            ToastDialog::show(tr("Information updated"));
         });
     });
 

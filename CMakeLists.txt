@@ -78,8 +78,6 @@ add_executable(GameMatcher
         src/PlayerTablePage.ui
         src/CollectionUtils.h
         src/NameFormatUtils.h
-        src/ToastEvent.cpp
-        src/ToastEvent.h
         src/ToastDialog.cpp
         src/ToastDialog.h
         src/CombinationsFinder.h

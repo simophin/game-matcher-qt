@@ -59,3 +59,9 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
     activateWindow();
     emit this->showRequested();
 }
+
+void ToastDialog::show(const QString &msg, int delayMills) {
+    static ToastDialog dialog;
+    dialog.open();
+    dialog.showMessage(msg, delayMills);
+}

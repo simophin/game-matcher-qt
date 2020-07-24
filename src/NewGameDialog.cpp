@@ -8,7 +8,7 @@
 #include "ClubRepository.h"
 #include "GameMatcher.h"
 #include "NameFormatUtils.h"
-#include "ToastEvent.h"
+#include "ToastDialog.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -156,13 +156,13 @@ void NewGameDialog::on_playerList_itemDoubleClicked(QListWidgetItem *item) {
     if (isPausing) {
         d->temporarilyPaused.insert(memberId);
         if (auto member = d->repo->getMember(memberId)) {
-            ToastEvent::show(tr("%1 paused for 1 game").arg(member->fullName()), 1000);
+            ToastDialog::show(tr("%1 paused for 1 game").arg(member->fullName()), 1000);
         }
     } else {
         d->temporarilyPaused.remove(memberId);
         d->repo->setPaused(d->session, memberId, false);
         if (auto member = d->repo->getMember(memberId)) {
-            ToastEvent::show(tr("%1 resumes playing").arg(member->fullName()), 1000);
+            ToastDialog::show(tr("%1 resumes playing").arg(member->fullName()), 1000);
         }
     }
     

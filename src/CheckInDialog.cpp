@@ -5,13 +5,13 @@
 #include "ui_CheckInDialog.h"
 
 #include "ClubRepository.h"
+#include "ToastDialog.h"
 
 #include <QMessageBox>
 #include <QLocale>
 #include <QPushButton>
 #include <set>
 
-#include "ToastEvent.h"
 
 struct CheckInDialog::Impl {
     MemberId id;
@@ -66,7 +66,7 @@ void CheckInDialog::accept() {
     }
 
     if (auto member = d->repo->getMember(d->id)) {
-        ToastEvent::show(tr("%1 checked in successfully").arg(member->fullName()));
+        ToastDialog::show(tr("%1 checked in successfully").arg(member->fullName()));
     }
 
     emit this->memberCheckedIn(d->id);

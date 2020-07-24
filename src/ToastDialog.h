@@ -19,6 +19,8 @@ public:
 
     void changeEvent(QEvent *) override;
 
+    static void show(const QString&, int delayMills = 2000);
+
     signals:
     void showRequested();
 
