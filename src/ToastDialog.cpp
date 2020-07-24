@@ -11,11 +11,15 @@
 #include <QStateMachine>
 #include <QSignalTransition>
 #include <QPropertyAnimation>
+#include <QMainWindow>
+#include <QPointer>
 
 struct ToastDialog::Impl {
     Ui::ToastDialog ui;
     QTimer timer;
 };
+
+static QPointer<QMainWindow> toastMainWindow;
 
 ToastDialog::ToastDialog(QWidget *parent)
         : QDialog(parent, Qt::FramelessWindowHint | Qt::CustomizeWindowHint), d(new Impl) {
@@ -61,7 +65,14 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
 }
 
 void ToastDialog::show(const QString &msg, int delayMills) {
-    static ToastDialog dialog;
-    dialog.open();
-    dialog.showMessage(msg, delayMills);
+    static QPointer<ToastDialog> dialog;
+    if (!dialog) {
+        dialog = new ToastDialog(toastMainWindow);
+    }
+    dialog->open();
+    dialog->showMessage(msg, delayMills);
+}
+
+void ToastDialog::registerMainWindow(QMainWindow *window) {
+    toastMainWindow = window;
 }

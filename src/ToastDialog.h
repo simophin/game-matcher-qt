@@ -8,6 +8,8 @@
 
 #include <QDialog>
 
+class QMainWindow;
+
 class ToastDialog : public QDialog {
 Q_OBJECT
 public:
@@ -19,7 +21,8 @@ public:
 
     void changeEvent(QEvent *) override;
 
-    static void show(const QString&, int delayMills = 2000);
+    static void show(const QString&, int delayMills = 20000);
+    static void registerMainWindow(QMainWindow *);
 
     signals:
     void showRequested();

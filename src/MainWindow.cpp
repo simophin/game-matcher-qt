@@ -6,6 +6,7 @@
 #include "ui_MainWindow.h"
 #include "ClubPage.h"
 #include "WelcomePage.h"
+#include "ToastDialog.h"
 
 #include <QEvent>
 #include <QSettings>
@@ -20,6 +21,7 @@ struct MainWindow::Impl {
 MainWindow::MainWindow(QWidget *parent)
         : QMainWindow(parent), d(new Impl) {
     d->ui.setupUi(this);
+    ToastDialog::registerMainWindow(this);
 
     auto lastOpened = QSettings().value(skLastOpened).toString();
     if (!lastOpened.isNull() && QFile(lastOpened).exists() && openClub(lastOpened)) return;

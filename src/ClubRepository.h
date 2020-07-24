@@ -120,7 +120,7 @@ public:
 
     QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
 
-    std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, uint64_t durationSeconds);
+    std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, qlonglong durationSeconds);
 
 signals:
 

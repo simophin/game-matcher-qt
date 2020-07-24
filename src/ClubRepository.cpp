@@ -167,7 +167,7 @@ QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::op
 
 std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
                                                  nonstd::span<const GameAllocation> allocations,
-                                                 uint64_t durationSeconds) {
+                                                 qlonglong durationSeconds) {
     SQLTransaction tx(d->db);
 
     auto gameId = DbUtils::insert<GameId>(
