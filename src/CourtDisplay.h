@@ -8,6 +8,8 @@
 
 #include <QWidget>
 
+#include "models.h"
+
 
 class CourtPlayers;
 
@@ -19,6 +21,9 @@ public:
     ~CourtDisplay() override;
 
     void setCourt(const CourtPlayers&);
+
+    signals:
+    void memberRightClicked(MemberId);
 
 private:
     struct Impl;

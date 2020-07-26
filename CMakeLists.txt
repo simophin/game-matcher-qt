@@ -92,7 +92,7 @@ add_executable(GameMatcher
         src/BruteForceCombinationFinder.cpp
         src/BruteForceCombinationFinder.h
         src/MainWindow.cpp
-        src/MainWindow.h)
+        src/MainWindow.h src/MemberPainter.cpp src/MemberPainter.h src/MemberMenu.cpp src/MemberMenu.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

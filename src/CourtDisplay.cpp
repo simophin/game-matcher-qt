@@ -7,7 +7,7 @@
 #include "Adapter.h"
 
 #include "ClubRepository.h"
-
+#include "MemberPainter.h"
 
 struct CourtDisplay::Impl {
     Ui::CourtDisplay ui;
@@ -33,5 +33,11 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                     return label; },
                 [](QLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
+                    auto palette = label->palette();
+                    auto color = MemberPainter::colorForMember(player);
+                    palette.setColor(QPalette::Text, color);
+                    palette.setColor(QPalette::ButtonText, color);
+                    palette.setColor(QPalette::WindowText, color);
+                    label->setPalette(palette);
                 });
 }
