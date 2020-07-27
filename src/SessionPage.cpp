@@ -11,6 +11,7 @@
 #include "CheckInDialog.h"
 #include "NewGameDialog.h"
 #include "CourtDisplay.h"
+#include "MemberPainter.h"
 #include "MemberMenu.h"
 
 #include <functional>
@@ -109,8 +110,13 @@ void SessionPage::onCurrentGameChanged() {
 
         for (const auto &item : game->waiting) {
             auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
-            listItem->setFont(itemFont);
+            listItem->setForeground(MemberPainter::colorForMember(item));
             listItem->setData(Qt::UserRole, QVariant::fromValue(item));
+            bool isPaused = item.status == Member::CheckedInPaused;
+            listItem->setFont(itemFont);
+            if (isPaused) {
+                listItem->setText(tr("%1 (paused)").arg(listItem->text()));
+            }
         }
     }
 }

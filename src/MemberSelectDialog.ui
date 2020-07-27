@@ -29,7 +29,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>New member register here -&gt;</string>
+         <string>New member?</string>
         </property>
        </widget>
       </item>
@@ -49,7 +49,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Select from the list below:</string>
+      <string>Or, select from the list below:</string>
      </property>
     </widget>
    </item>

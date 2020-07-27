@@ -10,6 +10,7 @@
 #include "NameFormatUtils.h"
 #include "ToastDialog.h"
 #include "MemberMenu.h"
+#include "MemberPainter.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -103,6 +104,8 @@ void NewGameDialog::refresh() {
         widgetItem->setFont(paused ? pausedFont : font);
         if (paused) {
             widgetItem->setForeground(pausedForeground);
+        } else {
+            widgetItem->setForeground(MemberPainter::colorForMember(p));
         }
     }
 

@@ -51,7 +51,7 @@ struct ClubRepository::Impl {
 };
 
 ClubRepository::ClubRepository(QObject *parent, const QSqlDatabase &db)
-    : QObject(parent), d(new Impl{db}) {}
+        : QObject(parent), d(new Impl{db}) {}
 
 ClubRepository::~ClubRepository() {
     delete d;
@@ -225,11 +225,16 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
     if (std::get_if<AllMembers>(&filter)) {
         sql += QStringLiteral("select * from members M where 1");
     } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
-        auto status = (checkedIn->paused && *(checkedIn->paused)) ? Member::CheckedInPaused : Member::CheckedIn;
-        sql += QStringLiteral("select M.*, %1 as status, P.paid as paid from members M "
+        sql += QStringLiteral("select M.*, P.paid as paid, "
+                              " (case "
+                              "     when P.paused then %1 "
+                              "     else %2 "
+                              " end) as status "
+                              "from members M "
                               "inner join players P on P.memberId = M.id "
                               "where P.checkOutTime is null "
-                              " and P.sessionId = ? ").arg(status);
+                              " and P.sessionId = ? ").arg(QString::number(Member::CheckedInPaused),
+                                                           QString::number(Member::CheckedIn));
         args.push_back(checkedIn->sessionId);
 
         if (checkedIn->paused) {
@@ -301,9 +306,10 @@ bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
 std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) const {
     auto gameResult = DbUtils::queryFirst<GameInfo>(
             d->db,
-            QStringLiteral("select id, cast(strftime('%s',startTime) as integer) as startTime, durationSeconds from games "
-                           "where sessionId = ? "
-                           "order by startTime desc limit 1"),
+            QStringLiteral(
+                    "select id, cast(strftime('%s',startTime) as integer) as startTime, durationSeconds from games "
+                    "where sessionId = ? "
+                    "order by startTime desc limit 1"),
             {sessionId});
 
     if (!gameResult) return std::nullopt;
@@ -420,9 +426,9 @@ bool ClubRepository::saveMember(const Member &m) {
 }
 
 bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paused) {
-    if (auto rc = DbUtils::update(d->db,
-                                  QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
-                                  {paused, sessionId, memberId}).orDefault(0) > 0) {
+    if (DbUtils::update(d->db,
+                        QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
+                        {paused, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);
         return true;
     }
