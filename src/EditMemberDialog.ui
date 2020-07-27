@@ -59,14 +59,14 @@
      <item row="3" column="1">
       <widget class="QComboBox" name="genderComboBox">
        <property name="placeholderText">
-        <string>Select gender</string>
+        <string/>
        </property>
       </widget>
      </item>
      <item row="2" column="1">
       <widget class="QComboBox" name="levelComboBox">
        <property name="placeholderText">
-        <string>Select level</string>
+        <string/>
        </property>
       </widget>
      </item>
