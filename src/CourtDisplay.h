@@ -23,7 +23,7 @@ public:
     void setCourt(const CourtPlayers&);
 
     signals:
-    void memberRightClicked(MemberId);
+    void memberRightClicked(Member, QPoint);
 
 private:
     struct Impl;

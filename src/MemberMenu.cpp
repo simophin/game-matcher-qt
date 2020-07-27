@@ -7,28 +7,53 @@
 #include "ClubRepository.h"
 
 #include "CheckInDialog.h"
+#include "ToastDialog.h"
+#include "EditMemberDialog.h"
 
 #include <QPoint>
 #include <QMenu>
+#include <QMessageBox>
 
-static void showCheckOutConfirmation(ClubRepository *repo, SessionId sessionId, const Member &m) {
 
+static void checkout(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    if (QMessageBox::question(parent, QObject::tr("Checking out"),
+            QObject::tr("Check out <i>%1</i>?").arg(m.fullName())) == QMessageBox::No) {
+        return;
+    }
+
+    if (repo->checkOut(sessionId, m.id)) {
+        ToastDialog::show(QObject::tr("%1 left the game").arg(m.fullName()));
+    }
 }
 
-static void showPausePlaying(ClubRepository *repo, SessionId sessionId, const Member &m) {
-
+static void pausePlaying(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    if (repo->setPaused(sessionId, m.id, true)) {
+        ToastDialog::show(QObject::tr("%1 paused until further action").arg(m.fullName()));
+    }
 }
 
-static void showResumePlaying(ClubRepository *repo, SessionId sessionId, const Member &m) {
-
+static void resumePlaying(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    if (repo->setPaused(sessionId, m.id, false)) {
+        ToastDialog::show(QObject::tr("%1 resumed playing").arg(m.fullName()));
+    }
 }
 
-static void markPaid(ClubRepository *repo, SessionId sessionId, const Member &m) {
-
+static void markPaid(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    if (repo->setPaid(sessionId, m.id, true)) {
+        ToastDialog::show(QObject::tr("%1 marked as paid").arg(m.fullName()));
+    }
 }
 
-static void markUnpaid(ClubRepository *repo, SessionId sessionId, const Member &m) {
+static void markUnpaid(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    if (repo->setPaid(sessionId, m.id, false)) {
+        ToastDialog::show(QObject::tr("%1 marked as unpaid").arg(m.fullName()));
+    }
+}
 
+static void editUser(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+    auto dialog = new EditMemberDialog(repo, parent);
+    dialog->setMember(m.id);
+    dialog->show();
 }
 
 void MemberMenu::showAt(QWidget *parent,
@@ -45,7 +70,7 @@ void MemberMenu::showAt(QWidget *parent,
                     menu->addAction(QObject::tr("Check in")),
                     &QAction::triggered,
                     [=] {
-                        (new CheckInDialog(m.id, sessionId, repo))->show();
+                        (new CheckInDialog(m.id, sessionId, repo, parent))->show();
                     });
             break;
 
@@ -55,7 +80,7 @@ void MemberMenu::showAt(QWidget *parent,
                     menu->addAction(QObject::tr("Check out")),
                     &QAction::triggered,
                     [=] {
-                        showCheckOutConfirmation(repo, sessionId, m);
+                        checkout(parent, repo, sessionId, m);
                     });
     }
 
@@ -64,32 +89,41 @@ void MemberMenu::showAt(QWidget *parent,
                 menu->addAction(QObject::tr("Pause playing")),
                 &QAction::triggered,
                 [=] {
-                    showPausePlaying(repo, sessionId, m);
+                    pausePlaying(parent, repo, sessionId, m);
                 });
     } else if (status == Member::CheckedInPaused) {
         QObject::connect(
                 menu->addAction(QObject::tr("Resume playing")),
                 &QAction::triggered,
                 [=] {
-                    showResumePlaying(repo, sessionId, m);
+                    resumePlaying(parent, repo, sessionId, m);
                 });
     }
 
     if (m.paid.isValid()) {
         if (m.paid.toBool()) {
-            QObject::connect(menu->addAction(QObject::tr("Mark as unpaid")),
-                             &QAction::triggered,
-                             [=] {
-                                 markUnpaid(repo, sessionId, m);
-                             });
+            QObject::connect(
+                    menu->addAction(QObject::tr("Mark as unpaid")),
+                    &QAction::triggered,
+                    [=] {
+                        markUnpaid(parent, repo, sessionId, m);
+                    });
         } else {
-            QObject::connect(menu->addAction(QObject::tr("Mark as paid")),
-                             &QAction::triggered,
-                             [=] {
-                                 markPaid(repo, sessionId, m);
-                             });
+            QObject::connect(
+                    menu->addAction(QObject::tr("Mark as paid")),
+                    &QAction::triggered,
+                    [=] {
+                        markPaid(parent, repo, sessionId, m);
+                    });
         }
     }
+
+    QObject::connect(
+            menu->addAction(QObject::tr("Edit info")),
+            &QAction::triggered,
+            [=] {
+               editUser(parent, repo, sessionId, m);
+            });
 
     menu->popup(globalPos);
 }

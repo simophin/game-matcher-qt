@@ -208,8 +208,7 @@ ClubRepository::createMember(const QString &fistName,
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
             QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
-            {fistName, lastName,
-             QString(QLatin1String(QMetaEnum::fromType<Member::Gender>().valueToKey(gender))).toLower(), level});
+            {fistName, lastName, enumToString(gender), level});
 
     if (!memberId) {
         qWarning() << "Error inserting member";
@@ -415,7 +414,7 @@ bool ClubRepository::saveMember(const Member &m) {
             d->db,
             QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
                            " = (?, ?, ?, ?, ?, ?) where id = ?"),
-            {m.firstName, m.lastName, m.gender, m.level, m.email, m.phone, m.id})
+            {m.firstName, m.lastName, enumToString(m.gender), m.level, m.email, m.phone, m.id})
                    .orDefault(0) > 0;
 
 }
@@ -429,6 +428,17 @@ bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paus
     }
     return false;
 }
+
+bool ClubRepository::setPaid(SessionId sessionId, MemberId memberId, bool paid) {
+    if (auto rc = DbUtils::update(d->db,
+                                  QStringLiteral("update players set paid = ? where sessionId = ? and memberId = ?"),
+                                  {paid, sessionId, memberId}).orDefault(0) > 0) {
+        emit this->sessionChanged(sessionId);
+        return true;
+    }
+    return false;
+}
+
 
 QString ClubRepository::getClubName() const {
     return getSetting(skClubName).value_or(QString());
@@ -464,4 +474,5 @@ bool ClubRepository::saveClubInfo(const QString &name, unsigned int levelMin, un
 
     return true;
 }
+
 

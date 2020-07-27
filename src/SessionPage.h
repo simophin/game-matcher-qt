@@ -31,11 +31,7 @@ private slots:
     void onCurrentGameChanged();
     void updateElapseTime();
 
-    void on_checkInButton_clicked();
-    void on_checkOutButton_clicked();
-    void on_pauseButton_clicked();
-    void on_resumeButton_clicked();
-    void on_updateButton_clicked();
+    void showMemberMenuAt(const Member &, const QPoint &);
 
     void on_wardenOptionButton_clicked();
 

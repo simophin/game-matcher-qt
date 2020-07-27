@@ -9,6 +9,7 @@
 #include "GameMatcher.h"
 #include "NameFormatUtils.h"
 #include "ToastDialog.h"
+#include "MemberMenu.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -18,8 +19,8 @@
 #include <QFutureWatcher>
 #include <QtConcurrent/QtConcurrent>
 
-static const auto dataRoleUserId = Qt::UserRole + 1;
-static const auto dataRoleUserIsPaused = Qt::UserRole + 2;
+static const auto dataRoleUserIsPaused = Qt::UserRole + 1;
+static const auto dataRoleMember = Qt::UserRole + 2;
 
 static const SettingKey settingsKeyDurationSeconds = QStringLiteral("last_game_duration");
 static const auto defaultGameDurationSeconds = 15 * 60;
@@ -67,6 +68,7 @@ NewGameDialog::NewGameDialog(SessionId session, ClubRepository *repo, QWidget *p
     connect(d->ui.secondBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
 
     refresh();
+    connect(repo, &ClubRepository::sessionChanged, this, &NewGameDialog::refresh);
 }
 
 NewGameDialog::~NewGameDialog() {
@@ -81,7 +83,7 @@ void NewGameDialog::changeEvent(QEvent *evt) {
 }
 
 void NewGameDialog::refresh() {
-    auto players = d->repo->getMembers(AllSession{d->session});
+    auto players = d->repo->getMembers(CheckedIn{d->session});
     formatMemberDisplayNames(players);
 
     QFont font;
@@ -94,7 +96,7 @@ void NewGameDialog::refresh() {
     d->ui.playerList->clear();
     for (const auto &p : players) {
         auto widgetItem = new QListWidgetItem(p.displayName, d->ui.playerList);
-        widgetItem->setData(dataRoleUserId, p.id);
+        widgetItem->setData(dataRoleMember, QVariant::fromValue(p));
 
         auto paused = p.status == Member::CheckedInPaused || d->temporarilyPaused.contains(p.id);
         widgetItem->setData(dataRoleUserIsPaused, paused);
@@ -109,61 +111,22 @@ void NewGameDialog::refresh() {
 
 void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
     if (auto item = d->ui.playerList->itemAt(pt)) {
-        item->setSelected(true);
-
-        auto menu = new QMenu(tr("Player option: "), d->ui.playerList);
-        auto action = menu->addAction(tr("Check out"));
-        auto memberId = item->data(dataRoleUserId).value<MemberId>();
-        connect(action, &QAction::triggered, [=] {
-            if (QMessageBox::question(this, tr("Check out"),
-                                      tr("Are you sure to check out %1?").arg(item->text())) == QMessageBox::Yes) {
-                if (d->repo->checkOut(d->session, memberId)) {
-                    refresh();
-                }
-            }
-        });
-
-        if (!item->data(dataRoleUserIsPaused).toBool()) {
-            action = menu->addAction(tr("Pause for 1 game"));
-            connect(action, &QAction::triggered, [=] {
-                d->temporarilyPaused.insert(memberId);
-                refresh();
-            });
-
-            action = menu->addAction(tr("Pause until further notice"));
-            connect(action, &QAction::triggered, [=] {
-                d->temporarilyPaused.remove(memberId);
-                if (d->repo->setPaused(d->session, memberId, true)) {
-                    refresh();
-                }
-            });
-        } else {
-            action = menu->addAction(tr("Resume"));
-            connect(action, &QAction::triggered, [=] {
-                d->temporarilyPaused.remove(memberId);
-                d->repo->setPaused(d->session, memberId, false);
-                refresh();
-            });
-        }
-
-        menu->popup(d->ui.playerList->mapToGlobal(pt));
+        MemberMenu::showAt(this, d->repo, d->session,
+                item->data(dataRoleMember).value<Member>(),
+                d->ui.playerList->mapToGlobal(pt));
     }
 }
 
 void NewGameDialog::on_playerList_itemDoubleClicked(QListWidgetItem *item) {
-    auto memberId = item->data(dataRoleUserId).value<MemberId>();
+    auto member = item->data(dataRoleMember).value<Member>();
     bool isPausing = !item->data(dataRoleUserIsPaused).toBool();
     if (isPausing) {
-        d->temporarilyPaused.insert(memberId);
-        if (auto member = d->repo->getMember(memberId)) {
-            ToastDialog::show(tr("%1 paused for 1 game").arg(member->fullName()), 1000);
-        }
+        d->temporarilyPaused.insert(member.id);
+        ToastDialog::show(tr("%1 paused for 1 game").arg(member.fullName()), 1000);
     } else {
-        d->temporarilyPaused.remove(memberId);
-        d->repo->setPaused(d->session, memberId, false);
-        if (auto member = d->repo->getMember(memberId)) {
-            ToastDialog::show(tr("%1 resumes playing").arg(member->fullName()), 1000);
-        }
+        d->temporarilyPaused.remove(member.id);
+        d->repo->setPaused(d->session, member.id, false);
+        ToastDialog::show(tr("%1 resumes playing").arg(member.fullName()), 1000);
     }
     
     refresh();

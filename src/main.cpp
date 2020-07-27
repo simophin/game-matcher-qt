@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
     qRegisterMetaType<MemberId>("MemberId");
     qRegisterMetaType<SettingKey>("SettingKey");
     qRegisterMetaType<CourtPlayers>();
+    qRegisterMetaType<Member>();
 
     QApplication app(argc, argv);
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoMono-Regular.ttf"));

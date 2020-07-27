@@ -9,10 +9,9 @@
 #include "Adapter.h"
 #include "MemberSelectDialog.h"
 #include "CheckInDialog.h"
-#include "EditMemberDialog.h"
 #include "NewGameDialog.h"
 #include "CourtDisplay.h"
-#include "ToastDialog.h"
+#include "MemberMenu.h"
 
 #include <functional>
 #include <QTimer>
@@ -54,6 +53,24 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     onSessionDataChanged();
     onCurrentGameChanged();
 
+    d->ui.benchList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(d->ui.benchList, &QListWidget::customContextMenuRequested, [=](QPoint pos) {
+        if (auto item = d->ui.benchList->itemAt(pos)) {
+            auto member = item->data(Qt::UserRole).value<Member>();
+            showMemberMenuAt(member, d->ui.benchList->mapToGlobal(pos));
+        }
+    });
+
+    connect(d->ui.checkInButton, &QPushButton::clicked, [=] {
+        auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, false, d->repo, this);
+        dialog->setWindowTitle(tr("Who is checking in?"));
+        dialog->setAcceptButtonText(tr("Check in"));
+        dialog->show();
+        connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
+            auto checkInDialog = new CheckInDialog(id, d->session.session.id, d->repo, this);
+            checkInDialog->show();
+        });
+    });
 }
 
 SessionPage::~SessionPage() {
@@ -74,7 +91,9 @@ void SessionPage::onCurrentGameChanged() {
         updateElapseTime();
 
         auto createWidget = [this]() {
-            return new CourtDisplay(this);
+            auto display = new CourtDisplay(this);
+            connect(display, &CourtDisplay::memberRightClicked, this, &SessionPage::showMemberMenuAt);
+            return display;
         };
 
         auto updateWidget = [this](CourtDisplay *widget, const CourtPlayers &court) {
@@ -91,77 +110,9 @@ void SessionPage::onCurrentGameChanged() {
         for (const auto &item : game->waiting) {
             auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
             listItem->setFont(itemFont);
+            listItem->setData(Qt::UserRole, QVariant::fromValue(item));
         }
     }
-}
-
-
-void SessionPage::on_checkInButton_clicked() {
-    auto dialog = new MemberSelectDialog(NonCheckedIn{d->session.session.id}, true, false, d->repo, this);
-    dialog->setWindowTitle(tr("Who is checking in?"));
-    dialog->setAcceptButtonText(tr("Check in"));
-    dialog->show();
-    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-        auto checkInDialog = new CheckInDialog(id, d->session.session.id, d->repo, this);
-        checkInDialog->show();
-    });
-}
-
-void SessionPage::on_checkOutButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id}, false, true, d->repo, this);
-    dialog->setWindowTitle(tr("Who is leaving the game?"));
-    dialog->setAcceptButtonText(tr("Check out"));
-    dialog->show();
-    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-        if (auto member = d->repo->getMember(id)) {
-            if (QMessageBox::question(this, tr("Confirm checking out"),
-                                      tr("Are you sure to check out %1").arg(member->fullName())) == QMessageBox::Yes) {
-                d->repo->checkOut(d->session.session.id, id);
-                ToastDialog::show(tr("%1 checked out").arg(member->fullName()));
-            }
-        }
-    });
-}
-
-void SessionPage::on_pauseButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, false}, false, true, d->repo, this);
-    dialog->setWindowTitle(tr("Who is pausing?"));
-    dialog->setAcceptButtonText(tr("Pause playing"));
-    dialog->show();
-    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-        if (auto member = d->repo->getMember(id)) {
-            d->repo->setPaused(d->session.session.id, id, true);
-            ToastDialog::show(tr("%1 paused playing").arg(member->fullName()));
-        }
-    });
-}
-
-void SessionPage::on_resumeButton_clicked() {
-    auto dialog = new MemberSelectDialog(CheckedIn{d->session.session.id, true}, false, true, d->repo, this);
-    dialog->setWindowTitle(tr("Who is resuming?"));
-    dialog->setAcceptButtonText(tr("Resume playing"));
-    dialog->show();
-    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-        if (auto member = d->repo->getMember(id)) {
-            d->repo->setPaused(d->session.session.id, id, false);
-            ToastDialog::show(tr("%1 resumed playing").arg(member->fullName()));
-        }
-    });
-}
-
-void SessionPage::on_updateButton_clicked() {
-    auto dialog = new MemberSelectDialog(AllMembers{}, false, true, d->repo, this);
-    dialog->setWindowTitle(tr("Whom to update?"));
-    dialog->show();
-    connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-        auto editDialog = new EditMemberDialog(d->repo, this);
-        editDialog->setMember(id);
-        editDialog->show();
-        connect(editDialog, &EditMemberDialog::memberUpdated, [=] {
-            ToastDialog::show(tr("Information updated"));
-        });
-    });
-
 }
 
 void SessionPage::changeEvent(QEvent *event) {
@@ -245,4 +196,8 @@ SessionPage *SessionPage::create(SessionId id, ClubRepository *repo, QWidget *pa
 
 SessionId SessionPage::sessionId() const {
     return d->session.session.id;
+}
+
+void SessionPage::showMemberMenuAt(const Member &m, const QPoint &pos) {
+    MemberMenu::showAt(this, d->repo, d->session.session.id, m, pos);
 }

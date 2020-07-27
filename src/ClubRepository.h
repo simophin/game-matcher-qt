@@ -111,6 +111,8 @@ public:
 
     bool setPaused(SessionId, MemberId, bool);
 
+    bool setPaid(SessionId, MemberId, bool);
+
     std::optional<SessionData> getSession(SessionId) const;
 
     std::optional<SessionId> getLastSession() const;

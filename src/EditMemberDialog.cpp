@@ -6,6 +6,7 @@
 #include "ui_EditMemberDialog.h"
 
 #include "ClubRepository.h"
+#include "TypeUtils.h"
 
 #include <optional>
 #include <QMessageBox>
@@ -113,11 +114,10 @@ void EditMemberDialog::accept() {
         m.phone = d->ui.phoneLineEdit->text();
         m.email = d->ui.emailLineEdit->text();
         m.level = level.toInt();
-        m.gender = static_cast<Member::Gender>(QMetaEnum::fromType<Member::Gender>()
-                .keyToValue(gender.toString().toStdString().data()));
+        m.gender = enumFromString<Member::Gender>(gender.toString().toUtf8().data());
         if (!d->repo->saveMember(m)) {
-            QMessageBox::warning(this, tr("Unable to save to database"),
-                    tr("Probably nothing you can do about this. You can ignore this."));
+            QMessageBox::warning(this, tr("Error"),
+                    tr("Unable to save to database. Probably nothing you can do about this. You should try again."));
         } else {
             emit this->memberUpdated(*d->editingMember);
             QDialog::accept();

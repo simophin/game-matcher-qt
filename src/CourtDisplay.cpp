@@ -30,6 +30,11 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                 [=] {
                     auto label = new QLabel(this);
                     label->setProperty("isMember", true);
+                    label->setContextMenuPolicy(Qt::CustomContextMenu);
+                    connect(label, &QLabel::customContextMenuRequested, [=](QPoint pos) {
+                        label->setFocus(Qt::PopupFocusReason);
+                        emit this->memberRightClicked(label->property("member").value<Member>(), label->mapToGlobal(pos));
+                    });
                     return label; },
                 [](QLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
@@ -38,6 +43,7 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                     palette.setColor(QPalette::Text, color);
                     palette.setColor(QPalette::ButtonText, color);
                     palette.setColor(QPalette::WindowText, color);
+                    label->setProperty("member", QVariant::fromValue(player));
                     label->setPalette(palette);
                 });
 }
