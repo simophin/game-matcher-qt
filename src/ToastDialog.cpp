@@ -19,8 +19,6 @@ struct ToastDialog::Impl {
     QTimer timer;
 };
 
-static QPointer<QMainWindow> toastMainWindow;
-
 ToastDialog::ToastDialog(QWidget *parent)
         : QDialog(parent, Qt::FramelessWindowHint | Qt::CustomizeWindowHint), d(new Impl) {
     d->ui.setupUi(this);
@@ -65,14 +63,13 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
 }
 
 void ToastDialog::show(const QString &msg, int delayMills) {
-//    static QPointer<ToastDialog> dialog;
-//    if (!dialog) {
-//        dialog = new ToastDialog();
-//    }
-//    dialog->open();
-//    dialog->showMessage(msg, delayMills);
+    static QPointer<ToastDialog> dialog;
+    if (!dialog) {
+        dialog = new ToastDialog();
+    }
+    dialog->showMessage(msg, delayMills);
 }
 
 void ToastDialog::registerMainWindow(QMainWindow *window) {
-    toastMainWindow = window;
+//    toastMainWindow = window;
 }
