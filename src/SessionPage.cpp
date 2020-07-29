@@ -197,6 +197,8 @@ void SessionPage::on_wardenOptionButton_clicked() {
         page->load(d->session.session.id, d->repo);
 
         dialog->show();
+        dialog->setWindowTitle(tr("Player board"));
+        dialog->adjustSize();
     });
 
     if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {

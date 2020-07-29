@@ -8,6 +8,7 @@
 #include "ClubRepository.h"
 #include "CollectionUtils.h"
 #include "NameFormatUtils.h"
+#include "MemberMenu.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -87,7 +88,7 @@ void PlayerTablePage::reload() {
 
         memberFont.setStrikeOut(status == Member::CheckedOut);
         memberItem->setFont(memberFont);
-        memberItem->setData(Qt::UserRole, member.id);
+        memberItem->setData(Qt::UserRole, QVariant::fromValue(member));
 
         if (status == Member::CheckedOut || status == Member::CheckedInPaused) {
             memberItem->setForeground(QApplication::palette().mid());
@@ -113,7 +114,7 @@ void PlayerTablePage::reload() {
             }
 
             courtItem->setFont(courtFont);
-            courtItem->setData(Qt::UserRole, member.id);
+            courtItem->setData(Qt::UserRole, QVariant::fromValue(member));
             d->ui.table->setItem(row, j + 1, courtItem);
         }
 
@@ -125,15 +126,10 @@ void PlayerTablePage::reload() {
 void PlayerTablePage::on_table_customContextMenuRequested(const QPoint &pt) {
     if (auto item = d->ui.table->itemAt(pt); item) {
         d->ui.table->selectRow(item->row());
-    }
 
-    auto menu = new QMenu(tr("Player option"), d->ui.table);
-    menu->addAction(tr("Pause"));
-    menu->addAction(tr("Check out"));
-    menu->addAction(tr("Change level"));
-    menu->addAction(tr("Change name"));
-    menu->addAction(tr("Mark as paid"));
-    menu->popup(d->ui.table->mapToGlobal(pt));
+        MemberMenu::showAt(this, d->repo, d->sessionId, item->data(Qt::UserRole).value<Member>(),
+                mapToGlobal(pt));
+    }
 }
 
 void PlayerTablePage::load(SessionId id, ClubRepository *repo) {
