@@ -92,10 +92,14 @@ add_executable(GameMatcher
         src/BruteForceCombinationFinder.cpp
         src/BruteForceCombinationFinder.h
         src/MainWindow.cpp
-        src/MainWindow.h src/MemberPainter.cpp src/MemberPainter.h src/MemberMenu.cpp src/MemberMenu.h)
+        src/MainWindow.h
+        src/MemberPainter.cpp
+        src/MemberPainter.h
+        src/MemberMenu.cpp
+        src/MemberMenu.h src/CourtDisplayLayout.cpp src/CourtDisplayLayout.h src/MemberLabel.cpp src/MemberLabel.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
-target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Boost)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia)

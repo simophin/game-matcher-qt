@@ -46,7 +46,7 @@ static void formatMemberDisplayNames(Col &members, const ReferenceCol &ref) {
             m.displayName = m.firstName.toUpper();
         }
 #ifndef NDEBUG
-        m.displayName += QStringLiteral("(%1, %2)").arg(QString::number(m.level), m.genderString().left(1).toUpper());
+//        m.displayName += QStringLiteral("(%1, %2)").arg(QString::number(m.level), m.genderString().left(1).toUpper());
 #endif
     }
 }

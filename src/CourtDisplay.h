@@ -9,6 +9,7 @@
 #include <QWidget>
 
 #include "models.h"
+#include "span.h"
 
 
 class CourtPlayers;
@@ -22,12 +23,17 @@ public:
 
     void setCourt(const CourtPlayers&);
 
-    signals:
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
+signals:
     void memberRightClicked(Member, QPoint);
 
 private:
     struct Impl;
     Impl *d;
+
+    void applyData();
 };
 
 #endif //GAMEMATCHER_COURTDISPLAY_H

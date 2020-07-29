@@ -13,6 +13,8 @@
 #include "CourtDisplay.h"
 #include "MemberPainter.h"
 #include "MemberMenu.h"
+#include "FlowLayout.h"
+#include "CourtDisplayLayout.h"
 
 #include <functional>
 #include <QTimer>
@@ -27,6 +29,7 @@ struct SessionPage::Impl {
 
     SessionData session;
     Ui::SessionPage ui;
+    QLayout *courtLayout;
 
     std::optional<GameInfo> lastGame;
     QTimer gameTimer = QTimer();
@@ -36,6 +39,10 @@ struct SessionPage::Impl {
 SessionPage::SessionPage(Impl *d, QWidget *parent)
         : QWidget(parent), d(d) {
     d->ui.setupUi(this);
+    d->ui.courtFrame->setLayout(d->courtLayout = new CourtDisplayLayout());
+
+    d->ui.timeLabel->setFont(QFont(QStringLiteral("Noto Mono"), 21));
+
     setWindowTitle(tr("%1 game session").arg(d->repo->getClubName()));
 
     d->sound.setSource(QUrl::fromLocalFile(QStringLiteral(":/sound/alarm_clock.wav")));
@@ -82,7 +89,7 @@ void SessionPage::onSessionDataChanged() {
 }
 
 void SessionPage::onCurrentGameChanged() {
-    if (auto courtLayout = d->ui.courtLayout) {
+    if (auto courtLayout = d->courtLayout) {
         auto game = d->repo->getLastGameInfo(d->session.session.id);
         if (!game) {
             return;
@@ -130,6 +137,8 @@ void SessionPage::changeEvent(QEvent *event) {
 
 void SessionPage::updateElapseTime() {
     QString value;
+    QPalette palette;
+
     if (d->lastGame) {
         auto now = QDateTime::currentDateTimeUtc();
         auto startTime = d->lastGame->startDateTime();
@@ -151,7 +160,8 @@ void SessionPage::updateElapseTime() {
         value = QLatin1String(buf.data());
 
         if (isTimeout && (totalSeconds % 2 == 0)) {
-            value = QStringLiteral("<font color=\"red\">%1</font>").arg(value);
+            static QColor red("red");
+            palette.setColor(QPalette::WindowText, red);
         }
 
         if (isTimeout && totalSeconds < d->lastGame->durationSeconds + alarmDurationSeconds) {
@@ -165,7 +175,8 @@ void SessionPage::updateElapseTime() {
         d->gameTimer.stop();
     }
 
-    d->ui.timeLabel->setText(tr("Time since last game: %1").arg(value));
+    d->ui.timeLabel->setText(value);
+    d->ui.timeLabel->setPalette(palette);
 }
 
 

@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
     QApplication app(argc, argv);
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoMono-Regular.ttf"));
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Bold.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSansMono-Medium.ttf"));
     auto fontId = QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Regular.ttf"));
     QFont font(QFontDatabase::applicationFontFamilies(fontId).first(), 16);
     QApplication::setFont(font);

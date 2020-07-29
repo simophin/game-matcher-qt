@@ -8,10 +8,19 @@
 
 #include "ClubRepository.h"
 #include "MemberPainter.h"
+#include "MemberLabel.h"
+
+#include <QPainter>
+#include <optional>
+
+static const auto pkMember = "member";
 
 struct CourtDisplay::Impl {
     Ui::CourtDisplay ui;
+    QFont nameFont = QFont(QStringLiteral("Noto Mono"));
+    std::optional<CourtPlayers> court;
 };
+
 
 CourtDisplay::CourtDisplay(QWidget *parent)
         : QWidget(parent), d(new Impl) {
@@ -23,17 +32,36 @@ CourtDisplay::~CourtDisplay() {
 }
 
 void CourtDisplay::setCourt(const CourtPlayers &court) {
-    d->ui.courtName->setText(court.courtName);
+    d->court = court;
+    d->ui.courtName->setText(tr("Court %1").arg(court.courtName));
+
+    if (size().isValid()) {
+        applyData();
+    }
+}
+
+void CourtDisplay::resizeEvent(QResizeEvent *event) {
+    QWidget::resizeEvent(event);
+
+    if (d->court && size().isValid()) {
+        applyData();
+    }
+}
+
+void CourtDisplay::applyData() {
+    d->nameFont.setPointSize(50);
 
     setEntities(d->ui.memberListLayout,
-                court.players,
+                d->court->players,
                 [=] {
-                    auto label = new QLabel(this);
+                    auto label = new MemberLabel(this);
                     label->setProperty("isMember", true);
+                    label->setAlignment(Qt::AlignCenter);
+                    label->setScaledContents(true);
+                    label->setFont(d->nameFont);
                     label->setContextMenuPolicy(Qt::CustomContextMenu);
                     connect(label, &QLabel::customContextMenuRequested, [=](QPoint pos) {
-                        label->setFocus(Qt::PopupFocusReason);
-                        emit this->memberRightClicked(label->property("member").value<Member>(), label->mapToGlobal(pos));
+                        emit this->memberRightClicked(label->property(pkMember).value<Member>(), label->mapToGlobal(pos));
                     });
                     return label; },
                 [](QLabel *label, const Member &player) {
@@ -43,7 +71,7 @@ void CourtDisplay::setCourt(const CourtPlayers &court) {
                     palette.setColor(QPalette::Text, color);
                     palette.setColor(QPalette::ButtonText, color);
                     palette.setColor(QPalette::WindowText, color);
-                    label->setProperty("member", QVariant::fromValue(player));
+                    label->setProperty(pkMember, QVariant::fromValue(player));
                     label->setPalette(palette);
                 });
 }
