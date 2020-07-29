@@ -27,7 +27,6 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private slots:
-    void onSessionDataChanged();
     void onCurrentGameChanged();
     void updateElapseTime();
 

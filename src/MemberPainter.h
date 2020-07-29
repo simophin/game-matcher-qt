@@ -13,9 +13,6 @@ struct Member;
 
 class MemberPainter {
 public:
-    static void paintBackground(QPainter &, const Member &);
-    static void paintForeground(QPainter &, const Member &);
-
     static QColor colorForMember(const Member &);
 };
 

@@ -5,8 +5,10 @@
 #include "MemberLabel.h"
 
 #include <QPainter>
-#include <QDebug>
+#include <QIcon>
 
+const qreal iconSize = 30.0;
+const qreal iconSpacing = 8.0;
 
 MemberLabel::MemberLabel(QWidget *parent): QLabel(parent) {
 }
@@ -17,17 +19,41 @@ void MemberLabel::paintEvent(QPaintEvent *event) {
         return;
     }
 
-    qreal scale = 1.0;
-    if (size().width() < minSize.width()) {
-        scale = static_cast<qreal>(size().width()) / minSize.width();
-    }
-
-    if (size().height() < minSize.height()) {
-        scale = std::min(scale, static_cast<qreal>(size().height()) / minSize.height());
-    }
-
+    int actualWidth = size().width() - (paid_ ? (iconSize + iconSpacing) * 2 : 0);
+    int actualHeight = size().height();
     QPainter painter(this);
+
+
+    qreal scale = 1.0;
+    if (actualWidth < minSize.width()) {
+        scale = static_cast<qreal>(actualWidth) / minSize.width();
+    }
+
+    if (actualHeight < minSize.height()) {
+        scale = std::min(scale, static_cast<qreal>(actualHeight) / minSize.height());
+    }
+
+
     painter.scale(scale, scale);
     QRectF rect(0.0, 0.0, width() / scale, height() / scale);
-    painter.drawText(rect, Qt::AlignCenter | Qt::TextSingleLine, text());
+    QRectF bounding;
+    painter.drawText(rect, Qt::AlignCenter | Qt::TextSingleLine, text(), &bounding);
+
+    if (paid_) {
+        paidIcon().paint(&painter, bounding.left() - iconSize - iconSpacing,
+                         bounding.top() + (bounding.height() - iconSize) / 2.0,
+                         iconSize, iconSize);
+    }
+}
+
+const QIcon &MemberLabel::paidIcon() {
+    static QIcon icon(QStringLiteral(":/icons/Finance/money-dollar-box-line.svg"));
+    return icon;
+}
+
+void MemberLabel::setPaid(bool paid) {
+    if (paid_ != paid) {
+        paid_ = paid;
+        update();
+    }
 }

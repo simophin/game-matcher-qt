@@ -12,24 +12,15 @@
 #include <vector>
 
 static std::vector<QColor> bgColors = {
-        "cornflowerblue",
+        "darkred",
+        "darkorange",
+        "darkgoldenrod",
+        "darkgreen",
         "darkblue",
-        "darkolivegreen",
-        "firebrick",
         "saddlebrown",
         "slategrey",
-        "seagreen",
 };
 
-void MemberPainter::paintBackground(QPainter &painter, const Member &m) {
-    auto bgColor = bgColors[m.level % bgColors.size()];
-    painter.fillRect(painter.viewport(), bgColor);
-}
-
-void MemberPainter::paintForeground(QPainter &, const Member &) {
-
-}
-
 QColor MemberPainter::colorForMember(const Member &m) {
-    return bgColors[m.level % bgColors.size()];
+    return bgColors[(m.level - 1) % bgColors.size()];
 }

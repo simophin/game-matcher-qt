@@ -280,7 +280,9 @@ QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QStr
 
 QVector<Member> ClubRepository::getMembers(MemberSearchFilter filter) const {
     auto[sql, args] = constructFindMembersSql(filter);
-    return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
+    auto members = DbUtils::queryList<Member>(d->db, sql, args).orDefault();
+    formatMemberDisplayNames(members);
+    return members;
 }
 
 bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) {

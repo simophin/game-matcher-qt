@@ -12,8 +12,15 @@ class MemberLabel : public QLabel {
 public:
     MemberLabel(QWidget *parent = nullptr);
 
+    static const QIcon &paidIcon();
+
+    void setPaid(bool paid);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
+
+private:
+    bool paid_ = false;
 };
 
 

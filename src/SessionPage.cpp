@@ -15,6 +15,8 @@
 #include "MemberMenu.h"
 #include "FlowLayout.h"
 #include "CourtDisplayLayout.h"
+#include "MemberLabel.h"
+#include "PlayerTablePage.h"
 
 #include <functional>
 #include <QTimer>
@@ -58,7 +60,6 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     d->gameTimer.setSingleShot(true);
     connect(&d->gameTimer, &QTimer::timeout, this, &SessionPage::updateElapseTime);
 
-    onSessionDataChanged();
     onCurrentGameChanged();
 
     d->ui.benchList->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -85,47 +86,40 @@ SessionPage::~SessionPage() {
     delete d;
 }
 
-void SessionPage::onSessionDataChanged() {
-}
-
 void SessionPage::onCurrentGameChanged() {
-    if (auto courtLayout = d->courtLayout) {
-        auto game = d->repo->getLastGameInfo(d->session.session.id);
-        if (!game) {
-            return;
+    d->lastGame = d->repo->getLastGameInfo(d->session.session.id);
+    updateElapseTime();
+
+    auto createWidget = [this]() {
+        auto display = new CourtDisplay(this);
+        connect(display, &CourtDisplay::memberRightClicked, this, &SessionPage::showMemberMenuAt);
+        return display;
+    };
+
+    auto updateWidget = [this](CourtDisplay *widget, const CourtPlayers &court) {
+        widget->setCourt(court);
+    };
+
+    setEntities(d->courtLayout, d->lastGame ? d->lastGame->courts : QVector<CourtPlayers>(), createWidget, updateWidget);
+
+    QFont itemFont;
+    itemFont.setPointSize(24);
+
+    d->ui.benchList->clear();
+    for (const auto &item : (d->lastGame ? d->lastGame->waiting : d->repo->getMembers(CheckedIn{d->session.session.id}))) {
+        auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
+        listItem->setForeground(MemberPainter::colorForMember(item));
+        listItem->setData(Qt::UserRole, QVariant::fromValue(item));
+        bool isPaused = item.status == Member::CheckedInPaused;
+        listItem->setFont(itemFont);
+        if (isPaused) {
+            listItem->setText(tr("%1 (paused)").arg(listItem->text()));
         }
-
-        d->lastGame = game;
-        updateElapseTime();
-
-        auto createWidget = [this]() {
-            auto display = new CourtDisplay(this);
-            connect(display, &CourtDisplay::memberRightClicked, this, &SessionPage::showMemberMenuAt);
-            return display;
-        };
-
-        auto updateWidget = [this](CourtDisplay *widget, const CourtPlayers &court) {
-            widget->setCourt(court);
-        };
-
-        setEntities(courtLayout, game->courts, createWidget, updateWidget);
-
-        d->ui.benchList->clear();
-
-        QFont itemFont;
-        itemFont.setPointSize(18);
-
-        for (const auto &item : game->waiting) {
-            auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
-            listItem->setForeground(MemberPainter::colorForMember(item));
-            listItem->setData(Qt::UserRole, QVariant::fromValue(item));
-            bool isPaused = item.status == Member::CheckedInPaused;
-            listItem->setFont(itemFont);
-            if (isPaused) {
-                listItem->setText(tr("%1 (paused)").arg(listItem->text()));
-            }
+        if (item.paid == true) {
+            listItem->setIcon(MemberLabel::paidIcon());
         }
     }
+    qDebug() << "ItemCount = " << d->ui.benchList->count();
 }
 
 void SessionPage::changeEvent(QEvent *event) {
@@ -189,16 +183,31 @@ void SessionPage::on_wardenOptionButton_clicked() {
         connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });
 
+
     auto adminMenu = wardenMenu->addMenu(tr("Admin"));
+
+    connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
+            [=] {
+        auto dialog = new QDialog(this);
+        QVBoxLayout *layout;
+        dialog->setLayout(layout = new QVBoxLayout());
+        auto page = new PlayerTablePage();
+        layout->addWidget(page);
+        page->setWindowModality(Qt::ApplicationModal);
+        page->load(d->session.session.id, d->repo);
+
+        dialog->show();
+    });
+
+    if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
+        connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
+            d->repo->withdrawLastGame(d->session.session.id);
+        });
+    }
+
     connect(adminMenu->addAction(tr("Close current session")), &QAction::triggered,
             this, &SessionPage::closeSessionRequested);
 
-//    if (d->lastGameStarted.isValid() && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGameStarted)) < 60) {
-//        action = wardenMenu->addAction(tr("Withdraw last game"));
-//        connect(action, &QAction::triggered, [] {
-//            //TODO:
-//        });
-//    }
 
     wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
             QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));

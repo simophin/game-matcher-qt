@@ -64,7 +64,7 @@ void CourtDisplay::applyData() {
                         emit this->memberRightClicked(label->property(pkMember).value<Member>(), label->mapToGlobal(pos));
                     });
                     return label; },
-                [](QLabel *label, const Member &player) {
+                [](MemberLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
                     auto palette = label->palette();
                     auto color = MemberPainter::colorForMember(player);
