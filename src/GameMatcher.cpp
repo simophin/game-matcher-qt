@@ -11,47 +11,51 @@
 #include "GameStats.h"
 #include "CombinationsFinder.h"
 #include "FastIntVector.h"
-#include "BruteForceCombinationFinder.h"
+#include "CourtFinderV1.h"
 
 using nonstd::span;
 
 static std::vector<PlayerInfo> getEligiblePlayers(
         span<const Member> members, int numMaxSeats, const GameStats &stats, int randomSeed) {
-    std::vector<PlayerInfo> players;
-    if (members.empty()) return {};
+    struct MemberInfo {
+        const Member *member;
+        int numGamesOff;
+    };
 
+    std::vector<PlayerInfo> players;
+
+    if (members.empty() || numMaxSeats <= 0) return players;
+
+    std::vector<MemberInfo> memberInfo;
+    memberInfo.reserve(members.size());
     for (const auto &member : members) {
-        players.emplace_back(member, stats.numGamesOff(member.id));
+        memberInfo.push_back({&member, stats.numGamesOff(member.id)});
     }
 
     // Shuffle the list so we don't end up using the same order withing same level.
-    std::shuffle(players.begin(), players.end(), std::default_random_engine(randomSeed));
+    std::shuffle(memberInfo.begin(), memberInfo.end(), std::default_random_engine(randomSeed));
 
-    // Sort by eligibility score max to min
-    std::sort(players.begin(), players.end(), [](auto &a, auto &b) {
-        return b.eligibilityScore.value() < a.eligibilityScore.value();
+    // Sort by number of games off
+    std::sort(memberInfo.begin(), memberInfo.end(), [](MemberInfo &a, MemberInfo &b) {
+        return b.numGamesOff < a.numGamesOff;
     });
 
-    if (players.size() > numMaxSeats && numMaxSeats > 0) {
-        // Find lowest score and we will cut off from there
-        int cutOffSize = numMaxSeats;
-        const auto lowestScore = players[numMaxSeats - 1].eligibilityScore.value();
-        for (; cutOffSize < players.size(); cutOffSize++) {
-            if (players[cutOffSize].eligibilityScore.value() != lowestScore) break;
+    if (memberInfo.size() > numMaxSeats) {
+        // If we don't have enough seats for all players, we will have two groups of people
+        //  1. Ones that must be on
+        //  2. Ones that are optionally on.
+        // The ones that must on have higher numGamesOff than then lowest one
+
+        const auto lowestNumGamesOff = memberInfo[numMaxSeats - 1].numGamesOff;
+
+        // Anything lower than lowestNumGamesOff will be discarded
+        while (memberInfo.rbegin()->numGamesOff < lowestNumGamesOff) {
+            memberInfo.pop_back();
         }
 
-        while (players.size() > cutOffSize) {
-            players.pop_back();
-        }
-
-        if (players.begin()->eligibilityScore.value() != lowestScore) {
-            // The lowest score players will be re-written to invalid to indicate they are all optional, if there
-            // are higher score players.
-            for (auto iter = players.rbegin();
-                 iter != players.rend() && iter->eligibilityScore.value() == lowestScore;
-                 ++iter) {
-                iter->eligibilityScore = std::nullopt;
-            }
+        for (const auto &info : memberInfo) {
+            // If we have higher than lowestNumGamesOff, they are people must on.
+            players.emplace_back(*info.member, info.numGamesOff > lowestNumGamesOff);
         }
     }
 
@@ -103,6 +107,6 @@ std::vector<GameAllocation> GameMatcher::match(
     // Find eligible players
     auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
 
-    return BruteForceCombinationFinder(stats, playerPerCourt, levelMin, levelMax).find(courts, eligiblePlayers);
+    return CourtFinderV1(stats, playerPerCourt, levelMin, levelMax).find(courts, eligiblePlayers);
 }
 

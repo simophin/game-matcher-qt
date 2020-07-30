@@ -96,7 +96,14 @@ add_executable(GameMatcher
         src/MemberPainter.cpp
         src/MemberPainter.h
         src/MemberMenu.cpp
-        src/MemberMenu.h src/CourtDisplayLayout.cpp src/CourtDisplayLayout.h src/MemberLabel.cpp src/MemberLabel.h)
+        src/MemberMenu.h
+        src/CourtDisplayLayout.cpp
+        src/CourtDisplayLayout.h
+        src/MemberLabel.cpp
+        src/MemberLabel.h
+        src/CourtFinderV1.cpp
+        src/CourtFinderV1.h
+        )
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

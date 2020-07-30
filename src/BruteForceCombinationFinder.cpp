@@ -57,7 +57,7 @@ struct BestCourtFinder {
             }
         } else {
             while (begin != end) {
-                bool isOptional = begin->optionalOn();
+                bool isOptional = !begin->mandatory;
                 players.emplace_back(begin++);
                 if (isOptional) numOptional++;
                 find(begin, end);
@@ -75,7 +75,7 @@ BruteForceCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourt
     int numOptional = 0;
     for (const auto &item : span) {
         players.emplace_back(item);
-        if (item.optionalOn()) numOptional++;
+        if (!item.mandatory) numOptional++;
     }
 
     std::vector<CourtAllocation> result;

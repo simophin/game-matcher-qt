@@ -14,12 +14,10 @@ struct PlayerInfo {
     MemberId memberId;
     Member::Gender gender;
     int level;
-    std::optional<int> eligibilityScore;
+    bool mandatory;
 
-    inline bool optionalOn() const { return !eligibilityScore.has_value(); }
-
-    inline PlayerInfo(const Member &m, int score)
-            :memberId(m.id), gender(m.gender), level(m.level), eligibilityScore(score) {}
+    inline PlayerInfo(const Member &m, bool mustOn)
+            : memberId(m.id), gender(m.gender), level(m.level), mandatory(mustOn) {}
 };
 
 
