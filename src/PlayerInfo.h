@@ -16,8 +16,8 @@ struct PlayerInfo {
     int level;
     bool mandatory;
 
-    inline PlayerInfo(const Member &m, bool mustOn)
-            : memberId(m.id), gender(m.gender), level(m.level), mandatory(mustOn) {}
+    inline PlayerInfo(const Member &m, bool mandatory)
+            : memberId(m.id), gender(m.gender), level(m.level), mandatory(mandatory) {}
 };
 
 

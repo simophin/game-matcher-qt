@@ -13,37 +13,55 @@ using std::vector;
 
 typedef std::function<void(span<const PlayerInfo *>)> CourtArrangementCallback;
 
+
 struct CourtArrangementFindContext {
-    CourtArrangementCallback fn;
-    size_t numMandatoryRequired = 0, numOptionalAllowed = 0;
-    size_t playerPerCourt = 0, numCourt = 0;
+    CourtArrangementCallback const fn;
+    const size_t numMandatoryRequired, numOptionalAllowed;
+    const size_t playerPerCourt, numCourt;
+
+    const size_t numPlayersOnCourts;
+
+    std::list<const PlayerInfo *> &inputList;
+
+    CourtArrangementFindContext(CourtArrangementCallback &&fn, const size_t numMandatoryRequired,
+                                const size_t numOptionalAllowed, const size_t playerPerCourt, const size_t numCourt,
+                                std::list<const PlayerInfo *> &inputList)
+            : fn(std::move(fn)), numMandatoryRequired(numMandatoryRequired), numOptionalAllowed(numOptionalAllowed),
+              playerPerCourt(playerPerCourt), numCourt(numCourt), inputList(inputList),
+              numPlayersOnCourts(
+                      std::min(inputList.size(), playerPerCourt * numCourt) / playerPerCourt * playerPerCourt) {}
 
     size_t numMandatory = 0, numOptional = 0;
     vector<const PlayerInfo *> arrangement;
-    QSet<MemberId> availableMemberIds;
 
-    void find(span<const PlayerInfo> players) {
-        if (arrangement.size() > 0 &&
-                (arrangement.size() == playerPerCourt * numCourt) ||
-                (arrangement.size() % playerPerCourt == 0 && players.size() < playerPerCourt)) {
+    void find(std::list<const PlayerInfo *>::iterator begin) {
+        if (arrangement.size() == numPlayersOnCourts) {
             if (numMandatory >= numMandatoryRequired) {
                 fn(arrangement);
             }
-        } else {
-            for (size_t i = 0, size = players.size(); i < size; i++) {
-                auto &p = players[i];
-                if ((!p.mandatory && (numOptional + 1) <= numOptionalAllowed) || p.mandatory) {
-                    if (p.mandatory) numMandatory++;
-                    else numOptional++;
+            return;
+        }
 
-                    arrangement.push_back(&p);
-                    find(players.subspan(i+1));
-                    arrangement.pop_back();
+        if (arrangement.size() < numPlayersOnCourts && (arrangement.size() % playerPerCourt) == 0) {
+            begin = inputList.begin();
+        }
 
-                    if (p.mandatory) numMandatory--;
-                    else numOptional--;
-                }
+        for (auto iter = begin; iter != inputList.end(); ++iter) {
+            auto player = *iter;
+            iter = inputList.erase(iter);
+
+            if (player->mandatory) numMandatory++;
+            else numOptional++;
+
+            if (numOptional < numOptionalAllowed) {
+                arrangement.push_back(player);
+                find(iter);
             }
+
+            if (player->mandatory) numMandatory--;
+            else numOptional--;
+
+            inputList.insert(iter, player);
         }
     }
 };
@@ -53,16 +71,18 @@ static void forEachCourtArrangement(
         span<const PlayerInfo> players,
         size_t playerPerCourt, size_t numCourt,
         CourtArrangementCallback cb) {
-    CourtArrangementFindContext ctx;
-    ctx.fn = std::move(cb);
-    ctx.playerPerCourt = playerPerCourt;
-    ctx.numCourt = numCourt;
+    size_t numMandatoryRequired = 0, numOptionalAllowed = 0;
     for (const auto &player : players) {
-        if (player.mandatory) ctx.numMandatoryRequired++;
-        else ctx.numOptionalAllowed++;
-
-        ctx.availableMemberIds.insert(player.memberId);
+        if (player.mandatory) numMandatoryRequired++;
+        else numOptionalAllowed++;
     }
+    std::list<const PlayerInfo *> list;
+    for (const auto &p : players) {
+        list.push_back(&p);
+    }
+
+    CourtArrangementFindContext ctx(std::move(cb), numMandatoryRequired, numOptionalAllowed, playerPerCourt, numCourt, list);
+    ctx.find(list.begin());
 }
 
 static int computeArrangementScore(
