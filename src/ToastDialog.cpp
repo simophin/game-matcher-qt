@@ -63,11 +63,11 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
 }
 
 void ToastDialog::show(const QString &msg, int delayMills) {
-    static QPointer<ToastDialog> dialog;
-    if (!dialog) {
-        dialog = new ToastDialog();
-    }
-    dialog->showMessage(msg, delayMills);
+//    static QPointer<ToastDialog> dialog;
+//    if (!dialog) {
+//        dialog = new ToastDialog();
+//    }
+//    dialog->showMessage(msg, delayMills);
 }
 
 void ToastDialog::registerMainWindow(QMainWindow *window) {

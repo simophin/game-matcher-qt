@@ -8,6 +8,7 @@
 #include "models.h"
 
 class QPoint;
+class QRect;
 class ClubRepository;
 
 class MemberMenu {
@@ -17,7 +18,8 @@ public:
             ClubRepository *,
             SessionId,
             const Member &m,
-            const QPoint &globalPos);
+            const QPoint &globalPos,
+            QRect *itemRect = nullptr);
 };
 
 

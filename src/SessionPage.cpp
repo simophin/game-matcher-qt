@@ -66,6 +66,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     connect(d->ui.benchList, &QListWidget::customContextMenuRequested, [=](QPoint pos) {
         if (auto item = d->ui.benchList->itemAt(pos)) {
             auto member = item->data(Qt::UserRole).value<Member>();
+            d->ui.benchList->visualItemRect(item);
             showMemberMenuAt(member, d->ui.benchList->mapToGlobal(pos));
         }
     });

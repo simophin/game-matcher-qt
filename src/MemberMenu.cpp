@@ -60,7 +60,8 @@ void MemberMenu::showAt(QWidget *parent,
                         ClubRepository *repo,
                         SessionId sessionId,
                         const Member &m,
-                        const QPoint &globalPos) {
+                        const QPoint &globalPos,
+                        QRect *itemRect) {
     auto menu = new QMenu(QObject::tr("Member options"), parent);
     auto status = m.status.isValid() ? m.status.value<Member::Status>() : Member::NotCheckedIn;
     switch (status) {
