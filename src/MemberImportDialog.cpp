@@ -219,7 +219,10 @@ void MemberImportDialog::reload() {
                                         new QTableWidgetItem(QString::number(m.level)));
             row++;
         }
+
+        d->ui.previewTable->resizeColumnsToContents();
     });
+
 
     d->validateForm();
 }
