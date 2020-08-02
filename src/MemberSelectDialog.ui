@@ -64,7 +64,7 @@
       <string notr="true">padding: 8px</string>
      </property>
      <property name="placeholderText">
-      <string>Filter by first name</string>
+      <string>Search by first name</string>
      </property>
      <property name="clearButtonEnabled">
       <bool>true</bool>
@@ -73,6 +73,9 @@
    </item>
    <item>
     <widget class="QListWidget" name="memberList">
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAsNeeded</enum>
      </property>
@@ -86,7 +89,7 @@
       <enum>QListView::Batched</enum>
      </property>
      <property name="spacing">
-      <number>6</number>
+      <number>2</number>
      </property>
      <property name="uniformItemSizes">
       <bool>false</bool>

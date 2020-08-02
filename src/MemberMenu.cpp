@@ -50,7 +50,7 @@ static void markUnpaid(QWidget *parent, ClubRepository *repo, SessionId sessionI
     }
 }
 
-static void editUser(QWidget *parent, ClubRepository *repo, SessionId sessionId, const Member &m) {
+static void editUser(QWidget *parent, ClubRepository *repo, const Member &m) {
     auto dialog = new EditMemberDialog(repo, parent);
     dialog->setMember(m.id);
     dialog->show();
@@ -58,7 +58,7 @@ static void editUser(QWidget *parent, ClubRepository *repo, SessionId sessionId,
 
 void MemberMenu::showAt(QWidget *parent,
                         ClubRepository *repo,
-                        SessionId sessionId,
+                        std::optional<SessionId> sessionId,
                         const Member &m,
                         const QPoint &globalPos,
                         QRect *itemRect) {
@@ -67,54 +67,58 @@ void MemberMenu::showAt(QWidget *parent,
     switch (status) {
         case Member::NotCheckedIn:
         case Member::CheckedOut:
-            QObject::connect(
-                    menu->addAction(QObject::tr("Check in")),
-                    &QAction::triggered,
-                    [=] {
-                        (new CheckInDialog(m.id, sessionId, repo, parent))->show();
-                    });
+            if (sessionId) {
+                QObject::connect(
+                        menu->addAction(QObject::tr("Check in")),
+                        &QAction::triggered,
+                        [=] {
+                            (new CheckInDialog(m.id, *sessionId, repo, parent))->show();
+                        });
+            }
             break;
 
         case Member::CheckedIn:
         case Member::CheckedInPaused:
-            QObject::connect(
-                    menu->addAction(QObject::tr("Check out")),
-                    &QAction::triggered,
-                    [=] {
-                        checkout(parent, repo, sessionId, m);
-                    });
+            if (sessionId) {
+                QObject::connect(
+                        menu->addAction(QObject::tr("Check out")),
+                        &QAction::triggered,
+                        [=] {
+                            checkout(parent, repo, *sessionId, m);
+                        });
+            }
     }
 
-    if (status == Member::CheckedIn) {
+    if (status == Member::CheckedIn && sessionId) {
         QObject::connect(
                 menu->addAction(QObject::tr("Pause playing")),
                 &QAction::triggered,
                 [=] {
-                    pausePlaying(parent, repo, sessionId, m);
+                    pausePlaying(parent, repo, *sessionId, m);
                 });
-    } else if (status == Member::CheckedInPaused) {
+    } else if (status == Member::CheckedInPaused && sessionId) {
         QObject::connect(
                 menu->addAction(QObject::tr("Resume playing")),
                 &QAction::triggered,
                 [=] {
-                    resumePlaying(parent, repo, sessionId, m);
+                    resumePlaying(parent, repo, *sessionId, m);
                 });
     }
 
-    if (m.paid.isValid()) {
+    if (m.paid.isValid() && sessionId) {
         if (m.paid.toBool()) {
             QObject::connect(
                     menu->addAction(QObject::tr("Mark as unpaid")),
                     &QAction::triggered,
                     [=] {
-                        markUnpaid(parent, repo, sessionId, m);
+                        markUnpaid(parent, repo, *sessionId, m);
                     });
         } else {
             QObject::connect(
                     menu->addAction(QObject::tr("Mark as paid")),
                     &QAction::triggered,
                     [=] {
-                        markPaid(parent, repo, sessionId, m);
+                        markPaid(parent, repo, *sessionId, m);
                     });
         }
     }
@@ -123,7 +127,7 @@ void MemberMenu::showAt(QWidget *parent,
             menu->addAction(QObject::tr("Edit info")),
             &QAction::triggered,
             [=] {
-               editUser(parent, repo, sessionId, m);
+               editUser(parent, repo, m);
             });
 
     menu->popup(globalPos);

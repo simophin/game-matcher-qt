@@ -7,9 +7,12 @@
 
 #include "ClubRepository.h"
 #include "EditMemberDialog.h"
+#include "MemberMenu.h"
+#include "MemberPainter.h"
 
 #include <QPushButton>
 #include <QTimer>
+#include <QListWidgetItem>
 
 struct MemberSelectDialog::Impl {
     MemberSearchFilter filter;
@@ -35,6 +38,12 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
     connect(d->ui.filterEdit, &QLineEdit::textChanged, d->filterDebounceTimer, qOverload<>(&QTimer::start));
 
     connect(d->ui.memberList, &QListWidget::itemSelectionChanged, this, &MemberSelectDialog::validateForm);
+    connect(d->ui.memberList, &QWidget::customContextMenuRequested, [=](auto pt) {
+        if (QListWidgetItem* item = d->ui.memberList->itemAt(pt)) {
+            MemberMenu::showAt(this, d->repo, sessionIdFrom(d->filter), item->data(Qt::UserRole).value<Member>(),
+                    d->ui.memberList->mapToGlobal(pt));
+        }
+    });
     validateForm();
 }
 
@@ -53,11 +62,12 @@ void MemberSelectDialog::reload() {
 
     d->ui.memberList->clear();
     QFont font;
-    font.setPointSize(18);
+    font.setPointSize(20.0);
     for (const auto &member : members) {
         auto item = new QListWidgetItem(member.fullName(), d->ui.memberList);
         item->setFont(font);
-        item->setData(Qt::UserRole, member.id);
+        item->setData(Qt::UserRole, QVariant::fromValue(member));
+        item->setForeground(MemberPainter::colorForMember(member));
     }
 }
 
@@ -80,7 +90,7 @@ void MemberSelectDialog::accept() {
     }
 
     if (auto data = currentItem->data(Qt::UserRole); data.isValid()) {
-        emit this->memberSelected(data.toLongLong());
+        emit this->memberSelected(data.value<Member>().id);
         if (d->closeWhenSelected) QDialog::accept();
         else {
             d->ui.memberList->clearSelection();

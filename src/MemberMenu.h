@@ -16,7 +16,7 @@ public:
     static void showAt(
             QWidget *parent,
             ClubRepository *,
-            SessionId,
+            std::optional<SessionId>,
             const Member &m,
             const QPoint &globalPos,
             QRect *itemRect = nullptr);

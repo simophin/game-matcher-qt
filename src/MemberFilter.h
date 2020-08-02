@@ -16,5 +16,17 @@ struct AllSession { SessionId sessionId; };
 
 typedef std::variant<AllMembers, NonCheckedIn, CheckedIn, AllSession> MemberSearchFilter;
 
+static inline std::optional<SessionId> sessionIdFrom(const MemberSearchFilter &filter) {
+    if (auto nci = std::get_if<NonCheckedIn>(&filter)) {
+        return nci->sessionId;
+    } else if (auto ci = std::get_if<CheckedIn>(&filter)) {
+        return ci->sessionId;
+    } else if (auto all = std::get_if<AllSession>(&filter)) {
+        return all->sessionId;
+    }
+
+    return std::nullopt;
+}
+
 
 #endif //GAMEMATCHER_MEMBERFILTER_H
