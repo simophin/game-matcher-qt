@@ -32,8 +32,8 @@ NewSessionDialog::NewSessionDialog(ClubRepository *repo, QWidget *parent)
         d->ui.feeLineEdit->setText(QString::number(*feeInCents / 100.0));
     }
     d->ui.numberOfCourtsSpinBox->setValue(repo->getSettingValue<int>(skLastNumCourts).value_or(0));
-    d->ui.placeValue->setText(repo->getSetting(skLastPlace).value_or(QString()));
-    d->ui.annoucement->setText(repo->getSetting(skLastAnnouncement).value_or(QString()));
+    d->ui.placeValue->setText(repo->getSettingValue<QString>(skLastPlace).value_or(QString()));
+    d->ui.annoucement->setText(repo->getSettingValue<QString>(skLastAnnouncement).value_or(QString()));
     d->ui.numberOfPlayersPerCourtSpinBox->setValue(repo->getSettingValue<int>(skLastNumPlayersPerCourt).value_or(0));
 
     validateForm();
@@ -60,7 +60,7 @@ void NewSessionDialog::accept() {
     auto numCourts = d->ui.numberOfCourtsSpinBox->value();
     auto numPlayersPerCourt = d->ui.numberOfPlayersPerCourtSpinBox->value();
     for (auto i = 0, size = numCourts; i < size; i++) {
-        courts.append(CourtConfiguration{QString::number(i + 1), -i});
+        courts.append(CourtConfiguration{QString::number(i + 1), i});
     }
 
     int fee = d->ui.feeLineEdit->text().toDouble() * 100;
@@ -73,11 +73,11 @@ void NewSessionDialog::accept() {
             numPlayersPerCourt,
             courts)) {
 
-        d->repo->saveSettings(skLastNumCourts, numCourts);
-        d->repo->saveSettings(skLastSessionFee, fee);
-        d->repo->saveSettings(skLastAnnouncement, announcement);
-        d->repo->saveSettings(skLastPlace, place);
-        d->repo->saveSettings(skLastNumPlayersPerCourt, numPlayersPerCourt);
+        d->repo->saveSetting(skLastNumCourts, numCourts);
+        d->repo->saveSetting(skLastSessionFee, fee);
+        d->repo->saveSetting(skLastAnnouncement, announcement);
+        d->repo->saveSetting(skLastPlace, place);
+        d->repo->saveSetting(skLastNumPlayersPerCourt, numPlayersPerCourt);
 
         emit this->sessionCreated();
         QDialog::accept();

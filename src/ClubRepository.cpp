@@ -367,11 +367,18 @@ std::optional<QString> ClubRepository::getSetting(const SettingKey &key) const {
             .toOptional();
 }
 
-bool ClubRepository::saveSettings(const SettingKey &key, const QVariant &value) {
+bool ClubRepository::saveSetting(const SettingKey &key, const QVariant &value) {
     return DbUtils::update(
             d->db,
             QStringLiteral("insert or replace into settings (name, value) values (?, ?)"),
             {key, value}).orDefault(0) > 0;
+}
+
+bool ClubRepository::removeSetting(const SettingKey &key) {
+    return DbUtils::insert<Setting>(
+            d->db,
+            QStringLiteral("delete from settings where name = ?"),
+            {key});
 }
 
 std::optional<Member> ClubRepository::getMember(MemberId id) const {
@@ -449,11 +456,11 @@ bool ClubRepository::setPaid(SessionId sessionId, MemberId memberId, bool paid) 
 
 
 QString ClubRepository::getClubName() const {
-    return getSetting(skClubName).value_or(QString());
+    return getSettingValue<QString>(skClubName).value_or(QString());
 }
 
 bool ClubRepository::saveClubName(const QString &name) {
-    return saveSettings(skClubName, name);
+    return saveSetting(skClubName, name);
 }
 
 std::pair<unsigned int, unsigned int> ClubRepository::getLevelRange() const {
@@ -470,12 +477,12 @@ bool ClubRepository::saveClubInfo(const QString &name, unsigned int levelMin, un
     }
 
     SQLTransaction tx(d->db);
-    if (!saveSettings(skLevelMin, levelMin) || !saveSettings(skLevelMax, levelMax)) {
+    if (!saveSetting(skLevelMin, levelMin) || !saveSetting(skLevelMax, levelMax)) {
         tx.setError();
         return false;
     }
 
-    if (!saveSettings(skClubName, name)) {
+    if (!saveSetting(skClubName, name)) {
         tx.setError();
         return false;
     }

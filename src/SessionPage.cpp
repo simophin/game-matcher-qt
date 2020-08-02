@@ -177,7 +177,12 @@ void SessionPage::on_wardenOptionButton_clicked() {
     auto wardenMenu = new QMenu(tr("Warden options"), this);
     auto action = wardenMenu->addAction(tr("Start a new game"));
     connect(action, &QAction::triggered, [=] {
-        auto dialog = new NewGameDialog(d->session.session.id, d->repo, this);
+        auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
+        if (!dialog) {
+            QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
+            return;
+        }
+
         dialog->show();
         connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });

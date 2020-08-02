@@ -11,36 +11,50 @@
 #include "ToastDialog.h"
 #include "MemberMenu.h"
 #include "MemberPainter.h"
+#include "LastSelectedCourts.h"
 
 #include <QEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QProgressDialog>
+#include <QCheckBox>
 #include <QFutureWatcher>
 #include <QtConcurrent/QtConcurrent>
 
-static const auto dataRoleUserIsPaused = Qt::UserRole + 1;
-static const auto dataRoleMember = Qt::UserRole + 2;
+static const auto dataRoleMember = Qt::UserRole;
+static const auto propCourtId = "courtId";
 
-static const SettingKey settingsKeyDurationSeconds = QStringLiteral("last_game_duration");
+static const SettingKey skLastSelectedCourts = QStringLiteral("last_selected_courts");
+static const SettingKey skLastGameDurationSeconds = QStringLiteral("last_game_duration_seconds");
+
 static const auto defaultGameDurationSeconds = 15 * 60;
 static const auto minGameDurationSeconds = 30;
 
 struct NewGameDialog::Impl {
-    SessionId const session;
+    SessionData const session;
     ClubRepository *const repo;
     Ui::NewGameDialog ui;
-    QSet<MemberId> temporarilyPaused;
 
-    int countNonPausedPlayers() const {
+    int countEligiblePlayer() const {
         int rc = 0;
         for (int i = 0, size = ui.playerList->count(); i < size; i++) {
-            if (!ui.playerList->item(i)->data(dataRoleUserIsPaused).toBool()) {
+            if (ui.playerList->item(i)->data(dataRoleMember).value<Member>().status == Member::CheckedIn) {
                 rc++;
             }
         }
         return rc;
+    }
+
+    int courtCheckedCourts() const {
+        int numCourts = 0;
+        for (int i = 0, size = ui.courtBoxes->count(); i < size; i++) {
+            if (auto checkbox = qobject_cast<QCheckBox *>(ui.courtBoxes->itemAt(i)->widget());
+                    checkbox && checkbox->isChecked()) {
+                numCourts++;
+            }
+        }
+        return numCourts;
     }
 
     void updateDuration(uint64_t durationSeconds) {
@@ -57,19 +71,48 @@ struct NewGameDialog::Impl {
     }
 };
 
-NewGameDialog::NewGameDialog(SessionId session, ClubRepository *repo, QWidget *parent)
-        : QDialog(parent), d(new Impl{session, repo}) {
+NewGameDialog::NewGameDialog(Impl *d, QWidget *parent)
+        : QDialog(parent), d(d) {
     d->ui.setupUi(this);
-    d->ui.playerList->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    d->updateDuration(repo->getSettingValue<uint64_t>(settingsKeyDurationSeconds).value_or(defaultGameDurationSeconds));
+    d->updateDuration(
+            d->repo->getSettingValue<uint64_t>(skLastGameDurationSeconds).value_or(defaultGameDurationSeconds));
 
-    connect(d->ui.hourBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
-    connect(d->ui.minuteBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
-    connect(d->ui.secondBox,  qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+    connect(d->ui.hourBox, qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+    connect(d->ui.minuteBox, qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+    connect(d->ui.secondBox, qOverload<int>(&QSpinBox::valueChanged), this, &NewGameDialog::validateForm);
+
+    connect(d->repo, &ClubRepository::sessionChanged, this, &NewGameDialog::refresh);
+
+    connect(d->ui.playerList, &QListWidget::itemDoubleClicked, [=](QListWidgetItem *item) {
+        auto member = item->data(dataRoleMember).value<Member>();
+        bool isPausing = item->data(dataRoleMember).value<Member>().status == Member::CheckedInPaused;
+        d->repo->setPaused(d->session.session.id, member.id, !isPausing);
+    });
+
+    connect(d->ui.playerList, &QWidget::customContextMenuRequested, [=](QPoint pt) {
+        if (auto item = d->ui.playerList->itemAt(pt)) {
+            MemberMenu::showAt(this, d->repo, d->session.session.id,
+                               item->data(dataRoleMember).value<Member>(),
+                               d->ui.playerList->mapToGlobal(pt));
+        }
+    });
+
+    auto lastSelectedCourts = LastSelectedCourt::fromString(d->repo->getSettingValue<QString>(skLastSelectedCourts).value_or(QString()));
+    if (lastSelectedCourts && lastSelectedCourts->sessionId != d->session.session.id) {
+        lastSelectedCourts.reset();
+    }
+
+    for (const auto &court : d->session.courts) {
+        auto checkBox = new QCheckBox();
+        d->ui.courtBoxes->addWidget(checkBox, 1);
+        checkBox->setText(court.name);
+        checkBox->setProperty(propCourtId, court.id);
+        checkBox->setChecked(!lastSelectedCourts || (lastSelectedCourts->selectedCourts.contains(court.id)));
+        connect(checkBox, &QCheckBox::stateChanged, this, &NewGameDialog::validateForm);
+    }
 
     refresh();
-    connect(repo, &ClubRepository::sessionChanged, this, &NewGameDialog::refresh);
 }
 
 NewGameDialog::~NewGameDialog() {
@@ -84,14 +127,12 @@ void NewGameDialog::changeEvent(QEvent *evt) {
 }
 
 void NewGameDialog::refresh() {
-    auto players = d->repo->getMembers(CheckedIn{d->session});
+    auto players = d->repo->getMembers(CheckedIn{d->session.session.id});
     formatMemberDisplayNames(players);
 
     QFont font;
-    font.setPointSize(20);
+    font.setPointSizeF(24.0);
 
-    auto pausedFont = font;
-    pausedFont.setStrikeOut(true);
     auto pausedForeground = QApplication::palette().mid();
 
     d->ui.playerList->clear();
@@ -99,9 +140,15 @@ void NewGameDialog::refresh() {
         auto widgetItem = new QListWidgetItem(p.displayName, d->ui.playerList);
         widgetItem->setData(dataRoleMember, QVariant::fromValue(p));
 
-        auto paused = p.status == Member::CheckedInPaused || d->temporarilyPaused.contains(p.id);
-        widgetItem->setData(dataRoleUserIsPaused, paused);
-        widgetItem->setFont(paused ? pausedFont : font);
+        auto paused = p.status == Member::CheckedInPaused;
+        if (paused) font.setStrikeOut(true);
+        if (p.paid == false) font.setUnderline(true);
+
+        widgetItem->setFont(font);
+
+        font.setStrikeOut(false);
+        font.setUnderline(false);
+
         if (paused) {
             widgetItem->setForeground(pausedForeground);
         } else {
@@ -112,43 +159,20 @@ void NewGameDialog::refresh() {
     validateForm();
 }
 
-void NewGameDialog::on_playerList_customContextMenuRequested(const QPoint &pt) {
-    if (auto item = d->ui.playerList->itemAt(pt)) {
-        MemberMenu::showAt(this, d->repo, d->session,
-                item->data(dataRoleMember).value<Member>(),
-                d->ui.playerList->mapToGlobal(pt));
-    }
-}
-
-void NewGameDialog::on_playerList_itemDoubleClicked(QListWidgetItem *item) {
-    auto member = item->data(dataRoleMember).value<Member>();
-    bool isPausing = !item->data(dataRoleUserIsPaused).toBool();
-    if (isPausing) {
-        d->temporarilyPaused.insert(member.id);
-        ToastDialog::show(tr("%1 paused for 1 game").arg(member.fullName()), 1000);
-    } else {
-        d->temporarilyPaused.remove(member.id);
-        d->repo->setPaused(d->session, member.id, false);
-        ToastDialog::show(tr("%1 resumes playing").arg(member.fullName()), 1000);
-    }
-    
-    refresh();
-}
 
 void NewGameDialog::validateForm() {
     if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
-        auto session = d->repo->getSession(d->session);
-        if (!session) {
+        auto numCourts = d->courtCheckedCourts();
+        if (numCourts == 0) {
             button->setEnabled(false);
-            button->setText(tr("Error getting session info"));
-        } else if (d->countNonPausedPlayers() < session->session.numPlayersPerCourt) {
+            button->setText(tr("Not court selected"));
+        } else if (d->countEligiblePlayer() < d->session.session.numPlayersPerCourt * numCourts) {
             button->setEnabled(false);
             button->setText(tr("Not enough people to play"));
         } else if (d->readDurationSeconds() < minGameDurationSeconds) {
             button->setEnabled(false);
             button->setText(tr("Game duration is too short"));
-        }
-        else {
+        } else {
             button->setEnabled(true);
             button->setText(tr("Start"));
         }
@@ -157,52 +181,71 @@ void NewGameDialog::validateForm() {
 
 
 void NewGameDialog::accept() {
-    if (auto session = d->repo->getSession(d->session)) {
-        QVector<CourtId> courtIds;
-        courtIds.reserve(session->courts.size());
-        for (const auto &court : session->courts) {
-            courtIds.push_back(court.id);
+    QVector<CourtId> courtIds;
+    for (int i = 0, size = d->ui.courtBoxes->count(); i < size; i++) {
+        if (auto checkbox = qobject_cast<QCheckBox *>(d->ui.courtBoxes->itemAt(i)->widget());
+                checkbox && checkbox->isChecked()) {
+            courtIds.push_back(checkbox->property(propCourtId).value<CourtId>());
         }
-        
-        auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
-        progressDialog->open();
-
-        auto resultWatcher = new QFutureWatcher<std::vector<GameAllocation>>(this);
-        connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
-            progressDialog->close();
-
-            if (d->repo->createGame(d->session, resultWatcher->result(), d->readDurationSeconds())) {
-                emit this->newGameMade();
-                QDialog::accept();
-                return;
-            }
-
-            resultWatcher->deleteLater();
-        });
-
-        QVector<Member> eligiblePlayers;
-        for (const auto &m : d->repo->getMembers(CheckedIn{d->session, false})) {
-            if (!d->temporarilyPaused.contains(m.id)) {
-                eligiblePlayers.append(m);
-            }
-        }
-
-        auto levelRange = d->repo->getLevelRange();
-        auto pastAllocations = d->repo->getPastAllocations(d->session);
-
-        resultWatcher->setFuture(
-                QtConcurrent::run([=] {
-                    return GameMatcher::match(pastAllocations,
-                                              eligiblePlayers,
-                                              courtIds,
-                                              session->session.numPlayersPerCourt,
-                                              levelRange.first, levelRange.second,
-                                              QDateTime::currentMSecsSinceEpoch());
-                })
-        );
-
-        return;
     }
 
-    QMessageBox::critical(this, tr("Fail"), tr("Unable to create a new game"));
+    auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
+    progressDialog->open();
+
+    auto resultWatcher = new QFutureWatcher<std::vector<GameAllocation>>(this);
+    connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
+        progressDialog->close();
+
+        if (d->repo->createGame(d->session.session.id, resultWatcher->result(), d->readDurationSeconds())) {
+            emit this->newGameMade();
+            QDialog::accept();
+            return;
+        }
+
+        resultWatcher->deleteLater();
+    });
+
+    QVector<Member> eligiblePlayers;
+    for (int i = 0, size = d->ui.playerList->count(); i < size; i++) {
+        auto member = d->ui.playerList->item(i)->data(dataRoleMember).value<Member>();
+        if (member.status == Member::CheckedIn) {
+            eligiblePlayers.push_back(member);
+        }
+    }
+
+    auto levelRange = d->repo->getLevelRange();
+    auto pastAllocations = d->repo->getPastAllocations(d->session.session.id);
+    size_t numPlayersPerCourt = d->session.session.numPlayersPerCourt;
+
+    resultWatcher->setFuture(
+            QtConcurrent::run([pastAllocations, eligiblePlayers, courtIds, numPlayersPerCourt, levelRange] {
+                return GameMatcher::match(pastAllocations,
+                                          eligiblePlayers,
+                                          courtIds,
+                                          numPlayersPerCourt,
+                                          levelRange.first, levelRange.second,
+                                          QDateTime::currentMSecsSinceEpoch());
+            })
+    );
+
+    LastSelectedCourt lastSelected = { d->session.session.id };
+    for (auto courtId : courtIds) {
+        lastSelected.selectedCourts.insert(courtId);
+    }
+
+    if (!d->repo->saveSetting(skLastSelectedCourts, lastSelected.toString())) {
+        qWarning() << "Unable to save last selected courts";
+    }
+
+    if (!d->repo->saveSetting(skLastGameDurationSeconds, d->readDurationSeconds())) {
+        qWarning() << "Unable to save last game duration seconds";
+    }
+}
+
+NewGameDialog *NewGameDialog::create(SessionId id, ClubRepository *repo, QWidget *parent) {
+    if (auto session = repo->getSession(id)) {
+        return new NewGameDialog(new Impl{*session, repo}, parent);
+    }
+
+    return nullptr;
 }

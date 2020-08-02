@@ -103,7 +103,7 @@ add_executable(GameMatcher
         src/MemberLabel.h
         src/CourtFinderV1.cpp
         src/CourtFinderV1.h
-        src/LinkedEntry.h)
+        src/LinkedEntry.h src/LastSelectedCourts.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)

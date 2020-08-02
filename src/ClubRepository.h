@@ -75,12 +75,12 @@ public:
 
     std::optional<QString> getSetting(const SettingKey &key) const;
 
-    template<typename T>
-    std::optional<T> getSettingValue(const SettingKey &k) const {
-        auto v = getSetting(k);
-        if (!v || v->isNull()) return std::nullopt;
+    template <typename T>
+    std::optional<T> getSettingValue(const SettingKey &key) const {
+        auto stringValue = getSetting(key);
+        if (!stringValue) return std::nullopt;
 
-        QVariant variant = *v;
+        QVariant variant = *stringValue;
         static auto typeId = qMetaTypeId<T>();
         if (variant.convert(typeId)) {
             return variant.value<T>();
@@ -89,7 +89,8 @@ public:
         return std::nullopt;
     }
 
-    bool saveSettings(const SettingKey &key, const QVariant &value);
+    bool saveSetting(const SettingKey &key, const QVariant &value);
+    bool removeSetting(const SettingKey &key);
 
     std::optional<Member> createMember(
             const QString &fistName, const QString &lastName,

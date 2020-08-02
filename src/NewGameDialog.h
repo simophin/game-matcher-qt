@@ -16,7 +16,7 @@ class ClubRepository;
 class NewGameDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit NewGameDialog(SessionId, ClubRepository *, QWidget *parent = nullptr);
+    static NewGameDialog *create(SessionId, ClubRepository *, QWidget *parent);
 
     ~NewGameDialog() override;
 
@@ -29,15 +29,13 @@ public:
 
 private slots:
     void refresh();
-
-    void on_playerList_customContextMenuRequested(const QPoint &);
-    void on_playerList_itemDoubleClicked(QListWidgetItem *);
-
     void validateForm();
 
 private:
     struct Impl;
     Impl *d;
+
+    explicit NewGameDialog(Impl *, QWidget *parent);
 };
 
 
