@@ -63,6 +63,7 @@ void MemberSelectDialog::reload() {
     d->ui.memberList->clear();
     QFont font;
     font.setPointSize(20.0);
+    font.setBold(true);
     for (const auto &member : members) {
         auto item = new QListWidgetItem(member.fullName(), d->ui.memberList);
         item->setFont(font);

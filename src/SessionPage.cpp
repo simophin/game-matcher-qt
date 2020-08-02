@@ -86,6 +86,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
 }
 
 SessionPage::~SessionPage() {
+    d->sound.stop();
     delete d;
 }
 
@@ -212,7 +213,10 @@ void SessionPage::on_wardenOptionButton_clicked() {
 
     if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
         connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
-            d->repo->withdrawLastGame(d->session.session.id);
+            if (QMessageBox::question(this, tr("Withdrawing game"),
+                                      tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) == QMessageBox::Yes) {
+                d->repo->withdrawLastGame(d->session.session.id);
+            }
         });
     }
 
