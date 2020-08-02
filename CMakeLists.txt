@@ -89,8 +89,8 @@ add_executable(GameMatcher
         src/CourtCombinationFinder.cpp
         src/SortingCourtCombinationFinder.cpp
         src/SortingCourtCombinationFinder.h
-        src/BruteForceCombinationFinder.cpp
-        src/BruteForceCombinationFinder.h
+        src/BFCombinationFinder.cpp
+        src/BFCombinationFinder.h
         src/MainWindow.cpp
         src/MainWindow.h
         src/MemberPainter.cpp

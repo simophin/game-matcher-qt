@@ -11,7 +11,7 @@
 #include "GameStats.h"
 #include "CombinationsFinder.h"
 #include "FastVector.h"
-#include "CourtFinderV1.h"
+#include "BFCombinationFinder.h"
 
 using nonstd::span;
 
@@ -19,7 +19,7 @@ static std::vector<PlayerInfo> getEligiblePlayers(
         span<const Member> members, int numMaxSeats, const GameStats &stats, int randomSeed) {
     struct MemberInfo {
         const Member *member;
-        int numGamesOff;
+        int eligibilityScore;
     };
 
     std::vector<PlayerInfo> players;
@@ -29,7 +29,7 @@ static std::vector<PlayerInfo> getEligiblePlayers(
     std::vector<MemberInfo> memberInfo;
     memberInfo.reserve(members.size());
     for (const auto &member : members) {
-        memberInfo.push_back({&member, stats.numGamesOff(member.id)});
+        memberInfo.push_back({&member, stats.numGamesOff(member.id) * 2000 - stats.numGamesFor(member.id)});
     }
 
     // Shuffle the list so we don't end up using the same order withing same level.
@@ -37,7 +37,7 @@ static std::vector<PlayerInfo> getEligiblePlayers(
 
     // Sort by number of games off
     std::sort(memberInfo.begin(), memberInfo.end(), [](MemberInfo &a, MemberInfo &b) {
-        return b.numGamesOff < a.numGamesOff;
+        return b.eligibilityScore < a.eligibilityScore;
     });
 
     if (memberInfo.size() > numMaxSeats) {
@@ -46,16 +46,16 @@ static std::vector<PlayerInfo> getEligiblePlayers(
         //  2. Ones that are optionally on.
         // The ones that must on have higher numGamesOff than then lowest one
 
-        const auto lowestNumGamesOff = memberInfo[numMaxSeats - 1].numGamesOff;
+        const auto lowestScore = memberInfo[numMaxSeats - 1].eligibilityScore;
 
         // Anything lower than lowestNumGamesOff will be discarded
-        while (memberInfo.rbegin()->numGamesOff < lowestNumGamesOff) {
+        while (memberInfo.rbegin()->eligibilityScore < lowestScore) {
             memberInfo.pop_back();
         }
 
         for (const auto &info : memberInfo) {
             // If we have higher than lowestNumGamesOff, they are people must on.
-            players.emplace_back(*info.member, info.numGamesOff > lowestNumGamesOff);
+            players.emplace_back(*info.member, info.eligibilityScore > lowestScore);
         }
     }
 
@@ -107,6 +107,6 @@ std::vector<GameAllocation> GameMatcher::match(
     // Find eligible players
     auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
 
-    return CourtFinderV1(stats, playerPerCourt, levelMin, levelMax).find(courts, eligiblePlayers);
+    return BFCombinationFinder(stats, playerPerCourt, levelMin, levelMax).find(courts, eligiblePlayers);
 }
 

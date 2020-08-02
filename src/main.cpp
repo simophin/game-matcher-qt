@@ -64,22 +64,22 @@ static void testMatcher() {
 
         auto result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 0);
         for (auto &game : result) game.gameId = 0;
-//        printAllocations(QStringLiteral("Game 1"), result, memberById);
+        printAllocations(QStringLiteral("Game 1"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
         result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 1);
         for (auto &game : result) game.gameId = 1;
         printAllocations(QStringLiteral("Game 2"), result, memberById);
 
-//        allocations.insert(allocations.end(), result.begin(), result.end());
-//        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 2);
-//        for (auto &game : result) game.gameId = 2;
-//        printAllocations(QStringLiteral("Game 3"), result, memberById);
-//
-//        allocations.insert(allocations.end(), result.begin(), result.end());
-//        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 3);
-//        for (auto &game : result) game.gameId = 3;
-//        printAllocations(QStringLiteral("Game 4"), result, memberById);
+        allocations.insert(allocations.end(), result.begin(), result.end());
+        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 2);
+        for (auto &game : result) game.gameId = 2;
+        printAllocations(QStringLiteral("Game 3"), result, memberById);
+
+        allocations.insert(allocations.end(), result.begin(), result.end());
+        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 3);
+        for (auto &game : result) game.gameId = 3;
+        printAllocations(QStringLiteral("Game 4"), result, memberById);
     }
 }
 
@@ -106,10 +106,10 @@ int main(int argc, char **argv) {
     QCoreApplication::setOrganizationDomain(QStringLiteral("fanchao.nz"));
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
-//    MainWindow mainWindow;
-//    mainWindow.showMaximized();
+    MainWindow mainWindow;
+    mainWindow.showMaximized();
 
-    testMatcher();
+//    testMatcher();
 
     return app.exec();
 }

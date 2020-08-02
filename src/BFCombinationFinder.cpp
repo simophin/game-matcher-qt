@@ -2,7 +2,7 @@
 // Created by Fanchao Liu on 16/07/20.
 //
 
-#include "BruteForceCombinationFinder.h"
+#include "BFCombinationFinder.h"
 #include "MatchingScore.h"
 
 #include <list>
@@ -16,25 +16,26 @@ typedef typename PlayerInfoList::iterator PlayerInfoIterator;
 struct BestCombination {
     std::vector<PlayerInfoIterator> players;
     int score = 0;
-    int numOptional = 0;
+    size_t numOptional = 0, numMandatory = 0;
 };
 
 struct BestCourtFinder {
-    int const numRequired;
+    size_t const numPlayerRequired;
     GameStats const &stats;
     unsigned int const minLevel, maxLevel;
-    int const numMaxOptional;
+    size_t const maxOptionalAllowed, minMandatoryRequired;
 
     int numEstimated = 0;
 
     std::vector<PlayerInfoIterator> players;
-    int numOptional = 0;
+    size_t numOptional = 0;
+    size_t numMandatory = 0;
 
     std::optional<BestCombination> best;
 
     void find(PlayerInfoIterator begin, PlayerInfoIterator end) {
-        if (players.size() == numRequired) {
-            if (numOptional > numMaxOptional) {
+        if (players.size() == numPlayerRequired) {
+            if (numOptional > maxOptionalAllowed || numMandatory < minMandatoryRequired) {
                 return;
             }
 
@@ -54,15 +55,20 @@ struct BestCourtFinder {
                 best->players.insert(best->players.end(), players.begin(), players.end());
                 best->score = score;
                 best->numOptional = numOptional;
+                best->numMandatory = numMandatory;
             }
         } else {
             while (begin != end) {
-                bool isOptional = !begin->mandatory;
+                bool isMandatory = begin->mandatory;
                 players.emplace_back(begin++);
-                if (isOptional) numOptional++;
+                if (isMandatory) numMandatory++;
+                else numOptional++;
+
                 find(begin, end);
+
                 players.pop_back();
-                if (isOptional) numOptional--;
+                if (isMandatory) numMandatory--;
+                else numOptional--;
             }
         }
     }
@@ -70,18 +76,20 @@ struct BestCourtFinder {
 
 
 std::vector<CourtCombinationFinder::CourtAllocation>
-BruteForceCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailable) const {
+BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailable) const {
     std::list<PlayerInfo> players;
-    int numOptional = 0;
+    size_t numOptionalAllowed = 0, numMandatoryRequired = 0;
     for (const auto &item : span) {
         players.emplace_back(item);
-        if (!item.mandatory) numOptional++;
+        if (!item.mandatory) numOptionalAllowed++;
+        else numMandatoryRequired++;
     }
 
     std::vector<CourtAllocation> result;
 
     for (int i = 0; i < numCourtAvailable && !players.empty(); i++) {
-        BestCourtFinder finder = {numPlayersPerCourt_, stats_, minLevel_, maxLevel_, numOptional};
+        BestCourtFinder finder = {(size_t) numPlayersPerCourt_, stats_, minLevel_, maxLevel_, numOptionalAllowed,
+                                  numMandatoryRequired};
         finder.find(players.begin(), players.end());
         if (!finder.best) {
             qWarning() << "Unable to find best court";
@@ -94,7 +102,8 @@ BruteForceCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourt
             players.erase(player);
         }
         allocation.quality = finder.best->score;
-        numOptional -= finder.best->numOptional;
+        numOptionalAllowed -= std::min(numOptionalAllowed, finder.best->numOptional);
+        numMandatoryRequired -= std::min(numMandatoryRequired, finder.best->numMandatory);
     }
 
     return result;

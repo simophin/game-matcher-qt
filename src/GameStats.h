@@ -26,6 +26,17 @@ public:
         numTotalGames = games.size();
     }
 
+    int numGamesFor(MemberId memberId) const {
+        int rc = 0;
+        for (const auto &[id, courts] : games) {
+            for (const auto &[courtId, members] : courts) {
+                if (members.contains(memberId)) {
+                    rc++;
+                }
+            }
+        }
+        return rc;
+    }
 
     int numGamesOff(MemberId memberId) const {
         int i = 0;

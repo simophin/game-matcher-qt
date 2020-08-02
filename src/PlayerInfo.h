@@ -23,6 +23,8 @@ struct PlayerInfo {
             : memberId(memberId),
               gender(gender), level(level),
               mandatory(mandatory) {}
+
+    PlayerInfo(const PlayerInfo&) = default;
 };
 
 

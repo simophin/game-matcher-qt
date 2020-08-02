@@ -119,7 +119,6 @@ void SessionPage::onCurrentGameChanged() {
             listItem->setIcon(MemberLabel::paidIcon());
         }
     }
-    qDebug() << "ItemCount = " << d->ui.benchList->count();
 }
 
 void SessionPage::changeEvent(QEvent *event) {

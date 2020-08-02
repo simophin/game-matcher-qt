@@ -2,13 +2,13 @@
 // Created by Fanchao Liu on 16/07/20.
 //
 
-#ifndef GAMEMATCHER_BRUTEFORCECOMBINATIONFINDER_H
-#define GAMEMATCHER_BRUTEFORCECOMBINATIONFINDER_H
+#ifndef GAMEMATCHER_BFCOMBINATIONFINDER_H
+#define GAMEMATCHER_BFCOMBINATIONFINDER_H
 
 
 #include "CourtCombinationFinder.h"
 
-class BruteForceCombinationFinder : public CourtCombinationFinder {
+class BFCombinationFinder : public CourtCombinationFinder {
 public:
     using CourtCombinationFinder::CourtCombinationFinder;
 
@@ -17,4 +17,4 @@ protected:
 };
 
 
-#endif //GAMEMATCHER_BRUTEFORCECOMBINATIONFINDER_H
+#endif //GAMEMATCHER_BFCOMBINATIONFINDER_H
