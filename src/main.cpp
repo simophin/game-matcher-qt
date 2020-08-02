@@ -42,9 +42,9 @@ static void testMatcher() {
 
     if (auto sessionId = repo->getLastSession()) {
         auto members = repo->getMembers(CheckedIn{*sessionId});
-        while (members.size() > 50) {
-            members.pop_back();
-        }
+//        while (members.size() > 50) {
+//            members.pop_back();
+//        }
 
         auto session = repo->getSession(*sessionId);
         QVector<CourtId> courts;

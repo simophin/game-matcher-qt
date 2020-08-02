@@ -16,32 +16,49 @@ typedef typename PlayerInfoList::iterator PlayerInfoIterator;
 struct BestCombination {
     std::vector<PlayerInfoIterator> players;
     int score = 0;
-    size_t numOptional = 0, numMandatory = 0;
+    size_t numMandatory = 0;
 };
 
-struct BestCourtFinder {
+class BestCourtFinder {
     size_t const numPlayerRequired;
     GameStats const &stats;
     unsigned int const minLevel, maxLevel;
-    size_t const maxOptionalAllowed, minMandatoryRequired;
 
-    int numEstimated = 0;
+    PlayerInfoIterator inputEnd;
+    size_t minMandatoryRequired;
+    size_t numEstimated = 0;
 
-    std::vector<PlayerInfoIterator> players;
-    size_t numOptional = 0;
+    std::vector<PlayerInfoIterator> arrangement;
     size_t numMandatory = 0;
 
+public:
     std::optional<BestCombination> best;
 
-    void find(PlayerInfoIterator begin, PlayerInfoIterator end) {
-        if (players.size() == numPlayerRequired) {
-            if (numOptional > maxOptionalAllowed || numMandatory < minMandatoryRequired) {
+    BestCourtFinder(const size_t numPlayerRequired,
+                    const GameStats &stats,
+                    const unsigned int minLevel,
+                    const unsigned int maxLevel)
+            : numPlayerRequired(numPlayerRequired), stats(stats),
+              minLevel(minLevel), maxLevel(maxLevel) {}
+
+
+    void reset(size_t minMandatory, PlayerInfoIterator end) {
+        inputEnd = end;
+        minMandatoryRequired = minMandatory;
+        numEstimated = numMandatory = 0;
+        arrangement.clear();
+        best.reset();
+    }
+
+    void find(PlayerInfoIterator begin) {
+        if (arrangement.size() == numPlayerRequired) {
+            if (numMandatory < minMandatoryRequired) {
                 return;
             }
 
             numEstimated++;
 
-            int score = MatchingScore::computeCourtScore(stats, players, minLevel, maxLevel);
+            int score = MatchingScore::computeCourtScore(stats, arrangement, minLevel, maxLevel);
             bool update;
             if (!best) {
                 best.emplace();
@@ -52,23 +69,20 @@ struct BestCourtFinder {
 
             if (update) {
                 best->players.clear();
-                best->players.insert(best->players.end(), players.begin(), players.end());
+                best->players.insert(best->players.end(), arrangement.begin(), arrangement.end());
                 best->score = score;
-                best->numOptional = numOptional;
                 best->numMandatory = numMandatory;
             }
         } else {
-            while (begin != end) {
+            while (begin != inputEnd) {
                 bool isMandatory = begin->mandatory;
-                players.emplace_back(begin++);
+                arrangement.emplace_back(begin++);
                 if (isMandatory) numMandatory++;
-                else numOptional++;
 
-                find(begin, end);
+                find(begin);
 
-                players.pop_back();
+                arrangement.pop_back();
                 if (isMandatory) numMandatory--;
-                else numOptional--;
             }
         }
     }
@@ -78,19 +92,25 @@ struct BestCourtFinder {
 std::vector<CourtCombinationFinder::CourtAllocation>
 BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailable) const {
     std::list<PlayerInfo> players;
-    size_t numOptionalAllowed = 0, numMandatoryRequired = 0;
+    size_t numMandatoryRequired = 0;
     for (const auto &item : span) {
         players.emplace_back(item);
-        if (!item.mandatory) numOptionalAllowed++;
-        else numMandatoryRequired++;
+        if (item.mandatory) {
+            numMandatoryRequired++;
+        }
     }
 
     std::vector<CourtAllocation> result;
+    BestCourtFinder finder(numPlayersPerCourt_, stats_, minLevel_, maxLevel_);
 
-    for (int i = 0; i < numCourtAvailable && !players.empty(); i++) {
-        BestCourtFinder finder = {(size_t) numPlayersPerCourt_, stats_, minLevel_, maxLevel_, numOptionalAllowed,
-                                  numMandatoryRequired};
-        finder.find(players.begin(), players.end());
+    size_t numCourtAllocated = std::min(numCourtAvailable, players.size() / numPlayersPerCourt_);
+
+    for (int i = 0; i < numCourtAllocated; i++) {
+        finder.reset(static_cast<size_t>(std::ceil(
+                static_cast<double>(numMandatoryRequired) / (numCourtAllocated - i))),
+                     players.end());
+
+        finder.find(players.begin());
         if (!finder.best) {
             qWarning() << "Unable to find best court";
             break;
@@ -102,8 +122,7 @@ BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailabl
             players.erase(player);
         }
         allocation.quality = finder.best->score;
-        numOptionalAllowed -= std::min(numOptionalAllowed, finder.best->numOptional);
-        numMandatoryRequired -= std::min(numMandatoryRequired, finder.best->numMandatory);
+        numMandatoryRequired -= finder.best->numMandatory;
     }
 
     return result;
