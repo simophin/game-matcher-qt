@@ -29,11 +29,11 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
     for (int i = levelMin; i <= levelMax; i++) {
         QString levelDesc;
         if (i == levelMin) {
-            levelDesc = tr("Expert", "level");
-        } else if (i == (levelMax - levelMin) / 2) {
+            levelDesc = tr("Experienced", "level");
+        } else if (i == (levelMax - levelMin + 1) / 2) {
             levelDesc = tr("Medium", "level");
         } else if (i == levelMax) {
-            levelDesc = tr("Newbie", "level");
+            levelDesc = tr("Beginner", "level");
         }
 
         if (levelDesc.isNull()) {
