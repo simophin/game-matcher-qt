@@ -4,15 +4,36 @@
 
 #include "CourtFinderV1.h"
 #include "MatchingScore.h"
+#include "FastVector.h"
 
 #include <functional>
 #include <QSet>
 
+#include "LinkedEntry.h"
+
 using nonstd::span;
 using std::vector;
 
-typedef std::function<void(span<const PlayerInfo *>)> CourtArrangementCallback;
+struct PlayerInfoData : public LinkedEntry<PlayerInfoData>, PlayerInfo {
+    using PlayerInfo::PlayerInfo;
 
+    PlayerInfoData(const PlayerInfo &rhs)
+        :PlayerInfoData(rhs.memberId, rhs.gender, rhs.level, rhs.mandatory) {}
+};
+
+typedef std::function<void(span<PlayerInfo *>)> CourtArrangementCallback;
+
+
+inline QDebug operator<<(QDebug debug, const vector<const PlayerInfo *> &players) {
+    QDebugStateSaver saver(debug);
+    auto &d = debug.nospace().noquote();
+    d << "[";
+    for (const auto &player : players) {
+        d << *player << ", ";
+    }
+    d << "]";
+    return debug;
+}
 
 struct CourtArrangementFindContext {
     CourtArrangementCallback const fn;
@@ -21,47 +42,67 @@ struct CourtArrangementFindContext {
 
     const size_t numPlayersOnCourts;
 
-    std::list<const PlayerInfo *> &inputList;
+    PlayerInfoData *availablePlayerHead;
 
     CourtArrangementFindContext(CourtArrangementCallback &&fn, const size_t numMandatoryRequired,
                                 const size_t numOptionalAllowed, const size_t playerPerCourt, const size_t numCourt,
-                                std::list<const PlayerInfo *> &inputList)
+                                PlayerInfoData *playerHead, size_t numPlayers)
             : fn(std::move(fn)), numMandatoryRequired(numMandatoryRequired), numOptionalAllowed(numOptionalAllowed),
-              playerPerCourt(playerPerCourt), numCourt(numCourt), inputList(inputList),
+              playerPerCourt(playerPerCourt), numCourt(numCourt), availablePlayerHead(playerHead),
               numPlayersOnCourts(
-                      std::min(inputList.size(), playerPerCourt * numCourt) / playerPerCourt * playerPerCourt) {}
+                      std::min(numPlayers, playerPerCourt * numCourt) / playerPerCourt * playerPerCourt) {
+        qDebug() << "Finding matches on " << numPlayers << " players";
+    }
 
     size_t numMandatory = 0, numOptional = 0;
-    vector<const PlayerInfo *> arrangement;
+    FastVector<PlayerInfo *> arrangement;
 
-    void find(std::list<const PlayerInfo *>::iterator begin) {
+    size_t numInspect = 0;
+
+    void find(PlayerInfoData *curr) {
         if (arrangement.size() == numPlayersOnCourts) {
+            numInspect++;
             if (numMandatory >= numMandatoryRequired) {
-                fn(arrangement);
+//                qDebug() << "Inspecting arrangement " << arrangement;
+//                fn(span<PlayerInfo*>(&arrangement[0], &arrangement[arrangement.size() - 1]));
             }
             return;
         }
 
-        if (arrangement.size() < numPlayersOnCourts && (arrangement.size() % playerPerCourt) == 0) {
-            begin = inputList.begin();
+        if (!arrangement.empty() && (arrangement.size() % playerPerCourt) == 0) {
+            curr = availablePlayerHead;
         }
 
-        for (auto iter = begin; iter != inputList.end(); ++iter) {
-            auto player = *iter;
-            iter = inputList.erase(iter);
+        while (curr) {
+            bool wasHead = curr->isHead();
+            auto prev = curr->prev;
+            auto next = curr->next;
+            curr->remove();
+            if (wasHead) availablePlayerHead = next;
 
-            if (player->mandatory) numMandatory++;
+            if (curr->mandatory) numMandatory++;
             else numOptional++;
 
             if (numOptional < numOptionalAllowed) {
-                arrangement.push_back(player);
-                find(iter);
+                arrangement.push_back(curr);
+//                qDebug() << "Adding player " << *curr << " to arrangement";
+                find(next);
+                arrangement.pop_back();
             }
 
-            if (player->mandatory) numMandatory--;
+            if (curr->mandatory) numMandatory--;
             else numOptional--;
 
-            inputList.insert(iter, player);
+            assert(prev || next);
+
+            if (prev) prev->insertAfter(curr);
+            else if (next) next->insertBefore(curr);
+
+            if (wasHead) {
+                availablePlayerHead = curr;
+            }
+
+            curr = next;
         }
     }
 };
@@ -76,13 +117,16 @@ static void forEachCourtArrangement(
         if (player.mandatory) numMandatoryRequired++;
         else numOptionalAllowed++;
     }
-    std::list<const PlayerInfo *> list;
-    for (const auto &p : players) {
-        list.push_back(&p);
+    std::vector<PlayerInfoData> list(players.begin(), players.end());
+    for (size_t i = 0, size = list.size(); i < size; i++) {
+        if (i > 0) list[i].prev = &list[i - 1];
+        if (i < size - 1) list[i].next = &list[i + 1];
     }
 
-    CourtArrangementFindContext ctx(std::move(cb), numMandatoryRequired, numOptionalAllowed, playerPerCourt, numCourt, list);
-    ctx.find(list.begin());
+    CourtArrangementFindContext ctx(std::move(cb), numMandatoryRequired, numOptionalAllowed, playerPerCourt, numCourt,
+                                    &list[0], list.size());
+    ctx.find(&list[0]);
+    qDebug() << "Generated " << ctx.numInspect << " arrangements";
 }
 
 static int computeArrangementScore(
@@ -117,17 +161,17 @@ CourtFinderV1::doFind(span<const PlayerInfo> players, size_t numCourtAvailable) 
             players,
             numPlayersPerCourt_,
             numCourtAvailable,
-            [&](span<const PlayerInfo *> arrangement) {
-                thread_local vector<int> tmpCourtScores;
-                int totalScore = computeArrangementScore(stats_, numPlayersPerCourt_, arrangement, minLevel_, maxLevel_,
-                                                         tmpCourtScores);
-
-                if (!result.totalScore || (*result.totalScore) < totalScore) {
-                    result.arrangement.clear();
-                    result.arrangement.insert(result.arrangement.end(), arrangement.begin(), arrangement.end());
-                    result.courtScores = tmpCourtScores;
-                    result.totalScore = totalScore;
-                }
+            [&](span<PlayerInfo *> arrangement) {
+//                thread_local vector<int> tmpCourtScores;
+//                int totalScore = computeArrangementScore(stats_, numPlayersPerCourt_, arrangement, minLevel_, maxLevel_,
+//                                                         tmpCourtScores);
+//
+//                if (!result.totalScore || (*result.totalScore) < totalScore) {
+//                    result.arrangement.clear();
+//                    result.arrangement.insert(result.arrangement.end(), arrangement.begin(), arrangement.end());
+//                    result.courtScores = tmpCourtScores;
+//                    result.totalScore = totalScore;
+//                }
             });
 
     return vector<CourtAllocation>();

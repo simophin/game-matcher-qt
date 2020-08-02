@@ -10,7 +10,7 @@
 
 #include "GameStats.h"
 #include "CombinationsFinder.h"
-#include "FastIntVector.h"
+#include "FastVector.h"
 #include "CourtFinderV1.h"
 
 using nonstd::span;

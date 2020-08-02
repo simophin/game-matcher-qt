@@ -18,6 +18,11 @@ struct PlayerInfo {
 
     inline PlayerInfo(const Member &m, bool mandatory)
             : memberId(m.id), gender(m.gender), level(m.level), mandatory(mandatory) {}
+
+    PlayerInfo(MemberId memberId, Member::Gender gender, int level, bool mandatory)
+            : memberId(memberId),
+              gender(gender), level(level),
+              mandatory(mandatory) {}
 };
 
 

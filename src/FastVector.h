@@ -2,21 +2,23 @@
 // Created by Fanchao Liu on 15/07/20.
 //
 
-#ifndef GAMEMATCHER_FASTINTVECTOR_H
-#define GAMEMATCHER_FASTINTVECTOR_H
+#ifndef GAMEMATCHER_FASTVECTOR_H
+#define GAMEMATCHER_FASTVECTOR_H
 
 #include <memory>
 #include <cstring>
+#include <type_traits>
 
-class FastIntVector {
-    std::unique_ptr<int[]> data_;
+template <typename T>
+class FastVector {
+    std::unique_ptr<T[]> data_;
     size_t capacity_ = 0, size_ = 0;
 
     void grow() {
         auto newCapacity = capacity_ == 0 ? 32 : capacity_ * 2;
-        std::unique_ptr<int[]> data(new int[newCapacity]);
+        auto data = std::make_unique<T[]>(newCapacity);
         if (data_) {
-            ::memcpy(data.get(), data_.get(), capacity_ * sizeof(int));
+            ::memcpy(data.get(), data_.get(), capacity_ * sizeof(T));
         }
 
         capacity_ = newCapacity;
@@ -25,9 +27,13 @@ class FastIntVector {
 
 public:
     inline auto size() const { return size_; }
-    inline int& operator[](int index) { return *(data_.get() + index); }
+    inline T& operator[](int index) { return *(data_.get() + index); }
 
-    inline void push_back(int i) {
+    inline bool empty() const {
+        return size() == 0;
+    }
+
+    inline void push_back(T i) {
         if (size_ == capacity_) grow();
         (*this)[size_++] = i;
     }
@@ -37,4 +43,4 @@ public:
     }
 };
 
-#endif //GAMEMATCHER_FASTINTVECTOR_H
+#endif //GAMEMATCHER_FASTVECTOR_H

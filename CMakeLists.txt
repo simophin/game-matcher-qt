@@ -81,7 +81,7 @@ add_executable(GameMatcher
         src/ToastDialog.cpp
         src/ToastDialog.h
         src/CombinationsFinder.h
-        src/FastIntVector.h
+        src/FastVector.h
         src/MatchingScore.h
         src/PlayerInfo.h
         src/MatchingScore.cpp
@@ -103,7 +103,7 @@ add_executable(GameMatcher
         src/MemberLabel.h
         src/CourtFinderV1.cpp
         src/CourtFinderV1.h
-        )
+        src/LinkedEntry.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
