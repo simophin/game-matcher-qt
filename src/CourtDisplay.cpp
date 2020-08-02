@@ -12,6 +12,7 @@
 
 #include <QPainter>
 #include <optional>
+#include <cmath>
 
 static const auto pkMember = "member";
 
@@ -27,7 +28,7 @@ CourtDisplay::CourtDisplay(QWidget *parent)
         : QWidget(parent), d(new Impl) {
     d->ui.setupUi(this);
 
-    d->nameFont.setPointSize(50);
+    d->nameFont.setPointSize(40.0);
 
     d->nameUnpaidFont = d->nameFont;
     d->nameUnpaidFont.setUnderline(true);

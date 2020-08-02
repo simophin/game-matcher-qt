@@ -10,6 +10,8 @@
 #include "span.h"
 #include "MainWindow.h"
 
+#include <QSettings>
+
 
 static void printAllocations(const QString &prefix, nonstd::span<GameAllocation> allocations, const QHash<MemberId, Member> &members) {
     std::sort(allocations.begin(), allocations.end(), [](const GameAllocation &a, const GameAllocation &b) {
@@ -98,7 +100,7 @@ int main(int argc, char **argv) {
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Bold.ttf"));
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSansMono-Medium.ttf"));
     auto fontId = QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Regular.ttf"));
-    QFont font(QFontDatabase::applicationFontFamilies(fontId).first(), 18);
+    QFont font(QFontDatabase::applicationFontFamilies(fontId).first(), 16.0);
     QApplication::setFont(font);
 
 
@@ -107,6 +109,13 @@ int main(int argc, char **argv) {
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
     MainWindow mainWindow;
+
+    static auto skMainWindowState = QStringLiteral("sk_main_window_state");
+
+    QSettings settings;
+    auto state = settings.value(skMainWindowState);
+    if (state.isValid())
+
     mainWindow.showMaximized();
 
 //    testMatcher();

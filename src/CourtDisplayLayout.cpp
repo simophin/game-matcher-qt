@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <memory>
+#include <cmath>
 
 struct CourtDisplayLayout::Impl {
     std::vector<std::unique_ptr<QLayoutItem>> children;

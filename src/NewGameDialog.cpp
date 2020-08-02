@@ -237,7 +237,7 @@ void NewGameDialog::accept() {
         qWarning() << "Unable to save last selected courts";
     }
 
-    if (!d->repo->saveSetting(skLastGameDurationSeconds, d->readDurationSeconds())) {
+    if (!d->repo->saveSetting(skLastGameDurationSeconds, QVariant::fromValue(d->readDurationSeconds()))) {
         qWarning() << "Unable to save last game duration seconds";
     }
 }
