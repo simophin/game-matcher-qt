@@ -229,7 +229,7 @@ void MemberImportDialog::accept() {
     auto numSuccess = d->repo->importMembers(readAll(d->ui.pathLabel->text(), d->getPropertyMap()), failure);
     auto body = tr("Number of success imports: %1").arg(numSuccess);
     if (!failure.isEmpty()) {
-        body += tr("\nFailed imports:");
+        body += tr("\nFailed imports: %1").arg(failure.size());
         int num = 0;
         for (const auto &m : failure) {
             body += tr("\n%1").arg(m.fullName());
@@ -238,5 +238,4 @@ void MemberImportDialog::accept() {
         body += tr("\n...");
     }
     QMessageBox::information(this, tr("Import result"), body);
-    QDialog::accept();
 }

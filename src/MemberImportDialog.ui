@@ -88,7 +88,17 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="previewTable"/>
+    <widget class="QTableWidget" name="previewTable">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+     <property name="cornerButtonEnabled">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
