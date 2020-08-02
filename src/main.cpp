@@ -109,14 +109,11 @@ int main(int argc, char **argv) {
     QCoreApplication::setApplicationName(QStringLiteral("Game Matcher"));
 
     MainWindow mainWindow;
+    mainWindow.show();
 
-    static auto skMainWindowState = QStringLiteral("sk_main_window_state");
-
-    QSettings settings;
-    auto state = settings.value(skMainWindowState);
-    if (state.isValid())
-
-    mainWindow.showMaximized();
+    if (!mainWindow.restoreFromSettings(QSettings())) {
+        mainWindow.showFullScreen();
+    }
 
 //    testMatcher();
 

@@ -13,6 +13,7 @@
 #include <QFile>
 
 static const auto skLastOpened = QStringLiteral("last_opened");
+static auto skMainWindowGeometry = QStringLiteral("sk_main_window_geometry");
 
 struct MainWindow::Impl {
     Ui::MainWindow ui;
@@ -58,4 +59,15 @@ void MainWindow::changeEvent(QEvent *evt) {
     if (evt->type() == QEvent::LanguageChange) {
         d->ui.retranslateUi(this);
     }
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    QSettings().setValue(skMainWindowGeometry, saveGeometry());
+    QWidget::closeEvent(event);
+}
+
+bool MainWindow::restoreFromSettings(const QSettings &settings) {
+    auto value = settings.value(skMainWindowGeometry);
+    if (value.isNull()) return false;
+    return restoreGeometry(value.toByteArray());
 }

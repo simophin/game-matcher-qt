@@ -8,6 +8,8 @@
 
 #include <QMainWindow>
 
+class QSettings;
+
 class MainWindow : public QMainWindow {
 Q_OBJECT
 public:
@@ -16,6 +18,11 @@ public:
     ~MainWindow() override;
 
     void changeEvent(QEvent *) override;
+
+    bool restoreFromSettings(const QSettings &);
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     bool openClub(const QString &);
