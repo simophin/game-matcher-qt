@@ -45,7 +45,7 @@
       <enum>QListView::Adjust</enum>
      </property>
      <property name="spacing">
-      <number>4</number>
+      <number>2</number>
      </property>
      <property name="sortingEnabled">
       <bool>true</bool>

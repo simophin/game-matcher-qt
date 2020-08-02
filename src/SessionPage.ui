@@ -92,6 +92,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="fullScreenButton">
+        <property name="text">
+         <string>Fullscreen</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="wardenOptionButton">
         <property name="text">
          <string>Admin</string>

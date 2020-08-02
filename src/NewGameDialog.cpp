@@ -131,7 +131,8 @@ void NewGameDialog::refresh() {
     formatMemberDisplayNames(players);
 
     QFont font;
-    font.setPointSizeF(24.0);
+    font.setPointSizeF(20.0);
+    font.setBold(true);
 
     auto pausedForeground = QApplication::palette().mid();
 

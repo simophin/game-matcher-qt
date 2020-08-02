@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     mainWindow.show();
 
     if (!mainWindow.restoreFromSettings(QSettings())) {
-        mainWindow.showFullScreen();
+        mainWindow.showMaximized();
     }
 
 //    testMatcher();

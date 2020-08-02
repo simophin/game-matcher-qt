@@ -243,7 +243,7 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
         }
     } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
         sql += QStringLiteral("select M.*, %1 as status from members M "
-                              "  where id not in (select memberId from players where sessionId = ?)")
+                              "  where id not in (select memberId from players where sessionId = ? and checkOutTime is null)")
                 .arg(Member::NotCheckedIn);
         args.push_back(nonCheckedIn->sessionId);
     } else if (auto allSession = std::get_if<AllSession>(&filter)) {
@@ -288,7 +288,7 @@ QVector<Member> ClubRepository::getMembers(MemberSearchFilter filter) const {
 bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) {
     auto rc = DbUtils::update(
             d->db,
-            QStringLiteral("insert into players (sessionId, memberId, paid) values (?, ?, ?)"),
+            QStringLiteral("insert or replace into players (sessionId, memberId, paid, checkInTime, checkOutTime) values (?, ?, ?, current_timestamp, null)"),
             {sessionId, memberId, paid}).orDefault(0) > 0;
     if (rc) {
         emit this->sessionChanged(sessionId);

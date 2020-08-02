@@ -81,6 +81,8 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
             checkInDialog->show();
         });
     });
+
+    connect(d->ui.fullScreenButton, &QPushButton::clicked, this, &SessionPage::toggleFullScreenRequested);
 }
 
 SessionPage::~SessionPage() {
@@ -104,9 +106,8 @@ void SessionPage::onCurrentGameChanged() {
     setEntities(d->courtLayout, d->lastGame ? d->lastGame->courts : QVector<CourtPlayers>(), createWidget, updateWidget);
 
     QFont itemFont;
-    itemFont.setPointSize(24);
-    auto unpaidFont = itemFont;
-    unpaidFont.setUnderline(true);
+    itemFont.setPointSize(18);
+    itemFont.setBold(true);
 
     d->ui.benchList->clear();
     for (const auto &item : (d->lastGame ? d->lastGame->waiting : d->repo->getMembers(CheckedIn{d->session.session.id}))) {
@@ -114,7 +115,11 @@ void SessionPage::onCurrentGameChanged() {
         listItem->setForeground(MemberPainter::colorForMember(item));
         listItem->setData(Qt::UserRole, QVariant::fromValue(item));
         bool isPaused = item.status == Member::CheckedInPaused;
-        listItem->setFont(item.paid == false ? unpaidFont : itemFont);
+        if (item.paid == false) {
+            itemFont.setUnderline(true);
+        }
+        listItem->setFont(itemFont);
+        itemFont.setUnderline(false);
         if (isPaused) {
             listItem->setText(tr("%1 (paused)").arg(listItem->text()));
         }

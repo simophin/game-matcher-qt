@@ -13,8 +13,8 @@
 
 static std::vector<QColor> bgColors = {
         "darkred",
-        "darkorange",
-        "darkgoldenrod",
+        "saddlebrown",
+        "chocolate",
         "darkgreen",
         "darkblue",
         "saddlebrown",

@@ -49,6 +49,8 @@ void ClubPage::openSession(SessionId sessionId) {
         connect(session, &SessionPage::closeSessionRequested, [=] {
             d->layout->removeWidget(session);
         });
+
+        connect(session, &SessionPage::toggleFullScreenRequested, this, &ClubPage::toggleFullScreenRequested);
     } else {
         QMessageBox::warning(this, tr("Error opening session"), tr("Unable to open session page"));
     }

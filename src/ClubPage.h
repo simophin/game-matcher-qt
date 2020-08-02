@@ -20,6 +20,7 @@ public:
 
 signals:
     void clubClosed();
+    void toggleFullScreenRequested();
 
 public slots:
     void openSession(SessionId);

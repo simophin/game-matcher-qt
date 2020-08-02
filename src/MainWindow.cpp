@@ -38,6 +38,13 @@ bool MainWindow::openClub(const QString &dbPath) {
     if (auto clubPage = ClubPage::create(dbPath, nullptr)) {
         setCentralWidget(clubPage);
         connect(clubPage, &ClubPage::clubClosed, this, &MainWindow::openWelcomePage);
+        connect(clubPage, &ClubPage::toggleFullScreenRequested, [=] {
+            if (isFullScreen()) {
+                showNormal();
+            } else {
+                showFullScreen();
+            }
+        });
         QSettings().setValue(skLastOpened, dbPath);
         setWindowTitle(clubPage->windowTitle());
         return true;

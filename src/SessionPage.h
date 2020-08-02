@@ -22,6 +22,7 @@ public:
 
     signals:
     void closeSessionRequested();
+    void toggleFullScreenRequested();
 
 protected:
     void changeEvent(QEvent *event) override;

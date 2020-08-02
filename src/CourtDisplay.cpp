@@ -19,7 +19,6 @@ static const auto pkMember = "member";
 struct CourtDisplay::Impl {
     Ui::CourtDisplay ui;
     QFont nameFont = QFont(QStringLiteral("Noto Mono"));
-    QFont nameUnpaidFont;
     std::optional<CourtPlayers> court;
 };
 
@@ -29,9 +28,7 @@ CourtDisplay::CourtDisplay(QWidget *parent)
     d->ui.setupUi(this);
 
     d->nameFont.setPointSize(40.0);
-
-    d->nameUnpaidFont = d->nameFont;
-    d->nameUnpaidFont.setUnderline(true);
+    d->nameFont.setBold(true);
 }
 
 CourtDisplay::~CourtDisplay() {
@@ -78,6 +75,10 @@ void CourtDisplay::applyData() {
                     palette.setColor(QPalette::WindowText, color);
                     label->setProperty(pkMember, QVariant::fromValue(player));
                     label->setPalette(palette);
-                    label->setFont(player.paid == false ? d->nameUnpaidFont : d->nameFont);
+                    if (player.paid == false) {
+                        d->nameFont.setUnderline(true);
+                    }
+                    label->setFont(d->nameFont);
+                    d->nameFont.setUnderline(false);
                 });
 }
