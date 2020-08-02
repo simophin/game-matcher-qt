@@ -8,7 +8,7 @@
 
 #define DECLARE_PROPERTY(type, name, defaultValue) \
     type name defaultValue; \
-    Q_PROPERTY(type name MEMBER name)
+    Q_PROPERTY(type name MEMBER name);
 
 typedef qlonglong MemberId;
 typedef qlonglong SessionId;

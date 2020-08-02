@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <optional>
+#include <functional>
 
 #include "models.h"
 #include "MemberFilter.h"
@@ -97,6 +98,7 @@ public:
             const Member::Gender &gender, int level);
 
     bool saveMember(const Member &);
+    size_t importMembers(std::function<bool(Member&)> memberSupplier, QVector<Member> &failMembers);
 
     QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 

@@ -1,0 +1,3 @@
+[submodule "third_party/qtcsv"]
+	path = third_party/qtcsv
+	url = https://github.com/iamantony/qtcsv.git

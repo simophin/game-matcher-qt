@@ -173,13 +173,13 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="updateButton">
+         <widget class="QPushButton" name="importButton">
           <property name="text">
-           <string>Update club info</string>
+           <string>Import members</string>
           </property>
           <property name="icon">
            <iconset resource="../res/icons/icons.qrc">
-            <normaloff>:/icons/Design/edit-box-line.svg</normaloff>:/icons/Design/edit-box-line.svg</iconset>
+            <normaloff>:/icons/System/arrow-down-line.svg</normaloff>:/icons/System/arrow-down-line.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -196,7 +196,7 @@
           </property>
           <property name="icon">
            <iconset resource="../res/icons/icons.qrc">
-            <normaloff>:/icons/System/close-circle-line.svg</normaloff>:/icons/System/close-circle-line.svg</iconset>
+            <normaloff>:/icons/System/close-line.svg</normaloff>:/icons/System/close-line.svg</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -207,13 +207,13 @@
          </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QPushButton" name="statsButton">
+         <widget class="QPushButton" name="exportButton">
           <property name="text">
-           <string>Game statistics</string>
+           <string>Export members</string>
           </property>
           <property name="icon">
            <iconset resource="../res/icons/icons.qrc">
-            <normaloff>:/icons/Document/file-excel-2-fill.svg</normaloff>:/icons/Document/file-excel-2-fill.svg</iconset>
+            <normaloff>:/icons/System/arrow-up-line.svg</normaloff>:/icons/System/arrow-up-line.svg</iconset>
           </property>
           <property name="iconSize">
            <size>

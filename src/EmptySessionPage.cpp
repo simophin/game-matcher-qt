@@ -9,9 +9,12 @@
 #include "NewSessionDialog.h"
 #include "EditMemberDialog.h"
 #include "FakeNames.h"
+#include "MemberImportDialog.h"
 
 #include <QRandomGenerator>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QTextStream>
 
 struct EmptySessionPage::Impl {
     ClubRepository *const repo;
@@ -31,7 +34,85 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
     reload();
     connect(d->repo, &ClubRepository::clubInfoChanged, this, &EmptySessionPage::reload);
     connect(d->repo, &ClubRepository::sessionChanged, this, &EmptySessionPage::reload);
+
     connect(d->ui.closeButton, &QPushButton::clicked, this, &EmptySessionPage::clubClosed);
+    connect(d->ui.resumeButton, &QPushButton::clicked, this, &EmptySessionPage::lastSessionResumed);
+
+    connect(d->ui.startButton, &QPushButton::clicked, [=] {
+        auto dialog = new NewSessionDialog(d->repo, this);
+        dialog->show();
+        connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
+        connect(dialog, &NewSessionDialog::sessionCreated, this, &EmptySessionPage::newSessionCreated);
+    });
+
+    connect(d->ui.newMemberButton, &QPushButton::clicked, [=] {
+        auto dialog = new EditMemberDialog(d->repo, this);
+        dialog->show();
+        connect(dialog, &EditMemberDialog::newMemberCreated, [=] {
+            QMessageBox::information(this, tr("Welcome"),
+                                     tr("Register successfully. Welcome to %1.").arg(d->repo->getClubName()));
+        });
+    });
+
+    connect(d->ui.exportButton, &QPushButton::clicked, [=] {
+        auto csvFileName = QFileDialog::getSaveFileName(this, tr("Save as..."));
+        if (csvFileName.isEmpty()) return;
+
+        static const auto csvExt = QStringLiteral(".csv");
+
+        if (!csvFileName.endsWith(csvExt)) {
+            csvFileName.append(csvExt);
+        }
+
+        QFile csvFile(csvFileName);
+        if (!csvFile.open(QFile::WriteOnly)) {
+            QMessageBox::warning(
+                    this, tr("Error"),
+                    tr("Unable to write to this file: %1").arg(csvFile.errorString()));
+            return;
+        }
+
+        auto members = d->repo->getMembers(AllMembers{});
+
+        QTextStream stream(&csvFile);
+        // Header
+        stream << "First name," << "Last name," << "Level," << "Gender\n";
+        for (const auto &m : members) {
+            stream << m.firstName << "," << m.lastName << "," << m.level
+                <<  "," << (m.gender == Member::Male ? "M" : "F") << "\n";
+        }
+
+        QMessageBox::information(this, tr("Success"),
+                                 tr("Successfully exported %1 members").arg(members.size()));
+    });
+
+    connect(d->ui.importButton, &QPushButton::clicked, [=] {
+        auto dialog = new MemberImportDialog(d->repo, this);
+        dialog->show();
+    });
+
+#ifndef NDEBUG
+    connect(d->ui.createFakeButton, &QPushButton::clicked, [=] {
+        const auto [levelMin, levelMax] = d->repo->getLevelRange();
+        for (const auto &name : FakeNames::names()) {
+            const auto components = name.split(QStringLiteral(" "));
+            d->repo->createMember(components[0], components[1],
+                                  QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male,
+                                  QRandomGenerator::global()->bounded(levelMin, levelMax + 1));
+        }
+    });
+
+    connect(d->ui.checkInRandomButton, &QPushButton::clicked, [=] {
+        if (auto lastSessionId = d->repo->getLastSession()) {
+            auto members = d->repo->getMembers(NonCheckedIn{*lastSessionId});
+            auto size = 50 - d->repo->getMembers(CheckedIn{*lastSessionId}).size();
+            std::shuffle(members.begin(), members.end(), std::default_random_engine());
+            for (int i = 0; i < size; i++) {
+                d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);
+            }
+        }
+    });
+#endif
 }
 
 EmptySessionPage::~EmptySessionPage() {
@@ -41,54 +122,4 @@ EmptySessionPage::~EmptySessionPage() {
 void EmptySessionPage::reload() {
     d->ui.clubNameLabel->setText(tr("Welcome to %1").arg(d->repo->getClubName()));
     d->ui.resumeButton->setEnabled(d->repo->getLastSession().has_value());
-}
-
-void EmptySessionPage::on_startButton_clicked() {
-    auto dialog = new NewSessionDialog(d->repo, this);
-    dialog->show();
-    connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
-    connect(dialog, &NewSessionDialog::sessionCreated, this, &EmptySessionPage::newSessionCreated);
-}
-
-void EmptySessionPage::on_resumeButton_clicked() {
-    emit lastSessionResumed();
-}
-
-void EmptySessionPage::on_updateButton_clicked() {
-    //TODO
-}
-
-void EmptySessionPage::on_statsButton_clicked() {
-    //TODO
-}
-
-void EmptySessionPage::on_newMemberButton_clicked() {
-    auto dialog = new EditMemberDialog(d->repo, this);
-    dialog->show();
-    connect(dialog, &EditMemberDialog::newMemberCreated, [=] {
-        QMessageBox::information(this, tr("Welcome"),
-                                 tr("Register successfully. Welcome to %1.").arg(d->repo->getClubName()));
-    });
-}
-
-
-void EmptySessionPage::on_createFakeButton_clicked() {
-    const auto [levelMin, levelMax] = d->repo->getLevelRange();
-    for (const auto &name : FakeNames::names()) {
-        const auto components = name.split(QStringLiteral(" "));
-        d->repo->createMember(components[0], components[1],
-                              QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male,
-                              QRandomGenerator::global()->bounded(levelMin, levelMax + 1));
-    }
-}
-
-void EmptySessionPage::on_checkInRandomButton_clicked() {
-    if (auto lastSessionId = d->repo->getLastSession()) {
-        auto members = d->repo->getMembers(NonCheckedIn{*lastSessionId});
-        auto size = 50 - d->repo->getMembers(CheckedIn{*lastSessionId}).size();
-        std::shuffle(members.begin(), members.end(), std::default_random_engine());
-        for (int i = 0; i < size; i++) {
-            d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);
-        }
-    }
 }

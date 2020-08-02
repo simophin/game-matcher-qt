@@ -490,4 +490,24 @@ bool ClubRepository::saveClubInfo(const QString &name, unsigned int levelMin, un
     return true;
 }
 
+size_t ClubRepository::importMembers(std::function<bool(Member &)> memberSupplier, QVector<Member> &failMembers) {
+    SQLTransaction tx(d->db);
+
+    size_t success = 0;
+    Member member;
+    while (memberSupplier(member)) {
+        auto memberId = DbUtils::insert<MemberId>(
+                d->db,
+                QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
+                {member.firstName, member.lastName, enumToString(member.gender), member.level});
+
+        if (!memberId) {
+            failMembers.push_back(member);
+        } else {
+            success++;
+        }
+    }
+    return success;
+}
+
 

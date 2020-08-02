@@ -23,13 +23,6 @@ public:
 
 private slots:
     void reload();
-    void on_startButton_clicked();
-    void on_resumeButton_clicked();
-    void on_updateButton_clicked();
-    void on_statsButton_clicked();
-    void on_newMemberButton_clicked();
-    void on_createFakeButton_clicked();
-    void on_checkInRandomButton_clicked();
 
 private:
     struct Impl;
