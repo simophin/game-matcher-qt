@@ -114,7 +114,7 @@ readAll(const QString &filePath, const QHash<QString, const PropertyWriter *> &p
         auto items = ctx->line.split(QStringLiteral(","));
         for (size_t i = 0, size = std::min(ctx->headerNames.size(), items.size()); i < size; i++) {
             if (auto prop = propMaps[ctx->headerNames[i]]) {
-                prop->writer(m, items[i]);
+                prop->writer(m, items[i].trimmed());
             }
         }
         return true;

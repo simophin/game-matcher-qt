@@ -12,13 +12,10 @@
 #include <vector>
 
 static std::vector<QColor> bgColors = {
-        "darkred",
-        "saddlebrown",
-        "chocolate",
         "darkgreen",
-        "darkblue",
+        "chocolate",
         "saddlebrown",
-        "slategrey",
+        "darkred",
 };
 
 QColor MemberPainter::colorForMember(const Member &m) {

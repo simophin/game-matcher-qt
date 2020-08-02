@@ -105,7 +105,7 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
     connect(d->ui.checkInRandomButton, &QPushButton::clicked, [=] {
         if (auto lastSessionId = d->repo->getLastSession()) {
             auto members = d->repo->getMembers(NonCheckedIn{*lastSessionId});
-            auto size = 50 - d->repo->getMembers(CheckedIn{*lastSessionId}).size();
+            auto size = std::min(50, members.size()) - d->repo->getMembers(CheckedIn{*lastSessionId}).size();
             std::shuffle(members.begin(), members.end(), std::default_random_engine());
             for (int i = 0; i < size; i++) {
                 d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);
