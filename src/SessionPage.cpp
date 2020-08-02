@@ -104,6 +104,8 @@ void SessionPage::onCurrentGameChanged() {
 
     QFont itemFont;
     itemFont.setPointSize(24);
+    auto unpaidFont = itemFont;
+    unpaidFont.setUnderline(true);
 
     d->ui.benchList->clear();
     for (const auto &item : (d->lastGame ? d->lastGame->waiting : d->repo->getMembers(CheckedIn{d->session.session.id}))) {
@@ -111,12 +113,9 @@ void SessionPage::onCurrentGameChanged() {
         listItem->setForeground(MemberPainter::colorForMember(item));
         listItem->setData(Qt::UserRole, QVariant::fromValue(item));
         bool isPaused = item.status == Member::CheckedInPaused;
-        listItem->setFont(itemFont);
+        listItem->setFont(item.paid == false ? unpaidFont : itemFont);
         if (isPaused) {
             listItem->setText(tr("%1 (paused)").arg(listItem->text()));
-        }
-        if (item.paid == true) {
-            listItem->setIcon(MemberLabel::paidIcon());
         }
     }
 }

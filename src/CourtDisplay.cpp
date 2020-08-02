@@ -18,6 +18,7 @@ static const auto pkMember = "member";
 struct CourtDisplay::Impl {
     Ui::CourtDisplay ui;
     QFont nameFont = QFont(QStringLiteral("Noto Mono"));
+    QFont nameUnpaidFont;
     std::optional<CourtPlayers> court;
 };
 
@@ -25,6 +26,11 @@ struct CourtDisplay::Impl {
 CourtDisplay::CourtDisplay(QWidget *parent)
         : QWidget(parent), d(new Impl) {
     d->ui.setupUi(this);
+
+    d->nameFont.setPointSize(50);
+
+    d->nameUnpaidFont = d->nameFont;
+    d->nameUnpaidFont.setUnderline(true);
 }
 
 CourtDisplay::~CourtDisplay() {
@@ -49,7 +55,6 @@ void CourtDisplay::resizeEvent(QResizeEvent *event) {
 }
 
 void CourtDisplay::applyData() {
-    d->nameFont.setPointSize(50);
 
     setEntities(d->ui.memberListLayout,
                 d->court->players,
@@ -58,13 +63,12 @@ void CourtDisplay::applyData() {
                     label->setProperty("isMember", true);
                     label->setAlignment(Qt::AlignCenter);
                     label->setScaledContents(true);
-                    label->setFont(d->nameFont);
                     label->setContextMenuPolicy(Qt::CustomContextMenu);
                     connect(label, &QLabel::customContextMenuRequested, [=](QPoint pos) {
                         emit this->memberRightClicked(label->property(pkMember).value<Member>(), label->mapToGlobal(pos));
                     });
                     return label; },
-                [](MemberLabel *label, const Member &player) {
+                [=](MemberLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
                     auto palette = label->palette();
                     auto color = MemberPainter::colorForMember(player);
@@ -73,5 +77,6 @@ void CourtDisplay::applyData() {
                     palette.setColor(QPalette::WindowText, color);
                     label->setProperty(pkMember, QVariant::fromValue(player));
                     label->setPalette(palette);
+                    label->setFont(player.paid == false ? d->nameUnpaidFont : d->nameFont);
                 });
 }
