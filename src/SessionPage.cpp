@@ -226,7 +226,7 @@ void SessionPage::updateElapseTime() {
 
         if (isTimeout && totalSeconds < d->lastGame->durationSeconds + alarmDurationSeconds) {
             if (!d->sound.isPlaying()) d->sound.play();
-        } else {
+        } else if (!d->ui.bellButton->isChecked()) {
             d->sound.stop();
         }
 

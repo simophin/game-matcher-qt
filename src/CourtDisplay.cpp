@@ -18,7 +18,7 @@ static const auto pkMember = "member";
 
 struct CourtDisplay::Impl {
     Ui::CourtDisplay ui;
-    QFont nameFont = QFont(QStringLiteral("Noto Mono"));
+    QFont nameFont;
     std::optional<CourtPlayers> court;
 };
 

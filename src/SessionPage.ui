@@ -96,6 +96,10 @@
         <property name="text">
          <string>Bell</string>
         </property>
+        <property name="icon">
+         <iconset resource="../res/icons/icons.qrc">
+          <normaloff>:/icons/Others/bell-line.svg</normaloff>:/icons/Others/bell-line.svg</iconset>
+        </property>
         <property name="checkable">
          <bool>true</bool>
         </property>
@@ -106,6 +110,10 @@
         <property name="text">
          <string>Fullscreen</string>
         </property>
+        <property name="icon">
+         <iconset resource="../res/icons/icons.qrc">
+          <normaloff>:/icons/Media/fullscreen-fill.svg</normaloff>:/icons/Media/fullscreen-fill.svg</iconset>
+        </property>
        </widget>
       </item>
       <item>
@@ -114,8 +122,8 @@
          <string>Admin</string>
         </property>
         <property name="icon">
-         <iconset theme=":/icons/User/admin-fill.svg">
-          <normaloff>.</normaloff>.</iconset>
+         <iconset resource="../res/icons/icons.qrc">
+          <normaloff>:/icons/User/admin-line.svg</normaloff>:/icons/User/admin-line.svg</iconset>
         </property>
        </widget>
       </item>
