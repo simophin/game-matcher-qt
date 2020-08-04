@@ -167,7 +167,7 @@ void NewGameDialog::validateForm() {
         if (numCourts == 0) {
             button->setEnabled(false);
             button->setText(tr("Not court selected"));
-        } else if (d->countEligiblePlayer() < d->session.session.numPlayersPerCourt * numCourts) {
+        } else if (d->countEligiblePlayer() < d->session.session.numPlayersPerCourt) {
             button->setEnabled(false);
             button->setText(tr("Not enough people to play"));
         } else if (d->readDurationSeconds() < minGameDurationSeconds) {

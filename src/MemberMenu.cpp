@@ -129,9 +129,7 @@ void MemberMenu::showAt(QWidget *parent,
                 menu->addAction(QObject::tr("Show stats")),
                 &QAction::triggered,
                 [=] {
-                    auto dialog = new PlayerStatsDialog(m.id, *sessionId, repo, parent);
-                    dialog->setWindowTitle(QObject::tr("Game statistics for %1").arg(m.fullName()));
-                    dialog->show();
+                    (new PlayerStatsDialog(m, *sessionId, repo, parent))->show();
                 });
     }
 

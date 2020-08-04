@@ -17,6 +17,7 @@
 #include "CourtDisplayLayout.h"
 #include "MemberLabel.h"
 #include "PlayerTablePage.h"
+#include "PlayerStatsDialog.h"
 
 #include <functional>
 #include <QTimer>
@@ -69,6 +70,11 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
             d->ui.benchList->visualItemRect(item);
             showMemberMenuAt(member, d->ui.benchList->mapToGlobal(pos));
         }
+    });
+
+    connect(d->ui.benchList, &QListWidget::itemDoubleClicked, [=](QListWidgetItem *item) {
+        auto member = item->data(Qt::UserRole).value<Member>();
+        (new PlayerStatsDialog(member, d->session.session.id, d->repo, this))->show();
     });
 
     connect(d->ui.checkInButton, &QPushButton::clicked, [=] {

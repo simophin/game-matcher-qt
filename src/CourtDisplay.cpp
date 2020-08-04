@@ -65,6 +65,7 @@ void CourtDisplay::applyData() {
                     connect(label, &QLabel::customContextMenuRequested, [=](QPoint pos) {
                         emit this->memberRightClicked(label->property(pkMember).value<Member>(), label->mapToGlobal(pos));
                     });
+
                     return label; },
                 [=](MemberLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);

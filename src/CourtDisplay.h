@@ -28,6 +28,7 @@ protected:
 
 signals:
     void memberRightClicked(Member, QPoint);
+    void memberDoubleClicked(Member);
 
 private:
     struct Impl;

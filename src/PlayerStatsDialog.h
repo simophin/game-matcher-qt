@@ -14,7 +14,7 @@ class ClubRepository;
 class PlayerStatsDialog : public QDialog {
 Q_OBJECT
 public:
-    PlayerStatsDialog(MemberId, SessionId, ClubRepository *, QWidget *parent = nullptr);
+    PlayerStatsDialog(const BaseMember &, SessionId, ClubRepository *, QWidget *parent = nullptr);
 
     ~PlayerStatsDialog() override;
 

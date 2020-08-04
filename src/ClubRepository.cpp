@@ -241,9 +241,9 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
         auto insertResult = DbUtils::update(
                 d->db,
                 QStringLiteral("insert into game_allocations (gameId, courtId, playerId, quality) values (?, ?, "
-                               "(select P.id from players P where P.memberId = ?), "
+                               "(select P.id from players P where P.memberId = ? and P.sessionId = ?), "
                                "?)"),
-                {*gameId, ga.courtId, ga.memberId, ga.quality});
+                {*gameId, ga.courtId, ga.memberId, sessionId, ga.quality});
 
         if (!insertResult) {
             tx.setError();

@@ -18,9 +18,11 @@ struct PlayerStatsDialog::Impl {
     Ui::PlayerStatsDialog ui;
 };
 
-PlayerStatsDialog::PlayerStatsDialog(MemberId memberId, SessionId sessionId, ClubRepository *club, QWidget *parent)
-        : QDialog(parent), d(new Impl{memberId, sessionId, club}) {
+PlayerStatsDialog::PlayerStatsDialog(const BaseMember &m, SessionId sessionId, ClubRepository *club, QWidget *parent)
+        : QDialog(parent), d(new Impl{m.id, sessionId, club}) {
     d->ui.setupUi(this);
+
+    setWindowTitle(tr("Game statistics for %1").arg(m.fullName()));
 
     reload();
 }
