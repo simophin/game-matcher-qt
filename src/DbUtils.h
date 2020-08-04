@@ -23,13 +23,16 @@
 #include "TypeUtils.h"
 
 
-template <typename T>
+template<typename T>
 struct QueryResult {
     mutable std::variant<QSqlError, T> result;
 
-    inline QueryResult(const QSqlError &e): result(e) {}
-    inline QueryResult(const QSqlError *e): result(*e) {}
-    inline QueryResult(const T &data): result(data) {}
+    inline QueryResult(const QSqlError &e) : result(e) {}
+
+    inline QueryResult(const QSqlError *e) : result(*e) {}
+
+    inline QueryResult(const T &data) : result(data) {}
+
     inline QueryResult() = default;
 
     inline T *success() const {
@@ -58,12 +61,12 @@ struct QueryResult {
         return success() != nullptr;
     }
 
-    inline T* operator->() {
+    inline T *operator->() {
         assert(success());
         return success();
     }
 
-    inline T& operator*() {
+    inline T &operator*() {
         assert(success());
         return *success();
     }
@@ -72,8 +75,8 @@ struct QueryResult {
 class DbUtils {
 public:
 
-    template <typename Entity, std::enable_if_t<HasMetaObject<Entity, const QMetaObject>::value, int> = 0>
-    static bool readFrom(Entity& entity, const QSqlRecord &record) {
+    template<typename Entity, std::enable_if_t<HasMetaObject<Entity, const QMetaObject>::value, int> = 0>
+    static bool readFrom(Entity &entity, const QSqlRecord &record) {
         static auto propertyMaps = [] {
             QHash<QString, QMetaProperty> result;
             const QMetaObject *metaObject = &Entity::staticMetaObject;
@@ -131,8 +134,8 @@ public:
         return true;
     }
 
-    template <typename T, std::enable_if_t<!HasMetaObject<T, const QMetaObject>::value, int> = 0>
-    static bool readFrom(T& out, const QSqlRecord &record) {
+    template<typename T, std::enable_if_t<!HasMetaObject<T, const QMetaObject>::value, int> = 0>
+    static bool readFrom(T &out, const QSqlRecord &record) {
         if (auto v = record.value(0); v.isValid()) {
             out = v.value<T>();
             return true;
@@ -144,8 +147,9 @@ public:
 
     static QueryResult<QSqlQuery> buildQuery(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds);
 
-    template <typename ResultType>
-    static inline QueryResult<QVector<ResultType>> queryList(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+    template<typename ResultType>
+    static inline QueryResult<QVector<ResultType>>
+    queryList(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
         auto query = buildQuery(db, sql, binds);
         if (!query) return query.error();
         if (!query->isSelect()) return {};
@@ -161,8 +165,49 @@ public:
         return result;
     }
 
-    template <typename ResultType>
-    static inline QueryResult<ResultType> queryFirst(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+    template<typename ResultType, typename Streamer>
+    static inline QueryResult<size_t> queryStream(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds,
+                                                  Streamer streamer) {
+        auto query = buildQuery(db, sql, binds);
+        if (!query) return query.error();
+        if (!query->isSelect()) return {};
+        size_t rc = 0;
+        while (query->next()) {
+            ResultType r;
+            if (!readFrom(r, query->record())) {
+                return QSqlError(QObject::tr("Unable to read from record"));
+            }
+
+            if (!streamer(r)) {
+                break;
+            }
+
+            rc++;
+        }
+        return rc;
+    }
+
+    template<typename Streamer>
+    static inline QueryResult<size_t> queryRawStream(
+            QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds, Streamer streamer) {
+        auto query = buildQuery(db, sql, binds);
+        if (!query) return query.error();
+        if (!query->isSelect()) return {};
+        size_t rc = 0;
+        while (query->next()) {
+            if (!streamer(query->record())) {
+                break;
+            }
+
+            rc++;
+        }
+        return rc;
+    }
+
+
+    template<typename ResultType>
+    static inline QueryResult<ResultType>
+    queryFirst(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
         auto result = queryList<ResultType>(db, sql, binds);
         if (!result) return result.error();
         if (result->isEmpty()) {
@@ -171,8 +216,9 @@ public:
         return result->at(0);
     }
 
-    template <typename IdType>
-    static inline QueryResult<IdType> insert(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
+    template<typename IdType>
+    static inline QueryResult<IdType>
+    insert(QSqlDatabase &db, const QString &sql, const QVector<QVariant> &binds = {}) {
         auto query = buildQuery(db, sql, binds);
         if (!query) return query.error();
         if (auto id = query->lastInsertId(); id.isValid()) {

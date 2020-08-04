@@ -9,11 +9,11 @@
 
 class QPainter;
 
-struct Member;
+struct BaseMember;
 
 class MemberPainter {
 public:
-    static QColor colorForMember(const Member &);
+    static QColor colorForMember(const BaseMember &);
 };
 
 

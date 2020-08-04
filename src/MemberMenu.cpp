@@ -9,6 +9,7 @@
 #include "CheckInDialog.h"
 #include "ToastDialog.h"
 #include "EditMemberDialog.h"
+#include "PlayerStatsDialog.h"
 
 #include <QPoint>
 #include <QMenu>
@@ -121,6 +122,17 @@ void MemberMenu::showAt(QWidget *parent,
                         markPaid(parent, repo, *sessionId, m);
                     });
         }
+    }
+
+    if (sessionId) {
+        QObject::connect(
+                menu->addAction(QObject::tr("Show stats")),
+                &QAction::triggered,
+                [=] {
+                    auto dialog = new PlayerStatsDialog(m.id, *sessionId, repo, parent);
+                    dialog->setWindowTitle(QObject::tr("Game statistics for %1").arg(m.fullName()));
+                    dialog->show();
+                });
     }
 
     QObject::connect(

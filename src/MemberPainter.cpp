@@ -18,6 +18,6 @@ static std::vector<QColor> bgColors = {
         "darkred",
 };
 
-QColor MemberPainter::colorForMember(const Member &m) {
+QColor MemberPainter::colorForMember(const BaseMember &m) {
     return bgColors[(m.level - 1) % bgColors.size()];
 }

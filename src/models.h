@@ -24,7 +24,7 @@ public:
 };
 
 
-struct Member {
+struct BaseMember {
 Q_GADGET
 private:
     mutable QString fullNameCache;
@@ -47,6 +47,30 @@ public:
         return QLatin1String(QMetaEnum::fromType<Gender>().valueToKey(gender));
     }
 
+    QString fullName() const {
+        if (fullNameCache.isNull()) {
+            fullNameCache = QObject::tr("%1 %2", "full name").arg(firstName, lastName);
+        }
+        return fullNameCache;
+    }
+
+    bool operator==(const BaseMember &rhs) const {
+        return id == rhs.id &&
+               registerDate == rhs.registerDate &&
+               firstName == rhs.firstName &&
+               lastName == rhs.lastName &&
+               gender == rhs.gender &&
+               level == rhs.level;
+    }
+
+    bool operator!=(const BaseMember &rhs) const {
+        return !(rhs == *this);
+    }
+};
+
+struct Member : BaseMember {
+Q_GADGET
+public:
     enum Status {
         NotCheckedIn, CheckedIn, CheckedInPaused, CheckedOut
     };
@@ -56,26 +80,6 @@ public:
     DECLARE_PROPERTY(QVariant, paid, );
 
     QString displayName;
-
-    QString fullName() const {
-        if (fullNameCache.isNull()) {
-            fullNameCache = QObject::tr("%1 %2", "full name").arg(firstName, lastName);
-        }
-        return fullNameCache;
-    }
-
-    bool operator==(const Member &rhs) const {
-        return id == rhs.id &&
-               registerDate == rhs.registerDate &&
-               firstName == rhs.firstName &&
-               lastName == rhs.lastName &&
-               gender == rhs.gender &&
-               level == rhs.level;
-    }
-
-    bool operator!=(const Member &rhs) const {
-        return !(rhs == *this);
-    }
 };
 
 

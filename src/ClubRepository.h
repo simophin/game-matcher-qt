@@ -56,6 +56,20 @@ public:
     }
 };
 
+struct MemberGameStats {
+    struct PastGame {
+        GameId gameId;
+        GameId courtId;
+        QString courtName;
+        QDateTime startTime;
+        int quality;
+        QVector<BaseMember> players;
+    };
+
+    size_t numGamesOff = 0;
+    QVector<PastGame> pastGames;
+};
+
 class ClubRepository : public QObject {
 Q_OBJECT
 public:
@@ -124,6 +138,8 @@ public:
     createSession(int fee, const QString &place, const QString &announcement, int numPlayersPerCourt, const QVector<CourtConfiguration> &);
 
     QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
+
+    MemberGameStats getMemberGameStats(MemberId, SessionId) const;
 
     std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, qlonglong durationSeconds);
 
