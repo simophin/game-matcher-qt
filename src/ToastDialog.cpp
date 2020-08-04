@@ -13,11 +13,14 @@
 #include <QPropertyAnimation>
 #include <QMainWindow>
 #include <QPointer>
+#include <QStatusBar>
 
 struct ToastDialog::Impl {
     Ui::ToastDialog ui;
     QTimer timer;
 };
+
+static QPointer<QMainWindow> toastMainWindow;
 
 ToastDialog::ToastDialog(QWidget *parent)
         : QDialog(parent, Qt::FramelessWindowHint | Qt::CustomizeWindowHint), d(new Impl) {
@@ -63,13 +66,13 @@ void ToastDialog::showMessage(const QString &msg, int delayMills) {
 }
 
 void ToastDialog::show(const QString &msg, int delayMills) {
-//    static QPointer<ToastDialog> dialog;
-//    if (!dialog) {
-//        dialog = new ToastDialog();
-//    }
-//    dialog->showMessage(msg, delayMills);
+    if (auto window = toastMainWindow.data()) {
+        if (auto status = window->statusBar()) {
+            status->showMessage(msg, delayMills);
+        }
+    }
 }
 
 void ToastDialog::registerMainWindow(QMainWindow *window) {
-//    toastMainWindow = window;
+    toastMainWindow = window;
 }

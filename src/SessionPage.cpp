@@ -13,9 +13,7 @@
 #include "CourtDisplay.h"
 #include "MemberPainter.h"
 #include "MemberMenu.h"
-#include "FlowLayout.h"
 #include "CourtDisplayLayout.h"
-#include "MemberLabel.h"
 #include "PlayerTablePage.h"
 #include "PlayerStatsDialog.h"
 
@@ -89,6 +87,63 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     });
 
     connect(d->ui.fullScreenButton, &QPushButton::clicked, this, &SessionPage::toggleFullScreenRequested);
+
+    connect(d->ui.wardenOptionButton, &QPushButton::clicked, [=] {
+        auto wardenMenu = new QMenu(tr("Warden options"), this);
+        auto action = wardenMenu->addAction(tr("Start a new game"));
+        connect(action, &QAction::triggered, [=] {
+            auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
+            if (!dialog) {
+                QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
+                return;
+            }
+
+            dialog->show();
+            connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
+        });
+
+
+        auto adminMenu = wardenMenu->addMenu(tr("Admin"));
+
+        connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
+                [=] {
+                    auto dialog = new QDialog(this);
+                    QVBoxLayout *layout;
+                    dialog->setLayout(layout = new QVBoxLayout());
+                    auto page = new PlayerTablePage();
+                    layout->addWidget(page);
+                    page->setWindowModality(Qt::ApplicationModal);
+                    page->load(d->session.session.id, d->repo);
+
+                    dialog->show();
+                    dialog->setWindowTitle(tr("Player board"));
+                    dialog->adjustSize();
+                });
+
+        if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
+            connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
+                if (QMessageBox::question(this, tr("Withdrawing game"),
+                                          tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) == QMessageBox::Yes) {
+                    d->repo->withdrawLastGame(d->session.session.id);
+                }
+            });
+        }
+
+        connect(adminMenu->addAction(tr("Close current session")), &QAction::triggered,
+                this, &SessionPage::closeSessionRequested);
+
+
+        wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
+                QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
+    });
+
+    connect(d->ui.bellButton, &QPushButton::clicked, [=](bool checked) {
+        if (checked && !d->sound.isPlaying()) {
+            d->sound.play();
+        } else if (!checked && d->sound.isPlaying()) {
+            d->sound.stop();
+        }
+    });
 }
 
 SessionPage::~SessionPage() {
@@ -182,56 +237,6 @@ void SessionPage::updateElapseTime() {
 
     d->ui.timeLabel->setText(value);
     d->ui.timeLabel->setPalette(palette);
-}
-
-
-void SessionPage::on_wardenOptionButton_clicked() {
-    auto wardenMenu = new QMenu(tr("Warden options"), this);
-    auto action = wardenMenu->addAction(tr("Start a new game"));
-    connect(action, &QAction::triggered, [=] {
-        auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
-        if (!dialog) {
-            QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
-            return;
-        }
-
-        dialog->show();
-        connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
-    });
-
-
-    auto adminMenu = wardenMenu->addMenu(tr("Admin"));
-
-    connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
-            [=] {
-        auto dialog = new QDialog(this);
-        QVBoxLayout *layout;
-        dialog->setLayout(layout = new QVBoxLayout());
-        auto page = new PlayerTablePage();
-        layout->addWidget(page);
-        page->setWindowModality(Qt::ApplicationModal);
-        page->load(d->session.session.id, d->repo);
-
-        dialog->show();
-        dialog->setWindowTitle(tr("Player board"));
-        dialog->adjustSize();
-    });
-
-    if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
-        connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
-            if (QMessageBox::question(this, tr("Withdrawing game"),
-                                      tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) == QMessageBox::Yes) {
-                d->repo->withdrawLastGame(d->session.session.id);
-            }
-        });
-    }
-
-    connect(adminMenu->addAction(tr("Close current session")), &QAction::triggered,
-            this, &SessionPage::closeSessionRequested);
-
-
-    wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
-            QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
 }
 
 SessionPage *SessionPage::create(SessionId id, ClubRepository *repo, QWidget *parent) {

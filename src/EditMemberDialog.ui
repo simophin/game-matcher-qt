@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>306</width>
-    <height>296</height>
+    <width>462</width>
+    <height>324</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -34,62 +34,58 @@
      <item row="0" column="0">
       <widget class="QLabel" name="firstNameLabel">
        <property name="text">
-        <string>First name *</string>
+        <string>Full name *</string>
        </property>
       </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="firstNameLineEdit"/>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="lastNameLabel">
-       <property name="text">
-        <string>Last name *</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="lastNameLineEdit"/>
-     </item>
-     <item row="2" column="0">
       <widget class="QLabel" name="playingLevelLabel">
        <property name="text">
         <string>Playing level *</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
+     <item row="1" column="1">
+      <widget class="QComboBox" name="levelComboBox">
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+       <property name="placeholderText">
+        <string>Select your level</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
       <widget class="QLabel" name="genderLabel">
        <property name="text">
         <string>Gender *</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QComboBox" name="genderComboBox"/>
-     </item>
      <item row="2" column="1">
-      <widget class="QComboBox" name="levelComboBox"/>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="emailLabel">
-       <property name="text">
-        <string>Email</string>
+      <widget class="QComboBox" name="genderComboBox">
+       <property name="placeholderText">
+        <string>Select your gender</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="emailLineEdit"/>
-     </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="phoneLabel">
-       <property name="text">
-        <string>Phone</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLineEdit" name="phoneLineEdit"/>
+     <item row="0" column="1">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLineEdit" name="fullNameValue"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="fullNameErrorLabel">
+         <property name="styleSheet">
+          <string notr="true">color: red;
+font-size: 13pt;</string>
+         </property>
+         <property name="text">
+          <string>Must contain at least first and last name</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

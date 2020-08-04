@@ -484,7 +484,7 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
 std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, const QString &lastName) {
     return DbUtils::queryFirst<MemberId>(
             d->db,
-            QStringLiteral("select id from members where firstName = ? and lastName = ?"),
+            QStringLiteral("select id from members where firstName = ? collate nocase and lastName = ? collate nocase"),
             {firstName, lastName}).toOptional();
 }
 

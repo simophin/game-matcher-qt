@@ -92,6 +92,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="bellButton">
+        <property name="text">
+         <string>Bell</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="fullScreenButton">
         <property name="text">
          <string>Fullscreen</string>

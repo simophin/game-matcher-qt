@@ -26,6 +26,9 @@ public:
     void newMemberCreated(MemberId);
     void memberUpdated(MemberId);
 
+private slots:
+    void validateForm();
+
 private:
     struct Impl;
     Impl *d;

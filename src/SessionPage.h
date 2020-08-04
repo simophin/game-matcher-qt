@@ -33,8 +33,6 @@ private slots:
 
     void showMemberMenuAt(const Member &, const QPoint &);
 
-    void on_wardenOptionButton_clicked();
-
 private:
     struct Impl;
     Impl *d;
