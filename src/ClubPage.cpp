@@ -48,6 +48,7 @@ void ClubPage::openSession(SessionId sessionId) {
         d->layout->setCurrentWidget(session);
         connect(session, &SessionPage::closeSessionRequested, [=] {
             d->layout->removeWidget(session);
+            session->deleteLater();
         });
 
         connect(session, &SessionPage::toggleFullScreenRequested, this, &ClubPage::toggleFullScreenRequested);
