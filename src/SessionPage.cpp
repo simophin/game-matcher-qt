@@ -231,10 +231,10 @@ void SessionPage::updateElapseTime() {
         }
 
     } else {
-        value = tr("n/a");
         d->gameTimer.stop();
     }
 
+    d->ui.timeLabel->setVisible(!value.isEmpty());
     d->ui.timeLabel->setText(value);
     d->ui.timeLabel->setPalette(palette);
 }
