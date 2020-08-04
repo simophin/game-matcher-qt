@@ -34,6 +34,7 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
 
     reload();
     connect(d->repo, &ClubRepository::sessionChanged, this, &MemberSelectDialog::reload);
+    connect(d->repo, &ClubRepository::memberChanged, this, &MemberSelectDialog::reload);
     connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::reload);
     connect(d->ui.filterEdit, &QLineEdit::textChanged, d->filterDebounceTimer, qOverload<>(&QTimer::start));
 

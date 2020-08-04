@@ -146,6 +146,7 @@ public:
 signals:
 
     void clubInfoChanged();
+    void memberChanged();
     void sessionChanged(SessionId);
 
 private:

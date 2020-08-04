@@ -30,8 +30,6 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
         QString levelDesc;
         if (i == levelMin) {
             levelDesc = tr("Experienced", "level");
-        } else if (i == (levelMax - levelMin + 1) / 2) {
-            levelDesc = tr("Medium", "level");
         } else if (i == levelMax) {
             levelDesc = tr("Beginner", "level");
         }
@@ -114,7 +112,7 @@ void EditMemberDialog::accept() {
         m.phone = d->ui.phoneLineEdit->text();
         m.email = d->ui.emailLineEdit->text();
         m.level = level.toInt();
-        m.gender = enumFromString<Member::Gender>(gender.toString().toUtf8().data());
+        m.gender = gender.value<Member::Gender>();
         if (!d->repo->saveMember(m)) {
             QMessageBox::warning(this, tr("Error"),
                     tr("Unable to save to database. Probably nothing you can do about this. You should try again."));

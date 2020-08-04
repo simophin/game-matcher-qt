@@ -273,6 +273,8 @@ ClubRepository::createMember(const QString &fistName,
         return std::nullopt;
     }
 
+    emit memberChanged();
+
     return getMember(*memberId);
 }
 
@@ -350,6 +352,7 @@ bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) 
             {sessionId, memberId, paid}).orDefault(0) > 0;
     if (rc) {
         emit this->sessionChanged(sessionId);
+        emit memberChanged();
     }
     return rc;
 }
@@ -359,7 +362,10 @@ bool ClubRepository::checkOut(SessionId sessionId, MemberId memberId) {
             d->db,
             QStringLiteral("update players set checkOutTime = current_timestamp where sessionId = ? and memberId = ?"),
             {sessionId, memberId}).orDefault(0) > 0;
-    if (rc) emit this->sessionChanged(sessionId);
+    if (rc) {
+        emit this->sessionChanged(sessionId);
+        emit memberChanged();
+    }
     return rc;
 }
 
@@ -483,13 +489,17 @@ std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, c
 }
 
 bool ClubRepository::saveMember(const Member &m) {
-    return DbUtils::update(
+    if (DbUtils::update(
             d->db,
             QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
                            " = (?, ?, ?, ?, ?, ?) where id = ?"),
             {m.firstName, m.lastName, enumToString(m.gender), m.level, m.email, m.phone, m.id})
-                   .orDefault(0) > 0;
+                   .orDefault(0) > 0) {
+        emit memberChanged();
+        return true;
+    }
 
+    return false;
 }
 
 bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paused) {
@@ -497,6 +507,7 @@ bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paus
                         QStringLiteral("update players set paused = ? where sessionId = ? and memberId = ?"),
                         {paused, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);
+        emit memberChanged();
         return true;
     }
     return false;
@@ -507,6 +518,7 @@ bool ClubRepository::setPaid(SessionId sessionId, MemberId memberId, bool paid) 
                                   QStringLiteral("update players set paid = ? where sessionId = ? and memberId = ?"),
                                   {paid, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);
+        emit memberChanged();
         return true;
     }
     return false;
@@ -565,6 +577,8 @@ size_t ClubRepository::importMembers(std::function<bool(Member &)> memberSupplie
             success++;
         }
     }
+
+    emit memberChanged();
     return success;
 }
 
