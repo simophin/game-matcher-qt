@@ -93,13 +93,20 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
 
 #ifndef NDEBUG
     connect(d->ui.createFakeButton, &QPushButton::clicked, [=] {
-        const auto [levelMin, levelMax] = d->repo->getLevelRange();
-        for (const auto &name : FakeNames::names()) {
-            const auto components = name.split(QStringLiteral(" "));
-            d->repo->createMember(components[0], components[1],
-                                  QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male,
-                                  QRandomGenerator::global()->bounded(levelMin, levelMax + 1));
-        }
+        auto range = d->repo->getLevelRange();
+        QVector<Member> failed;
+        auto names = FakeNames::names();
+        auto iter = names.begin();
+        d->repo->importMembers([&](Member &m) {
+             if (iter == names.end()) return false;
+             auto components = iter->split(QStringLiteral(" "));
+             m.firstName = components[0];
+             m.lastName = components[1];
+             m.gender = QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male;
+             m.level = QRandomGenerator::global()->bounded(range.first, range.second + 1);
+             iter++;
+             return true;
+        }, failed);
     });
 
     connect(d->ui.checkInRandomButton, &QPushButton::clicked, [=] {

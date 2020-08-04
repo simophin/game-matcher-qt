@@ -568,7 +568,7 @@ size_t ClubRepository::importMembers(std::function<bool(Member &)> memberSupplie
     while (memberSupplier(member)) {
         auto memberId = DbUtils::insert<MemberId>(
                 d->db,
-                QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
+                QStringLiteral("insert or replace into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
                 {member.firstName, member.lastName, enumToString(member.gender), member.level});
 
         if (!memberId) {
