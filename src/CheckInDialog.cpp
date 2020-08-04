@@ -44,23 +44,23 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
     d->ui.annoucement->setText(tr("<u>Club announcement</u><br />%1").arg(d->session.session.announcement));
     d->ui.annoucement->setVisible(!d->session.session.announcement.isEmpty());
-    connect(d->ui.paidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
-    connect(d->ui.unpaidRadioButton, &QRadioButton::toggled, this, &CheckInDialog::validateForm);
-    validateForm();
+    connect(d->ui.paidButton, &QPushButton::clicked, [=] {
+        doCheckIn(true);
+    });
+
+    connect(d->ui.payLaterButton, &QPushButton::clicked, [=] {
+        doCheckIn(false);
+    });
+
+    connect(d->ui.cancelButton, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 CheckInDialog::~CheckInDialog() {
     delete d;
 }
 
-void CheckInDialog::validateForm() {
-    if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
-        button->setEnabled(d->ui.paidRadioButton->isChecked() || d->ui.unpaidRadioButton->isChecked());
-    }
-}
-
-void CheckInDialog::accept() {
-    if (!d->repo->checkIn(d->id, d->session.session.id, d->ui.paidRadioButton->isChecked())) {
+void CheckInDialog::doCheckIn(bool paid) {
+    if (!d->repo->checkIn(d->id, d->session.session.id, paid)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;
     }
@@ -70,5 +70,5 @@ void CheckInDialog::accept() {
     }
 
     emit this->memberCheckedIn(d->id);
-    QDialog::accept();
+    accept();
 }

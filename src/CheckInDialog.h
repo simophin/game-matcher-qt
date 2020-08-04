@@ -19,17 +19,14 @@ public:
 
     ~CheckInDialog() override;
 
-    void accept() override;
-
     signals:
     void memberCheckedIn(MemberId);
-
-private slots:
-    void validateForm();
 
 private:
     struct Impl;
     Impl *d;
+
+    void doCheckIn(bool paid);
 };
 
 #endif //GAMEMATCHER_CHECKINDIALOG_H

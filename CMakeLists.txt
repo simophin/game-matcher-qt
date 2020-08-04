@@ -106,7 +106,7 @@ add_executable(GameMatcher
         src/LinkedEntry.h
         src/LastSelectedCourts.h
         src/MemberImportDialog.cpp
-        src/MemberImportDialog.h src/PlayerStatsDialog.cpp src/PlayerStatsDialog.h)
+        src/MemberImportDialog.h src/PlayerStatsDialog.cpp src/PlayerStatsDialog.h src/ClubRepositoryModels.h)
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
