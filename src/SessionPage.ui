@@ -120,7 +120,18 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="wardenOptionButton">
+       <widget class="QPushButton" name="newGameButton">
+        <property name="text">
+         <string>New game</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/icons/icons.qrc">
+          <normaloff>:/icons/Device/restart-line.svg</normaloff>:/icons/Device/restart-line.svg</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="adminButton">
         <property name="text">
          <string>Admin</string>
         </property>

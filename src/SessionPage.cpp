@@ -91,22 +91,19 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
 
     connect(d->ui.fullScreenButton, &QPushButton::clicked, this, &SessionPage::toggleFullScreenRequested);
 
-    connect(d->ui.wardenOptionButton, &QPushButton::clicked, [=] {
-        auto wardenMenu = new QMenu(tr("Warden options"), this);
-        auto action = wardenMenu->addAction(tr("Start a new game"));
-        connect(action, &QAction::triggered, [=] {
-            auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
-            if (!dialog) {
-                QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
-                return;
-            }
+    connect(d->ui.newGameButton, &QPushButton::clicked, [=] {
+        auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
+        if (!dialog) {
+            QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
+            return;
+        }
 
-            dialog->show();
-            connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
-        });
+        dialog->show();
+        connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
+    });
 
-
-        auto adminMenu = wardenMenu->addMenu(tr("Admin"));
+    connect(d->ui.adminButton, &QPushButton::clicked, [=] {
+        auto adminMenu = new QMenu(tr("Admin options"), this);
 
         connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
                 [=] {
@@ -132,12 +129,12 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
             });
         }
 
-        connect(adminMenu->addAction(tr("Close current session")), &QAction::triggered,
+        connect(adminMenu->addAction(tr("Back to club page")), &QAction::triggered,
                 this, &SessionPage::closeSessionRequested);
 
 
-        wardenMenu->popup(d->ui.wardenOptionButton->mapToGlobal(
-                QPoint(d->ui.wardenOptionButton->width() / 2, d->ui.wardenOptionButton->height() / 2)));
+        adminMenu->popup(d->ui.adminButton->mapToGlobal(
+                QPoint(d->ui.adminButton->width() / 2, d->ui.adminButton->height() / 2)));
     });
 
     connect(d->ui.bellButton, &QPushButton::clicked, [=](bool checked) {
