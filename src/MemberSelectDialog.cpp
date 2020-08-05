@@ -32,7 +32,6 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
         d->ui.registerLayout->hide();
     }
 
-    reload();
     connect(d->repo, &ClubRepository::sessionChanged, this, &MemberSelectDialog::reload, Qt::QueuedConnection);
     connect(d->repo, &ClubRepository::memberChanged, this, &MemberSelectDialog::reload, Qt::QueuedConnection);
     connect(d->filterDebounceTimer, &QTimer::timeout, this, &MemberSelectDialog::reload);
@@ -45,6 +44,22 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
                     d->ui.memberList->mapToGlobal(pt));
         }
     });
+
+    connect(d->ui.registerButton, &QPushButton::clicked, [=] {
+        auto dialog = new EditMemberDialog(d->repo, this);
+        connect(dialog, &EditMemberDialog::newMemberCreated, [this](auto id) {
+            emit this->memberSelected(id);
+            if (d->closeWhenSelected) QDialog::accept();
+        });
+        dialog->show();
+    });
+
+    connect(d->ui.memberList, &QListWidget::itemDoubleClicked, [=](auto item) {
+        item->setSelected(true);
+        accept();
+    });
+
+    reload();
     validateForm();
 }
 
@@ -71,11 +86,6 @@ void MemberSelectDialog::reload() {
         item->setData(Qt::UserRole, QVariant::fromValue(member));
         item->setForeground(MemberPainter::colorForMember(member));
     }
-}
-
-void MemberSelectDialog::on_memberList_itemDoubleClicked(QListWidgetItem *item) {
-    item->setSelected(true);
-    accept();
 }
 
 void MemberSelectDialog::validateForm() {
@@ -107,17 +117,12 @@ void MemberSelectDialog::changeEvent(QEvent *event) {
     }
 }
 
-void MemberSelectDialog::on_registerButton_clicked() {
-    auto dialog = new EditMemberDialog(d->repo, this);
-    connect(dialog, &EditMemberDialog::newMemberCreated, [this](auto id) {
-        emit this->memberSelected(id);
-        if (d->closeWhenSelected) QDialog::accept();
-    });
-    dialog->show();
-}
-
 void MemberSelectDialog::setAcceptButtonText(const QString &text) {
     if (auto button = d->ui.buttonBox->button(QDialogButtonBox::Ok)) {
         button->setText(text);
     }
+}
+
+void MemberSelectDialog::clearFilter() {
+    d->ui.filterEdit->clear();
 }

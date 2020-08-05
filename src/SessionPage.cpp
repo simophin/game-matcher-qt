@@ -81,7 +81,10 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
         dialog->setAcceptButtonText(tr("Check in"));
         dialog->show();
         connect(dialog, &MemberSelectDialog::memberSelected, [=](MemberId id) {
-            auto checkInDialog = new CheckInDialog(id, d->session.session.id, d->repo, this);
+            auto checkInDialog = new CheckInDialog(id, d->session.session.id, d->repo, dialog);
+            connect(checkInDialog, &CheckInDialog::memberCheckedIn, [=] {
+                dialog->clearFilter();
+            });
             checkInDialog->show();
         });
     });

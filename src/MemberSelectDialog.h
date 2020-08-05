@@ -30,6 +30,9 @@ public:
 
     void accept() override;
 
+public slots:
+    void clearFilter();
+
 protected:
     void changeEvent(QEvent *event) override;
 
@@ -39,8 +42,6 @@ signals:
 
 private slots:
     void reload();
-    void on_memberList_itemDoubleClicked(QListWidgetItem *item);
-    void on_registerButton_clicked();
     void validateForm();
 
 private:
