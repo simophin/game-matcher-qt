@@ -14,7 +14,7 @@
 #include "MemberPainter.h"
 #include "MemberMenu.h"
 #include "CourtDisplayLayout.h"
-#include "PlayerTablePage.h"
+#include "PlayerTableDialog.h"
 #include "PlayerStatsDialog.h"
 
 #include <functional>
@@ -107,17 +107,8 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
 
         connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
                 [=] {
-                    auto dialog = new QDialog(this);
-                    QVBoxLayout *layout;
-                    dialog->setLayout(layout = new QVBoxLayout());
-                    auto page = new PlayerTablePage();
-                    layout->addWidget(page);
-                    page->setWindowModality(Qt::ApplicationModal);
-                    page->load(d->session.session.id, d->repo);
-
-                    dialog->show();
-                    dialog->setWindowTitle(tr("Player board"));
-                    dialog->adjustSize();
+                    auto page = new PlayerTableDialog(d->repo, sessionId(), this);
+                    page->show();
                 });
 
         if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
