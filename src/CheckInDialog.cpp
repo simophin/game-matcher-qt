@@ -44,11 +44,17 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
     d->ui.annoucement->setText(tr("<u>Club announcement</u><br />%1").arg(d->session.session.announcement));
     d->ui.annoucement->setVisible(!d->session.session.announcement.isEmpty());
+
+    if (sessionFee == 0) {
+        d->ui.paidButton->setText(tr("OK"));
+        d->ui.unpaidButton->hide();
+    }
+
     connect(d->ui.paidButton, &QPushButton::clicked, [=] {
         doCheckIn(true);
     });
 
-    connect(d->ui.payLaterButton, &QPushButton::clicked, [=] {
+    connect(d->ui.unpaidButton, &QPushButton::clicked, [=] {
         doCheckIn(false);
     });
 

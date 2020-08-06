@@ -14,8 +14,6 @@ find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED)
 set(HEADERS
         src/ClubRepository.h
         src/models.h
-        src/GameMatcher.h
-        src/GameStats.h
         src/NewClubDialog.h
         src/WelcomePage.h
         src/ClubPage.h
@@ -27,7 +25,6 @@ set(HEADERS
         src/MemberSelectDialog.h
         src/CheckInDialog.h
         src/NewGameDialog.h
-        src/FlowLayout.h
         src/PlayerTablePage.h
         src/ToastDialog.h
         src/MainWindow.h
@@ -44,6 +41,8 @@ qt5_wrap_cpp(SOURCES ${HEADERS})
 
 list(APPEND HEADERS
         src/Adapter.h
+        src/GameMatcher.h
+        src/GameStats.h
         src/FakeNames.h
         src/MemberFilter.h
         src/TypeUtils.h
@@ -51,16 +50,12 @@ list(APPEND HEADERS
         src/CollectionUtils.h
         src/NameFormatUtils.h
         src/CombinationsFinder.h
-        src/FastVector.h
         src/MatchingScore.h
         src/PlayerInfo.h
         src/CourtCombinationFinder.h
-        src/SortingCourtCombinationFinder.h
         src/BFCombinationFinder.h
         src/MemberPainter.h
         src/MemberMenu.h
-        src/CourtFinderV1.h
-        src/LinkedEntry.h
         src/LastSelectedCourts.h
         )
 
@@ -111,19 +106,16 @@ add_executable(GameMatcher
         src/FakeNames.cpp
         src/CheckInDialog.cpp
         src/NewGameDialog.cpp
-        src/FlowLayout.cpp
         src/PlayerTablePage.cpp
         src/ToastDialog.cpp
         src/MatchingScore.cpp
         src/CourtCombinationFinder.cpp
-        src/SortingCourtCombinationFinder.cpp
         src/BFCombinationFinder.cpp
         src/MainWindow.cpp
         src/MemberPainter.cpp
         src/MemberMenu.cpp
         src/CourtDisplayLayout.cpp
         src/MemberLabel.cpp
-        src/CourtFinderV1.cpp
         src/MemberImportDialog.cpp
         src/PlayerStatsDialog.cpp
         src/PlayerTableDialog.cpp
@@ -134,3 +126,6 @@ target_compile_definitions(GameMatcher
 target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher
         PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg)
+
+qt5_import_plugins(GameMatcher
+        INCLUDE_BY_TYPE imageformats Qt5::QSvgPlugin)

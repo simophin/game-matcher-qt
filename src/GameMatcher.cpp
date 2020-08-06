@@ -10,7 +10,6 @@
 
 #include "GameStats.h"
 #include "CombinationsFinder.h"
-#include "FastVector.h"
 #include "BFCombinationFinder.h"
 
 using nonstd::span;

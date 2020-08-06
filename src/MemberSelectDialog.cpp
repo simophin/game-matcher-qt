@@ -28,9 +28,7 @@ MemberSelectDialog::MemberSelectDialog(MemberSearchFilter filter, bool showRegis
     d->filterDebounceTimer->setSingleShot(true);
     d->filterDebounceTimer->setInterval(500);
 
-    if (!showRegister) {
-        d->ui.registerLayout->hide();
-    }
+    d->ui.registerButton->setVisible(showRegister);
 
     connect(d->repo, &ClubRepository::sessionChanged, this, &MemberSelectDialog::reload, Qt::QueuedConnection);
     connect(d->repo, &ClubRepository::memberChanged, this, &MemberSelectDialog::reload, Qt::QueuedConnection);

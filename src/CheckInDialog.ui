@@ -121,9 +121,9 @@ padding: 8pt;</string>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="payLaterButton">
+      <widget class="QPushButton" name="unpaidButton">
        <property name="text">
-        <string>Pay later</string>
+        <string>Unpaid</string>
        </property>
        <property name="default">
         <bool>false</bool>
