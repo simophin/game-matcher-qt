@@ -114,7 +114,8 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
         if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
             connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
                 if (QMessageBox::question(this, tr("Withdrawing game"),
-                                          tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) == QMessageBox::Yes) {
+                                          tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) ==
+                    QMessageBox::Yes) {
                     d->repo->withdrawLastGame(d->session.session.id);
                 }
             });
@@ -123,6 +124,16 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
         connect(adminMenu->addAction(tr("Back to club page")), &QAction::triggered,
                 this, &SessionPage::closeSessionRequested);
 
+        connect(adminMenu->addAction(tr("About Qt")), &QAction::triggered,
+                QCoreApplication::instance(), &QApplication::aboutQt);
+
+        connect(adminMenu->addAction(tr("About")), &QAction::triggered,
+                [=] {
+                    QMessageBox::about(this, tr("About GameMatcher"),
+                                       tr("This software is written by <br/>"
+                                          "Fanchao Liu (<a href=\"mailto:gamematcher@fanchao.nz\">gamematcher@fanchao.nz</a>)<br/>"
+                                          "Licensed under GPLv3"));
+                });
 
         adminMenu->popup(d->ui.adminButton->mapToGlobal(
                 QPoint(d->ui.adminButton->width() / 2, d->ui.adminButton->height() / 2)));
@@ -156,14 +167,16 @@ void SessionPage::onCurrentGameChanged() {
         widget->setCourt(court);
     };
 
-    setEntities(d->courtLayout, d->lastGame ? d->lastGame->courts : QVector<CourtPlayers>(), createWidget, updateWidget);
+    setEntities(d->courtLayout, d->lastGame ? d->lastGame->courts : QVector<CourtPlayers>(), createWidget,
+                updateWidget);
 
     QFont itemFont;
     itemFont.setPointSize(18);
     itemFont.setBold(true);
 
     d->ui.benchList->clear();
-    for (const auto &item : (d->lastGame ? d->lastGame->waiting : d->repo->getMembers(CheckedIn{d->session.session.id}))) {
+    for (const auto &item : (d->lastGame ? d->lastGame->waiting : d->repo->getMembers(
+            CheckedIn{d->session.session.id}))) {
         auto listItem = new QListWidgetItem(item.displayName, d->ui.benchList);
         listItem->setForeground(MemberPainter::colorForMember(item));
         listItem->setData(Qt::UserRole, QVariant::fromValue(item));

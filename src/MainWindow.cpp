@@ -11,6 +11,7 @@
 #include <QEvent>
 #include <QSettings>
 #include <QFile>
+#include <QMessageBox>
 
 static const auto skLastOpened = QStringLiteral("last_opened");
 static auto skMainWindowGeometry = QStringLiteral("sk_main_window_geometry");
