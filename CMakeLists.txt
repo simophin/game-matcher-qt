@@ -9,107 +9,128 @@ project(GameMatcher LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED)
 
-
-find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia REQUIRED)
-
-add_executable(GameMatcher
-        src/main.cpp
-        res/db/queries.qrc
-        res/images/images.qrc
-        res/icons/icons.qrc
-        res/fonts/fonts.qrc
-        res/sound/sound.qrc
-        src/ClubRepository.cpp
+set(HEADERS
         src/ClubRepository.h
         src/models.h
-        src/GameMatcher.cpp
         src/GameMatcher.h
         src/GameStats.h
-        src/DbUtils.h
-        src/DbUtils.cpp
         src/NewClubDialog.h
-        src/NewClubDialog.cpp
-        src/NewClubDialog.ui
-        src/WelcomePage.cpp
         src/WelcomePage.h
-        src/WelcomePage.ui
-        src/ClubPage.cpp
         src/ClubPage.h
-        src/ClubPage.ui
-        src/SessionPage.cpp
         src/SessionPage.h
-        src/SessionPage.ui
-        src/NewSessionDialog.cpp
         src/NewSessionDialog.h
-        src/NewSessionDialog.ui
-        src/EmptySessionPage.cpp
         src/EmptySessionPage.h
-        src/EmptySessionPage.ui
-        src/CourtDisplay.cpp
         src/CourtDisplay.h
-        src/CourtDisplay.ui
-        src/Adapter.h
-        src/EditMemberDialog.cpp
         src/EditMemberDialog.h
-        src/EditMemberDialog.ui
-        src/MemberSelectDialog.ui
-        src/MemberSelectDialog.cpp
         src/MemberSelectDialog.h
-        src/FakeNames.cpp
+        src/CheckInDialog.h
+        src/NewGameDialog.h
+        src/FlowLayout.h
+        src/PlayerTablePage.h
+        src/ToastDialog.h
+        src/MainWindow.h
+        src/CourtDisplayLayout.h
+        src/MemberLabel.h
+        src/MemberImportDialog.h
+        src/PlayerStatsDialog.h
+        src/PlayerTableDialog.h
+        src/ClubRepositoryModels.h
+        src/ClubRepositoryInternal.h
+        )
+
+qt5_wrap_cpp(SOURCES ${HEADERS})
+
+list(APPEND HEADERS
+        src/Adapter.h
         src/FakeNames.h
         src/MemberFilter.h
-        src/CheckInDialog.cpp
-        src/CheckInDialog.h
-        src/CheckInDialog.ui
-        src/NewGameDialog.cpp
-        src/NewGameDialog.ui
-        src/NewGameDialog.h
         src/TypeUtils.h
-        src/ClubRepositoryInternal.h
-        src/FlowLayout.h
-        src/FlowLayout.cpp
         src/span.h
-        src/PlayerTablePage.cpp
-        src/PlayerTablePage.h
-        src/PlayerTablePage.ui
         src/CollectionUtils.h
         src/NameFormatUtils.h
-        src/ToastDialog.cpp
-        src/ToastDialog.h
         src/CombinationsFinder.h
         src/FastVector.h
         src/MatchingScore.h
         src/PlayerInfo.h
-        src/MatchingScore.cpp
         src/CourtCombinationFinder.h
-        src/CourtCombinationFinder.cpp
-        src/SortingCourtCombinationFinder.cpp
         src/SortingCourtCombinationFinder.h
-        src/BFCombinationFinder.cpp
         src/BFCombinationFinder.h
-        src/MainWindow.cpp
-        src/MainWindow.h
-        src/MemberPainter.cpp
         src/MemberPainter.h
-        src/MemberMenu.cpp
         src/MemberMenu.h
-        src/CourtDisplayLayout.cpp
-        src/CourtDisplayLayout.h
-        src/MemberLabel.cpp
-        src/MemberLabel.h
-        src/CourtFinderV1.cpp
         src/CourtFinderV1.h
         src/LinkedEntry.h
         src/LastSelectedCourts.h
+        )
+
+qt5_add_resources(SOURCES
+    res/db/queries.qrc
+    res/images/images.qrc
+    res/icons/icons.qrc
+    res/fonts/fonts.qrc
+    res/sound/sound.qrc)
+
+qt5_wrap_ui(SOURCES
+    src/NewClubDialog.ui
+    src/WelcomePage.ui
+    src/ClubPage.ui
+    src/SessionPage.ui
+    src/NewSessionDialog.ui
+    src/EmptySessionPage.ui
+    src/CourtDisplay.ui
+    src/EditMemberDialog.ui
+    src/MemberSelectDialog.ui
+    src/CheckInDialog.ui
+    src/NewGameDialog.ui
+    src/PlayerTablePage.ui
+    src/MainWindow.ui
+    src/MemberImportDialog.ui
+    src/PlayerStatsDialog.ui
+    src/PlayerTableDialog.ui
+    src/ToastDialog.ui
+    )
+
+add_executable(GameMatcher
+        WIN32
+        ${SOURCES}
+        ${HEADERS}
+        src/main.cpp
+        src/ClubRepository.cpp
+        src/GameMatcher.cpp
+        src/DbUtils.cpp
+        src/NewClubDialog.cpp
+        src/WelcomePage.cpp
+        src/ClubPage.cpp
+        src/SessionPage.cpp
+        src/NewSessionDialog.cpp
+        src/EmptySessionPage.cpp
+        src/CourtDisplay.cpp
+        src/EditMemberDialog.cpp
+        src/MemberSelectDialog.cpp
+        src/FakeNames.cpp
+        src/CheckInDialog.cpp
+        src/NewGameDialog.cpp
+        src/FlowLayout.cpp
+        src/PlayerTablePage.cpp
+        src/ToastDialog.cpp
+        src/MatchingScore.cpp
+        src/CourtCombinationFinder.cpp
+        src/SortingCourtCombinationFinder.cpp
+        src/BFCombinationFinder.cpp
+        src/MainWindow.cpp
+        src/MemberPainter.cpp
+        src/MemberMenu.cpp
+        src/CourtDisplayLayout.cpp
+        src/MemberLabel.cpp
+        src/CourtFinderV1.cpp
         src/MemberImportDialog.cpp
-        src/MemberImportDialog.h src/PlayerStatsDialog.cpp src/PlayerStatsDialog.h src/ClubRepositoryModels.h src/PlayerTableDialog.cpp src/PlayerTableDialog.h)
+        src/PlayerStatsDialog.cpp
+        src/PlayerTableDialog.cpp
+        )
 
 target_compile_definitions(GameMatcher
         PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia)
+        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg)
