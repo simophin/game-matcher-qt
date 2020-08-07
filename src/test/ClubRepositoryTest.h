@@ -46,6 +46,21 @@ private slots :
         QCOMPARE(repo->getClubName(), clubName);
     }
 
+    void testSettings_data() {
+        QTest::addColumn<SettingKey>("key");
+        QTest::addColumn<QVariant>("value");
+
+        QTest::newRow("Strings") << "Key1" << QVariant::fromValue(QStringLiteral("Value1"));
+        QTest::newRow("Integers") << "Key2" << QVariant::fromValue(5);
+    }
+
+    void testSettings() {
+        QFETCH(SettingKey, key);
+        QFETCH(QVariant, value);
+
+        QVERIFY(repo->saveSetting(key, value));
+        QCOMPARE(value.toString(), repo->getSetting(key));
+    }
 
     void cleanupTestCase() {
         delete repo;
