@@ -12,7 +12,7 @@
 class ClubRepositoryTest : public QObject {
     Q_OBJECT
 private slots :
-    void initTestCase() {
+    void init() {
         repo = ClubRepository::open(this, QStringLiteral(":memory:"));
         QVERIFY(repo != nullptr);
     }
@@ -59,10 +59,23 @@ private slots :
         QFETCH(QVariant, value);
 
         QVERIFY(repo->saveSetting(key, value));
-        QCOMPARE(value.toString(), repo->getSetting(key));
+        QCOMPARE(value.toString(), repo->getSetting(key).value_or(QString()));
+        QVERIFY(repo->removeSetting(key));
+        QVERIFY(!repo->getSetting(key));
     }
 
-    void cleanupTestCase() {
+    void testSaveMember_data() {
+        QTest::addColumn<Member>("member");
+
+    }
+
+    void testSaveMember() {
+        QFETCH(Member, member);
+
+
+    }
+
+    void cleanup() {
         delete repo;
     }
 
