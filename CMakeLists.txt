@@ -9,7 +9,7 @@ project(GameMatcher LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED)
+find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED OPTIONAL_COMPONENTS Test)
 
 set(HEADERS
         src/ClubRepository.h
@@ -34,8 +34,7 @@ set(HEADERS
         src/PlayerStatsDialog.h
         src/PlayerTableDialog.h
         src/ClubRepositoryModels.h
-        src/ClubRepositoryInternal.h
-        )
+        src/ClubRepositoryInternal.h)
 
 qt5_wrap_cpp(SOURCES ${HEADERS})
 
@@ -86,11 +85,10 @@ qt5_wrap_ui(SOURCES
     src/ToastDialog.ui
     )
 
-add_executable(GameMatcher
-        WIN32
+add_library(GameMatcher_archive
+        OBJECT
         ${SOURCES}
         ${HEADERS}
-        src/main.cpp
         src/ClubRepository.cpp
         src/GameMatcher.cpp
         src/DbUtils.cpp
@@ -121,11 +119,36 @@ add_executable(GameMatcher
         src/PlayerTableDialog.cpp
         )
 
-target_compile_definitions(GameMatcher
-        PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
-target_include_directories(GameMatcher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
-target_link_libraries(GameMatcher
-        PRIVATE Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg)
+target_compile_definitions(GameMatcher_archive
+        PUBLIC -DQT_NO_CAST_FROM_ASCII=1)
+target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
+target_link_libraries(GameMatcher_archive
+        PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg)
 
-qt5_import_plugins(GameMatcher
+qt5_import_plugins(GameMatcher_archive
         INCLUDE_BY_TYPE imageformats Qt5::QSvgPlugin)
+
+add_executable(GameMatcher WIN32 src/main.cpp)
+target_link_libraries(GameMatcher GameMatcher_archive)
+
+
+# Testing
+set(TEST_CLASSES ClubRepositoryTest)
+
+
+foreach(TEST_CLASS ${TEST_CLASSES})
+    set(GEN_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/test/${TEST_CLASS}.cpp)
+    file(GENERATE
+            OUTPUT ${GEN_OUTPUT}
+            CONTENT "#include \"${TEST_CLASS}.h\"\n\n#include <QtTest/QtTest> \nQTEST_MAIN(${TEST_CLASS});\n")
+
+    set(TEST_SOURCES src/test/${TEST_CLASS}.h)
+    qt5_wrap_cpp(TEST_SOURCES ${TEST_SOURCES})
+    add_executable(${TEST_CLASS} ${TEST_SOURCES} ${GEN_OUTPUT})
+    add_test(NAME ${TEST_CLASS} COMMAND ${TEST_CLASS})
+    target_link_libraries(${TEST_CLASS} PRIVATE Qt5::Test GameMatcher_archive)
+    target_include_directories(${TEST_CLASS} PRIVATE src/test)
+endforeach()
+
+
+

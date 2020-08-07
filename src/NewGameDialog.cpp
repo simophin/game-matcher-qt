@@ -224,7 +224,7 @@ void NewGameDialog::accept() {
                                           eligiblePlayers,
                                           courtIds,
                                           numPlayersPerCourt,
-                                          levelRange.first, levelRange.second,
+                                          levelRange.min, levelRange.max,
                                           QDateTime::currentMSecsSinceEpoch());
             })
     );

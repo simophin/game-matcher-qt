@@ -25,9 +25,9 @@ public:
     QString getClubName() const;
     bool saveClubName(const QString&);
 
-    std::pair<unsigned int, unsigned int> getLevelRange() const;
+    LevelRange getLevelRange() const;
 
-    bool saveClubInfo(const QString &name, unsigned int levelMin, unsigned int levelMax);
+    bool saveClubInfo(const QString &name, LevelRange);
 
     std::optional<GameInfo> getLastGameInfo(SessionId) const;
 

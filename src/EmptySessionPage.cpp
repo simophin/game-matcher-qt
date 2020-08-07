@@ -103,7 +103,7 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
              m.firstName = components[0];
              m.lastName = components[1];
              m.gender = QRandomGenerator::global()->generate() % 4 == 0 ? Member::Female : Member::Male;
-             m.level = QRandomGenerator::global()->bounded(range.first, range.second + 1);
+             m.level = QRandomGenerator::global()->bounded(range.min, range.max + 1);
              iter++;
              return true;
         }, failed);

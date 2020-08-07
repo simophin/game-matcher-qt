@@ -65,4 +65,24 @@ struct MemberGameStats {
     QVector<PastGame> pastGames;
 };
 
+struct LevelRange {
+    Q_GADGET
+public:
+    DECLARE_PROPERTY(unsigned, min, = 0);
+    DECLARE_PROPERTY(unsigned, max, = 0);
+
+    bool operator==(const LevelRange &rhs) const {
+        return min == rhs.min &&
+               max == rhs.max;
+    }
+
+    bool operator!=(const LevelRange &rhs) const {
+        return !(rhs == *this);
+    }
+
+    bool isValid() const {
+        return min <= max;
+    }
+};
+
 #endif //GAMEMATCHER_CLUBREPOSITORYMODELS_H

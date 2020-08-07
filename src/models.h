@@ -16,13 +16,6 @@ typedef qlonglong CourtId;
 typedef qlonglong GameId;
 typedef QString SettingKey;
 
-struct Setting {
-    Q_GADGET
-public:
-    DECLARE_PROPERTY(SettingKey, name, );
-    DECLARE_PROPERTY(QString, value, );
-};
-
 
 struct BaseMember {
 Q_GADGET

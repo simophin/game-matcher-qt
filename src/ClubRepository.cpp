@@ -24,8 +24,8 @@ static const SettingKey skClubName = QStringLiteral("club_name");
 static const SettingKey skLevelMin = QStringLiteral("level_min");
 static const SettingKey skLevelMax = QStringLiteral("level_max");
 
-static const unsigned int defaultLevelMin = 1;
-static const unsigned int defaultLevelMax = 4;
+static const unsigned defaultLevelMin = 1;
+static const unsigned defaultLevelMax = 4;
 
 class SQLTransaction {
     QSqlDatabase &db_;
@@ -54,6 +54,7 @@ ClubRepository::ClubRepository(QObject *parent, const QSqlDatabase &db)
         : QObject(parent), d(new Impl{db}) {}
 
 ClubRepository::~ClubRepository() {
+    d->db.close();
     delete d;
 }
 
@@ -70,11 +71,12 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
 
     SQLTransaction tx(db);
 
-    auto result = DbUtils::queryFirst<Setting>(db,
-                                               QStringLiteral("select * from settings where name = 'schema_version'"));
+    auto result = DbUtils::queryFirst<int>(
+            db,
+            QStringLiteral("select cast(value as integer) from settings where name = 'schema_version'"));
 
     if (result) {
-        currSchemaVersion = result->value.toInt();
+        currSchemaVersion = *result;
     }
 
     QSqlQuery q(db);
@@ -439,7 +441,7 @@ bool ClubRepository::saveSetting(const SettingKey &key, const QVariant &value) {
 }
 
 bool ClubRepository::removeSetting(const SettingKey &key) {
-    return DbUtils::insert<Setting>(
+    return DbUtils::update(
             d->db,
             QStringLiteral("delete from settings where name = ?"),
             {key});
@@ -533,21 +535,21 @@ bool ClubRepository::saveClubName(const QString &name) {
     return saveSetting(skClubName, name);
 }
 
-std::pair<unsigned int, unsigned int> ClubRepository::getLevelRange() const {
+LevelRange ClubRepository::getLevelRange() const {
     SQLTransaction tx(d->db);
-    return std::make_pair(
-            getSettingValue<int>(skLevelMin).value_or(defaultLevelMin),
-            getSettingValue<int>(skLevelMax).value_or(defaultLevelMax)
-    );
+    return {
+            getSettingValue<unsigned>(skLevelMin).value_or(defaultLevelMin),
+            getSettingValue<unsigned>(skLevelMax).value_or(defaultLevelMax)
+    };
 }
 
-bool ClubRepository::saveClubInfo(const QString &name, unsigned int levelMin, unsigned int levelMax) {
-    if (levelMax < levelMin) {
+bool ClubRepository::saveClubInfo(const QString &name, LevelRange range) {
+    if (!range.isValid()) {
         return false;
     }
 
     SQLTransaction tx(d->db);
-    if (!saveSetting(skLevelMin, levelMin) || !saveSetting(skLevelMax, levelMax)) {
+    if (!saveSetting(skLevelMin, range.min) || !saveSetting(skLevelMax, range.max)) {
         tx.setError();
         return false;
     }
