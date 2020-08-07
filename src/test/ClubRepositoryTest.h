@@ -148,10 +148,35 @@ private slots :
         }
 
 
-
     }
 
+    void testImportMembers() {
+        struct {
+            const char *name;
+            QVector<BaseMember> inputMembers;
+            size_t sizeExpected, failExpected;
+        } testData[] = {
+                {"Happy day",
+                        {createMember("First", "Last", Member::Male, 2)},
+                        1,
+                        0
+                },
+        };
 
+        for (auto &[name, inputMembers, sizeExpected, failExpected] : testData) {
+            auto &list = inputMembers;
+            auto iter = inputMembers.begin();
+            QVector<BaseMember> failed;
+            auto imported = repo->importMembers([&](BaseMember &m) {
+                if (iter == list.end()) return false;
+                m = *iter;
+                iter++;
+                return true;
+            }, failed);
+            QCOMPARE(imported, sizeExpected);
+            QCOMPARE(failed.size(), failExpected);
+        }
+    }
 
     void cleanup() {
         delete repo;
