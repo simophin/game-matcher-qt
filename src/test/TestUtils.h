@@ -11,7 +11,7 @@
 
 inline Member createMember(const char *firstName,
                            const char *lastName,
-                           Member::Gender gender, int level) {
+                           Member::Gender gender = Member::Male, int level = 1) {
     Member m;
     m.firstName = QLatin1String(firstName);
     m.lastName = QLatin1String(lastName);

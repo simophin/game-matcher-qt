@@ -62,6 +62,7 @@ private slots :
         QFETCH(SettingKey, key);
         QFETCH(QVariant, value);
 
+        QVERIFY(!repo->getSetting(key));
         QVERIFY(repo->saveSetting(key, value));
         QCOMPARE(value.toString(), repo->getSetting(key).value_or(QString()));
         QVERIFY(repo->removeSetting(key));
@@ -175,6 +176,51 @@ private slots :
             }, failed);
             QCOMPARE(imported, sizeExpected);
             QCOMPARE(failed.size(), failExpected);
+        }
+    }
+
+    void testFindMemberByNames() {
+        QVector<BaseMember> members = {
+                createMember("First1", "Last1"),
+                createMember("First2", "Last2"),
+                createMember("First3", "Last3"),
+        };
+
+        for (auto &item : members) {
+            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+        }
+
+        struct {
+            const char *testName;
+            std::pair<const char *, const char *> names;
+            std::optional<MemberId> expected;
+        } testData[] = {
+                {"Exact match",
+                        std::make_pair("First1", "Last1"),
+                        members[0].id},
+
+                {"Case insensitive first name",
+                        std::make_pair("first1", "Last1"),
+                        members[0].id},
+
+                {"Case insensitive last name",
+                        std::make_pair("First1", "last1"),
+                        members[0].id},
+
+                {"Case insensitive names",
+                        std::make_pair("first1", "last1"),
+                        members[0].id},
+
+                {"Found nothing",
+                        std::make_pair("First4", "Last4"),
+                        std::nullopt
+                }
+        };
+
+        for (auto &[testName, names, expected] : testData) {
+            auto actual = repo->findMemberBy(
+                    QLatin1String(names.first), QLatin1String(names.second));
+            QCOMPARE(actual, expected);
         }
     }
 
