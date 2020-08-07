@@ -257,17 +257,19 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
     return gameId;
 }
 
-std::optional<Member>
-ClubRepository::createMember(const QString &fistName,
+std::optional<BaseMember>
+ClubRepository::createMember(const QString &firstName,
                              const QString &lastName,
                              const Member::Gender &gender,
                              int level) {
+    if (firstName.isEmpty() || lastName.isEmpty()) return std::nullopt;
+
     SQLTransaction tx(d->db);
 
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
             QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
-            {fistName, lastName, enumToString(gender), level});
+            {firstName, lastName, enumToString(gender), level});
 
     if (!memberId) {
         qWarning() << "Error inserting member";
@@ -447,12 +449,12 @@ bool ClubRepository::removeSetting(const SettingKey &key) {
             {key});
 }
 
-std::optional<Member> ClubRepository::getMember(MemberId id) const {
+std::optional<BaseMember> ClubRepository::getMember(MemberId id) const {
     auto[sql, args] = constructFindMembersSql(AllMembers{});
     sql += QStringLiteral(" and M.id = ?");
     args.push_back(id);
 
-    return DbUtils::queryFirst<Member>(d->db, sql, args).toOptional();
+    return DbUtils::queryFirst<BaseMember>(d->db, sql, args).toOptional();
 }
 
 bool ClubRepository::withdrawLastGame(SessionId sessionId) {
@@ -490,7 +492,7 @@ std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, c
             {firstName, lastName}).toOptional();
 }
 
-bool ClubRepository::saveMember(const Member &m) {
+bool ClubRepository::saveMember(const BaseMember &m) {
     if (DbUtils::update(
             d->db,
             QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
@@ -562,7 +564,7 @@ bool ClubRepository::saveClubInfo(const QString &name, LevelRange range) {
     return true;
 }
 
-size_t ClubRepository::importMembers(std::function<bool(Member &)> memberSupplier, QVector<Member> &failMembers) {
+size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, QVector<BaseMember> &failMembers) {
     SQLTransaction tx(d->db);
 
     size_t success = 0;

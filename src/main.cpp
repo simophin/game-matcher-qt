@@ -87,13 +87,8 @@ static void testMatcher() {
 
 int main(int argc, char **argv) {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    qRegisterMetaType<GameId>("GameId");
-    qRegisterMetaType<CourtId>("CourtId");
-    qRegisterMetaType<SessionId>("SessionId");
-    qRegisterMetaType<MemberId>("MemberId");
-    qRegisterMetaType<SettingKey>("SettingKey");
-    qRegisterMetaType<CourtPlayers>();
-    qRegisterMetaType<Member>();
+
+    registerModels();
 
     QApplication app(argc, argv);
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoMono-Regular.ttf"));

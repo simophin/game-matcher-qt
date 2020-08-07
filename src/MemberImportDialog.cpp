@@ -21,7 +21,7 @@
 
 static const auto propColumnName = "column_name";
 
-typedef void(*PropertyWriterFn)(Member &, const QString &);
+typedef void(*PropertyWriterFn)(BaseMember &, const QString &);
 
 struct PropertyWriter {
     QString columnName;
@@ -30,28 +30,28 @@ struct PropertyWriter {
 
 static const PropertyWriter firstNameWriter = {
         QObject::tr("First name"),
-        [](Member &m, const QString &item) {
+        [](BaseMember &m, const QString &item) {
             m.firstName = item;
         }
 };
 
 static const PropertyWriter lastNameWriter = {
         QObject::tr("Last name"),
-        [](Member &m, const QString &item) {
+        [](BaseMember &m, const QString &item) {
             m.lastName = item;
         }
 };
 
 static const PropertyWriter genderWriter = {
         QObject::tr("Gender"),
-        [](Member &m, const QString &item) {
+        [](BaseMember &m, const QString &item) {
             m.gender = (item.compare(QStringLiteral("M"), Qt::CaseInsensitive) == 0) ? Member::Male : Member::Female;
         }
 };
 
 static const PropertyWriter levelWriter = {
         QObject::tr("Level"),
-        [](Member &m, const QString &item) {
+        [](BaseMember &m, const QString &item) {
             bool ok;
             m.level = item.toInt(&ok);
             if (!ok) {
@@ -92,7 +92,7 @@ static QStringList readHeaders(const QString &fileName) {
     return stream.readLine(512).split(QStringLiteral(","));
 }
 
-static std::function<bool(Member &)>
+static std::function<bool(BaseMember &)>
 readAll(const QString &filePath, const QHash<QString, const PropertyWriter *> &propMaps) {
     struct Context {
         QFile file;
@@ -108,7 +108,7 @@ readAll(const QString &filePath, const QHash<QString, const PropertyWriter *> &p
     ctx->stream.setDevice(&ctx->file);
     ctx->headerNames = ctx->stream.readLine(512).split(QStringLiteral(","));
 
-    return [ctx, propMaps](Member &m) -> bool {
+    return [ctx, propMaps](BaseMember &m) -> bool {
         if (!ctx->stream.readLineInto(&ctx->line, 512)) return false;
 
         auto items = ctx->line.split(QStringLiteral(","));
@@ -228,7 +228,7 @@ void MemberImportDialog::reload() {
 }
 
 void MemberImportDialog::accept() {
-    QVector<Member> failure;
+    QVector<BaseMember> failure;
     auto numSuccess = d->repo->importMembers(readAll(d->ui.pathLabel->text(), d->getPropertyMap()), failure);
     auto body = tr("Number of success imports: %1").arg(numSuccess);
     if (!failure.isEmpty()) {

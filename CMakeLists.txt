@@ -117,6 +117,7 @@ add_library(GameMatcher_archive
         src/MemberImportDialog.cpp
         src/PlayerStatsDialog.cpp
         src/PlayerTableDialog.cpp
+        src/models.cpp
         )
 
 target_compile_definitions(GameMatcher_archive
@@ -144,7 +145,7 @@ foreach(TEST_CLASS ${TEST_CLASSES})
 
     set(TEST_SOURCES src/test/${TEST_CLASS}.h)
     qt5_wrap_cpp(TEST_SOURCES ${TEST_SOURCES})
-    add_executable(${TEST_CLASS} ${TEST_SOURCES} ${GEN_OUTPUT})
+    add_executable(${TEST_CLASS} ${TEST_SOURCES} ${GEN_OUTPUT} src/test/TestUtils.h)
     add_test(NAME ${TEST_CLASS} COMMAND ${TEST_CLASS})
     target_link_libraries(${TEST_CLASS} PRIVATE Qt5::Test GameMatcher_archive)
     target_include_directories(${TEST_CLASS} PRIVATE src/test)

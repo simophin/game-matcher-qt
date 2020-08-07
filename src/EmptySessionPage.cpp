@@ -94,10 +94,10 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
 #ifndef NDEBUG
     connect(d->ui.createFakeButton, &QPushButton::clicked, [=] {
         auto range = d->repo->getLevelRange();
-        QVector<Member> failed;
+        QVector<BaseMember> failed;
         auto names = FakeNames::names();
         auto iter = names.begin();
-        d->repo->importMembers([&](Member &m) {
+        d->repo->importMembers([&](BaseMember &m) {
              if (iter == names.end()) return false;
              auto components = iter->split(QStringLiteral(" "));
              m.firstName = components[0];

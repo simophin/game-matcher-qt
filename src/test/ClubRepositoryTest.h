@@ -9,10 +9,14 @@
 
 #include <QtTest/QtTest>
 
+#include "TestUtils.h"
+
 class ClubRepositoryTest : public QObject {
-    Q_OBJECT
+Q_OBJECT
 private slots :
+
     void init() {
+        registerModels();
         repo = ClubRepository::open(this, QStringLiteral(":memory:"));
         QVERIFY(repo != nullptr);
     }
@@ -34,7 +38,7 @@ private slots :
         QTest::addColumn<QString>("clubName");
         QTest::addColumn<LevelRange>("range");
 
-        QTest::newRow("Happy day") << "Test club name" << LevelRange { 10, 12 };
+        QTest::newRow("Happy day") << "Test club name" << LevelRange{10, 12};
     }
 
     void testClubInfo() {
@@ -64,16 +68,90 @@ private slots :
         QVERIFY(!repo->getSetting(key));
     }
 
-    void testSaveMember_data() {
-        QTest::addColumn<Member>("member");
+    void testCreateMember() {
+        struct {
+            const char *name;
+            BaseMember member;
+            bool successExpected;
+        } testData[] = {
+                {
+                        "Happy data",
+                        createMember("First", "Last", Member::Male, 1),
+                        true
+                },
+                {
+                        "Duplicated not allowed",
+                        createMember("First", "Last", Member::Male, 1),
+                        false
+                },
+                {
+                        "First name not allowed blank",
+                        createMember("", "Last", Member::Male, 1),
+                        false
+                },
+                {
+                        "Last name not allowed blank",
+                        createMember("First", "", Member::Male, 1),
+                        false
+                },
+        };
 
+        for (const auto &[name, member, successExpected] : testData) {
+            auto actual = repo->createMember(member.firstName, member.lastName, member.gender, member.level);
+            if (successExpected) {
+                verifyMember(*actual, member, name);
+            } else {
+                QVERIFY2(!actual, name);
+            }
+        }
     }
 
     void testSaveMember() {
-        QFETCH(Member, member);
+        struct {
+            const char *name;
+            Member member, updatedMember;
+            bool successExpected;
+        } testData[] = {
+                {
+                        "Happy day",
+                        createMember("First1", "Last1", Member::Male, 1),
+                        createMember("First1", "Last2", Member::Female, 2),
+                        true,
+                },
+                {
+                        "Name unchanged",
+                        createMember("First2", "Last1", Member::Male, 1),
+                        createMember("First2", "Last1", Member::Female, 2),
+                        true
+                },
+                {
+                        "Name change to existing name",
+                        createMember("First3", "Last1", Member::Male, 1),
+                        createMember("First2", "Last1", Member::Female, 2),
+                        false
+                },
+        };
+
+        for (auto &[name, member, updated, successExpected] : testData) {
+            const auto created = repo->createMember(member.firstName, member.lastName, member.gender, member.level);
+            QVERIFY2(created.has_value(), name);
+            updated.id = created->id;
+            QCOMPARE(repo->saveMember(updated), successExpected);
+
+            const auto latest = repo->getMember(created->id);
+            QVERIFY2(latest.has_value(), name);
+            if (successExpected) {
+                verifyMember(*latest, updated, name);
+            } else {
+                verifyMember(*latest, *created, name);
+            }
+        }
+
 
 
     }
+
+
 
     void cleanup() {
         delete repo;
@@ -82,7 +160,6 @@ private slots :
 private:
     ClubRepository *repo = nullptr;
 };
-
 
 
 #endif //GAMEMATCHER_CLUBREPOSITORYTEST_CPP

@@ -52,18 +52,18 @@ public:
     bool saveSetting(const SettingKey &key, const QVariant &value);
     bool removeSetting(const SettingKey &key);
 
-    std::optional<Member> createMember(
-            const QString &fistName, const QString &lastName,
+    std::optional<BaseMember> createMember(
+            const QString &firstName, const QString &lastName,
             const Member::Gender &gender, int level);
 
-    bool saveMember(const Member &);
-    size_t importMembers(std::function<bool(Member&)> memberSupplier, QVector<Member> &failMembers);
+    bool saveMember(const BaseMember &);
+    size_t importMembers(std::function<bool(BaseMember&)> memberSupplier, QVector<BaseMember> &failMembers);
 
     QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 
     std::optional<MemberId> findMemberBy(const QString &firstName, const QString &lastName);
 
-    std::optional<Member> getMember(MemberId) const;
+    std::optional<BaseMember> getMember(MemberId) const;
 
     QVector<Member> getMembers(MemberSearchFilter) const;
 

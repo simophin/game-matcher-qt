@@ -124,4 +124,6 @@ inline static QDebug operator<<(QDebug dbg, const GameAllocation &c)
     return dbg;
 }
 
+void registerModels();
+
 #endif // MODELS_H
