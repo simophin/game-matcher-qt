@@ -10,6 +10,7 @@
 #include <QtTest/QtTest>
 
 #include "TestUtils.h"
+#include "CollectionUtils.h"
 
 class ClubRepositoryTest : public QObject {
 Q_OBJECT
@@ -173,7 +174,7 @@ private slots :
                 m = *iter;
                 iter++;
                 return true;
-            }, failed);
+            }, &failed);
             QCOMPARE(imported, sizeExpected);
             QCOMPARE(failed.size(), failExpected);
         }
@@ -294,7 +295,8 @@ private slots :
         };
 
         for (const auto &d : testData) {
-            auto session = repo->createSession(d.fee, d.place, d.announcement, d.numPlayersPerCourt, d.courtConfigurations);
+            auto session = repo->createSession(d.fee, d.place, d.announcement, d.numPlayersPerCourt,
+                                               d.courtConfigurations);
             if (d.expectedSuccess) {
                 QVERIFY2(session.has_value(), d.testName);
                 QCOMPARE(*repo->getLastSession(), session->session.id);
@@ -307,6 +309,193 @@ private slots :
                 QVERIFY2(session->session.id > 0, d.testName);
             } else {
                 QVERIFY2(!session.has_value(), d.testName);
+            }
+        }
+    }
+
+    void testMemberGameOperation() {
+        QVector<BaseMember> members = {
+                createMember("First", "Last1", Member::Male, 1),
+                createMember("First", "Last2", Member::Female, 2),
+                createMember("First", "Last3", Member::Male, 3),
+        };
+
+        for (auto &item : members) {
+            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+        }
+
+        auto membersById = associateBy<QHash<MemberId, BaseMember>>(members, [](auto &m) {
+            return m.id;
+        });
+
+        compareMembers(repo->getMembers(AllMembers{}), members, "testMemberGameOperation");
+
+        typedef bool Paid;
+
+        struct {
+            const char *testName;
+            std::map<MemberId, Paid> checkInMembers;
+            std::map<MemberId, Paid> checkOutMembers;
+            QSet<MemberId> paused;
+        } testData[] = {
+                {
+                        "No one checkout nor pause",
+                        {
+                                std::make_pair(members[0].id, false),
+                                std::make_pair(members[1].id, false),
+                        },
+                        {},
+                        {}
+                },
+                {
+                        "No on check in",
+                        {},
+                        {},
+                        {}
+                },
+                {
+                        "Somebody pauses, nobody checks out",
+                        {
+                                std::make_pair(members[0].id, true),
+                                std::make_pair(members[1].id, true),
+                        },
+                        {},
+                        {members[0].id}
+                },
+                {
+                        "Somebody checked out, nobody pauses",
+                        {
+                                std::make_pair(members[0].id, true),
+                        },
+                        {
+                                std::make_pair(members[1].id, true),
+                        },
+                        {}
+                },
+                {
+                        "Somebody checked out, somebody pauses",
+                        {
+                                std::make_pair(members[0].id, true),
+                                std::make_pair(members[2].id, true),
+                        },
+                        {
+                                std::make_pair(members[1].id, false),
+                        },
+                        {
+                                members[2].id
+                        }
+                },
+        };
+
+        for (const auto &d : testData) {
+            auto session = repo->createSession(0, QStringLiteral("Place1"), QString(), 4, {{QStringLiteral("1"), 1}});
+            QVERIFY2(session.has_value(), d.testName);
+
+            for (auto [memberId, paid] : d.checkInMembers) {
+                QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
+            }
+
+            for (auto [memberId, paid] : d.checkOutMembers) {
+                QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
+            }
+
+            for (const auto &item : d.paused) {
+                QVERIFY2(repo->setPaused(session->session.id, item, true), d.testName);
+            }
+
+            for (const auto &[memberId, paid] : d.checkOutMembers) {
+                QVERIFY2(repo->checkOut(session->session.id, memberId), d.testName);
+            }
+
+            // Test non checked in filter
+            {
+                auto nonCheckedIn = associateBy<QHash<MemberId, BaseMember>>(
+                        members,
+                        [](auto &m) {
+                            return m.id;
+                        });
+
+                for (auto[memberId, paid] : d.checkInMembers) {
+                    nonCheckedIn.remove(memberId);
+                }
+
+                auto actual = repo->getMembers(NonCheckedIn{session->session.id});
+                compareMembers(actual, nonCheckedIn.values(), d.testName);
+                for (const auto &m : actual) {
+                    QCOMPARE(Member::NotCheckedIn, m.status);
+                }
+            }
+
+            // Test check in filter
+            {
+                auto actualCheckedIn = repo->getMembers(CheckedIn{session->session.id});
+                QCOMPARE(actualCheckedIn.size(), d.checkInMembers.size());
+                for (const auto &m : actualCheckedIn) {
+                    auto found = d.checkInMembers.find(m.id);
+                    QVERIFY2(found != d.checkInMembers.end(), d.testName);
+                    verifyMember(m, membersById[m.id], d.testName);
+                    QCOMPARE(found->second, m.paid.toBool());
+                    if (d.paused.contains(m.id)) {
+                        QCOMPARE(Member::CheckedInPaused, m.status);
+                    } else {
+                        QCOMPARE(Member::CheckedIn, m.status);
+                    }
+                }
+            }
+
+            // Test check in non pause filter
+            {
+                QVector<BaseMember> expected;
+                for (const auto &[memberId, paid] : d.checkInMembers) {
+                    if (!d.paused.contains(memberId)) {
+                        expected.push_back(membersById[memberId]);
+                    }
+                }
+
+                auto actual = repo->getMembers(CheckedIn{session->session.id, false});
+                compareMembers(actual, expected, d.testName);
+                for (const auto &m : actual) {
+                    QCOMPARE(Member::CheckedIn, m.status);
+                }
+            }
+
+            // Test check in pause filter
+            {
+                QVector<BaseMember> expected;
+                for (const auto &[memberId, paid] : d.checkInMembers) {
+                    if (d.paused.contains(memberId)) {
+                        expected.push_back(membersById[memberId]);
+                    }
+                }
+
+                auto actual = repo->getMembers(CheckedIn{session->session.id, true});
+                compareMembers(actual, expected, d.testName);
+                for (const auto &m : actual) {
+                    QCOMPARE(Member::CheckedInPaused, m.status);
+                }
+            }
+
+            // Test AllSession filter
+            {
+                QVector<BaseMember> expected;
+                for (const auto &[memberId, paid] : d.checkInMembers) {
+                    expected.push_back(membersById[memberId]);
+                }
+                for (const auto &[memberId, paid] : d.checkOutMembers) {
+                    expected.push_back(membersById[memberId]);
+                }
+
+                auto actual = repo->getMembers(AllSession{session->session.id});
+                compareMembers(actual, expected, d.testName);
+                for (const auto &m : actual) {
+                    if (d.checkOutMembers.find(m.id) != d.checkOutMembers.end()) {
+                        QCOMPARE(Member::CheckedOut, m.status);
+                    } else if (d.paused.contains(m.id)) {
+                        QCOMPARE(Member::CheckedInPaused, m.status);
+                    } else {
+                        QCOMPARE(Member::CheckedIn, m.status);
+                    }
+                }
             }
         }
     }

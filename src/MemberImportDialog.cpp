@@ -229,7 +229,7 @@ void MemberImportDialog::reload() {
 
 void MemberImportDialog::accept() {
     QVector<BaseMember> failure;
-    auto numSuccess = d->repo->importMembers(readAll(d->ui.pathLabel->text(), d->getPropertyMap()), failure);
+    auto numSuccess = d->repo->importMembers(readAll(d->ui.pathLabel->text(), d->getPropertyMap()), &failure);
     auto body = tr("Number of success imports: %1").arg(numSuccess);
     if (!failure.isEmpty()) {
         body += tr("\nFailed imports: %1").arg(failure.size());

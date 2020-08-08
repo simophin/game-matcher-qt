@@ -55,7 +55,7 @@ public:
             const Member::Gender &gender, int level);
 
     bool saveMember(const BaseMember &);
-    size_t importMembers(std::function<bool(BaseMember&)> memberSupplier, QVector<BaseMember> &failMembers);
+    size_t importMembers(std::function<bool(BaseMember&)> memberSupplier, QVector<BaseMember> *failMembers = nullptr);
 
     QVector<Member> findMember(MemberSearchFilter, const QString &needle) const;
 
@@ -65,7 +65,7 @@ public:
 
     QVector<Member> getMembers(MemberSearchFilter) const;
 
-    bool checkIn(MemberId, SessionId, bool paid);
+    bool checkIn(SessionId sessionId, MemberId memberId, bool paid);
 
     bool checkOut(SessionId, MemberId);
 

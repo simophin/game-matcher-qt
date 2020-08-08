@@ -349,7 +349,7 @@ QVector<Member> ClubRepository::getMembers(MemberSearchFilter filter) const {
     return members;
 }
 
-bool ClubRepository::checkIn(MemberId memberId, SessionId sessionId, bool paid) {
+bool ClubRepository::checkIn(SessionId sessionId, MemberId memberId, bool paid) {
     auto rc = DbUtils::update(
             d->db,
             QStringLiteral(
@@ -561,7 +561,7 @@ bool ClubRepository::saveClubInfo(const QString &name, LevelRange range) {
     return true;
 }
 
-size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, QVector<BaseMember> &failMembers) {
+size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, QVector<BaseMember> *failMembers) {
     SQLTransaction tx(d->db);
 
     size_t success = 0;
@@ -573,7 +573,7 @@ size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSup
                 {member.firstName, member.lastName, enumToString(member.gender), member.level});
 
         if (!memberId) {
-            failMembers.push_back(member);
+            if (failMembers) failMembers->push_back(member);
         } else {
             success++;
         }

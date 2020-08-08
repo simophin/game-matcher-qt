@@ -66,7 +66,7 @@ CheckInDialog::~CheckInDialog() {
 }
 
 void CheckInDialog::doCheckIn(bool paid) {
-    if (!d->repo->checkIn(d->id, d->session.session.id, paid)) {
+    if (!d->repo->checkIn(d->session.session.id, d->id, paid)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;
     }

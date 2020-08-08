@@ -106,7 +106,7 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
              m.level = QRandomGenerator::global()->bounded(range.min, range.max + 1);
              iter++;
              return true;
-        }, failed);
+        }, &failed);
     });
 
     connect(d->ui.checkInRandomButton, &QPushButton::clicked, [=] {
@@ -115,7 +115,7 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
             auto size = std::min(50, members.size()) - d->repo->getMembers(CheckedIn{*lastSessionId}).size();
             std::shuffle(members.begin(), members.end(), std::default_random_engine());
             for (int i = 0; i < size; i++) {
-                d->repo->checkIn(members[i].id, *lastSessionId, i % 5 != 0);
+                d->repo->checkIn(*lastSessionId, members[i].id, i % 5 != 0);
             }
         }
     });
