@@ -12,6 +12,8 @@
 #include "DbUtils.h"
 #include "NameFormatUtils.h"
 
+using namespace sqlx;
+
 static struct {
     int schemaVersion;
     QString sqlFile;

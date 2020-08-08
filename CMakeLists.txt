@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
+add_subdirectory(third_party/qtsqlx)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -44,7 +46,6 @@ list(APPEND HEADERS
         src/GameStats.h
         src/FakeNames.h
         src/MemberFilter.h
-        src/TypeUtils.h
         src/span.h
         src/CollectionUtils.h
         src/NameFormatUtils.h
@@ -91,7 +92,6 @@ add_library(GameMatcher_archive
         ${HEADERS}
         src/ClubRepository.cpp
         src/GameMatcher.cpp
-        src/DbUtils.cpp
         src/NewClubDialog.cpp
         src/WelcomePage.cpp
         src/ClubPage.cpp
@@ -124,7 +124,7 @@ target_compile_definitions(GameMatcher_archive
         PUBLIC -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher_archive
-        PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg)
+        PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg QtSQLx)
 
 qt5_import_plugins(GameMatcher_archive
         INCLUDE_BY_TYPE imageformats Qt5::QSvgPlugin)

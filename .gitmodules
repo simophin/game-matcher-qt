@@ -1,3 +1,6 @@
 [submodule "third_party/qtcsv"]
 	path = third_party/qtcsv
 	url = https://github.com/iamantony/qtcsv.git
+[submodule "third_party/qtsqlx"]
+	path = third_party/qtsqlx
+	url = git@gitlab.com:simophin/qtsqlx.git
