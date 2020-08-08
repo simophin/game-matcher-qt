@@ -110,17 +110,15 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
 }
 
 std::optional<SessionId> ClubRepository::getLastSession() const {
-    auto result = DbUtils::queryFirst<SessionId>(d->db, QStringLiteral(
-            "select id from sessions order by startTime desc limit 1"));
-    if (result) {
-        return *result;
-    }
-    return std::nullopt;
+    return DbUtils::queryFirst<SessionId>(d->db, QStringLiteral(
+            "select id from sessions order by startTime desc, id desc limit 1")).toOptional();
 }
 
 std::optional<SessionData>
-ClubRepository::createSession(int fee, const QString &place, const QString &announcement, int numPlayersPerCourt,
+ClubRepository::createSession(unsigned fee, const QString &place, const QString &announcement, unsigned numPlayersPerCourt,
                               const QVector<CourtConfiguration> &courts) {
+    if (courts.isEmpty() || numPlayersPerCourt == 0) return std::nullopt;
+
     SQLTransaction trans(d->db);
     auto sessionId = DbUtils::insert<SessionId>(
             d->db,
@@ -144,7 +142,7 @@ ClubRepository::createSession(int fee, const QString &place, const QString &anno
         }
     }
 
-    if (auto data = getSession(sessionId)) {
+    if (auto data = getSession(*sessionId)) {
         return data;
     }
 
@@ -254,7 +252,7 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
     }
 
     emit this->sessionChanged(sessionId);
-    return gameId;
+    return gameId.toOptional();
 }
 
 std::optional<BaseMember>
@@ -446,7 +444,7 @@ bool ClubRepository::removeSetting(const SettingKey &key) {
     return DbUtils::update(
             d->db,
             QStringLiteral("delete from settings where name = ?"),
-            {key});
+            {key}).orDefault(0) > 0;
 }
 
 std::optional<BaseMember> ClubRepository::getMember(MemberId id) const {
@@ -478,11 +476,7 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
                                             {sessionId});
     if (!courts) return std::nullopt;
 
-
-    std::optional<SessionData> data;
-    data.emplace().session = *session;
-    data.value().courts = *courts;
-    return data;
+    return SessionData { *session, *courts };
 }
 
 std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, const QString &lastName) {
@@ -518,7 +512,7 @@ bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paus
 }
 
 bool ClubRepository::setPaid(SessionId sessionId, MemberId memberId, bool paid) {
-    if (auto rc = DbUtils::update(d->db,
+    if (DbUtils::update(d->db,
                                   QStringLiteral("update players set paid = ? where sessionId = ? and memberId = ?"),
                                   {paid, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);

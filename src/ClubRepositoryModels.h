@@ -15,6 +15,15 @@ struct CourtConfiguration {
 struct SessionData {
     Session session;
     QVector<Court> courts;
+
+    bool operator==(const SessionData &rhs) const {
+        return session == rhs.session &&
+               courts == rhs.courts;
+    }
+
+    bool operator!=(const SessionData &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 struct CourtPlayers {

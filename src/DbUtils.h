@@ -57,7 +57,7 @@ struct QueryResult {
         return std::nullopt;
     }
 
-    inline operator bool() const {
+    inline explicit operator bool() const {
         return success() != nullptr;
     }
 

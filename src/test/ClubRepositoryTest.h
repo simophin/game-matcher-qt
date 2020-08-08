@@ -224,6 +224,93 @@ private slots :
         }
     }
 
+    void testCreateSession() {
+        struct {
+            const char *testName;
+            unsigned fee;
+            QString place;
+            QString announcement;
+            unsigned numPlayersPerCourt;
+            QVector<CourtConfiguration> courtConfigurations;
+            bool expectedSuccess;
+        } testData[] = {
+                {
+                        "Happy day",
+                        5,
+                        QStringLiteral("Place 1"),
+                        QStringLiteral("Annoucement 1"),
+                        4,
+                        {
+                                {QStringLiteral("1"), 1},
+                                {QStringLiteral("2"), 2},
+                        },
+                        true
+                },
+                {
+                        "No fee",
+                        0,
+                        QStringLiteral("Place 1"),
+                        QStringLiteral("Annoucement 1"),
+                        4,
+                        {
+                                {QStringLiteral("1"), 1},
+                                {QStringLiteral("2"), 2},
+                        },
+                        true
+                },
+                {
+                        "No announcement",
+                        5,
+                        QStringLiteral("Place 1"),
+                        QString(),
+                        4,
+                        {
+                                {QStringLiteral("1"), 1},
+                                {QStringLiteral("2"), 2},
+                        },
+                        true
+                },
+                {
+                        "No court",
+                        5,
+                        QStringLiteral("Place 1"),
+                        QString(),
+                        4,
+                        {},
+                        false
+                },
+                {
+                        "zero numPlayersPerCourt",
+                        5,
+                        QStringLiteral("Place 1"),
+                        QStringLiteral("Announcement"),
+                        0,
+                        {
+                                {QStringLiteral("1"), 1},
+                                {QStringLiteral("2"), 2},
+                        },
+                        false
+                }
+        };
+
+        for (const auto &d : testData) {
+            auto session = repo->createSession(d.fee, d.place, d.announcement, d.numPlayersPerCourt, d.courtConfigurations);
+            if (d.expectedSuccess) {
+                QVERIFY2(session.has_value(), d.testName);
+                QCOMPARE(*repo->getLastSession(), session->session.id);
+                QCOMPARE(repo->getSession(session->session.id), session);
+                QCOMPARE(session->session.place, d.place);
+                QCOMPARE(session->session.numPlayersPerCourt, d.numPlayersPerCourt);
+                QCOMPARE(session->session.announcement, d.announcement);
+                QCOMPARE(session->session.fee, d.fee);
+                QVERIFY2(session->session.startTime.isValid(), d.testName);
+                QVERIFY2(session->session.id > 0, d.testName);
+            } else {
+                QVERIFY2(!session.has_value(), d.testName);
+            }
+        }
+    }
+
     void cleanup() {
         delete repo;
     }

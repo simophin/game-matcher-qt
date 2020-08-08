@@ -80,7 +80,7 @@ public:
     std::optional<SessionId> getLastSession() const;
 
     std::optional<SessionData>
-    createSession(int fee, const QString &place, const QString &announcement, int numPlayersPerCourt, const QVector<CourtConfiguration> &);
+    createSession(unsigned fee, const QString &place, const QString &announcement, unsigned numPlayersPerCourt, const QVector<CourtConfiguration> &);
 
     QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
 

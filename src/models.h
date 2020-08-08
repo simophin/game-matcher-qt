@@ -85,6 +85,19 @@ public:
     DECLARE_PROPERTY(QString, place, );
     DECLARE_PROPERTY(QDateTime, startTime, );
     DECLARE_PROPERTY(int, numPlayersPerCourt, = 0);
+
+    bool operator==(const Session &rhs) const {
+        return id == rhs.id &&
+               fee == rhs.fee &&
+               announcement == rhs.announcement &&
+               place == rhs.place &&
+               startTime == rhs.startTime &&
+               numPlayersPerCourt == rhs.numPlayersPerCourt;
+    }
+
+    bool operator!=(const Session &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 
@@ -95,6 +108,17 @@ public:
     DECLARE_PROPERTY(SessionId, sessionId, = 0);
     DECLARE_PROPERTY(QString, name, );
     DECLARE_PROPERTY(int, sortOrder, = 0);
+
+    bool operator==(const Court &rhs) const {
+        return id == rhs.id &&
+               sessionId == rhs.sessionId &&
+               name == rhs.name &&
+               sortOrder == rhs.sortOrder;
+    }
+
+    bool operator!=(const Court &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 
