@@ -47,11 +47,11 @@ public:
 };
 
 struct ClubRepository::Impl {
-    QSqlDatabase db;
+    QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
 };
 
-ClubRepository::ClubRepository(QObject *parent, const QSqlDatabase &db)
-        : QObject(parent), d(new Impl{db}) {}
+ClubRepository::ClubRepository(QObject *parent, Impl *d)
+        : QObject(parent), d(d) {}
 
 ClubRepository::~ClubRepository() {
     d->db.close();
@@ -59,31 +59,34 @@ ClubRepository::~ClubRepository() {
 }
 
 ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
-    auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
-    db.setDatabaseName(path);
-    db.open();
-    if (!db.isValid()) {
-        qCritical().noquote() << "Error opening: " << path << " : " << db.lastError();
+    std::unique_ptr<Impl> d(new Impl);
+    d->db.setDatabaseName(path);
+    d->db.open();
+    if (!d->db.isValid()) {
+        qCritical().noquote() << "Error opening: " << path << " : " << d->db.lastError();
         return nullptr;
     }
 
     int currSchemaVersion = 0;
 
-    SQLTransaction tx(db);
+    SQLTransaction tx(d->db);
 
-    auto result = DbUtils::queryFirst<int>(
-            db,
-            QStringLiteral("select cast(value as integer) from settings where name = 'schema_version'"));
+    bool hasSettingsTable = DbUtils::queryFirst<int>(
+            d->db,
+            QStringLiteral("select count(*) from sqlite_master where type = 'table' and name = 'settings'")).orDefault(0) > 0;
 
-    if (result) {
-        currSchemaVersion = *result;
+    if (hasSettingsTable) {
+        if (auto result = DbUtils::queryFirst<int>(
+                d->db,
+                QStringLiteral("select cast(value as integer) from settings where name = 'schema_version'"))) {
+            currSchemaVersion = *result;
+        }
     }
 
-    QSqlQuery q(db);
+    QSqlQuery q(d->db);
 
     for (const auto &schema : schemas) {
         if (schema.schemaVersion > currSchemaVersion) {
-            qDebug() << "Migrating to schema version " << schema.schemaVersion;
             QFile schemaFile(schema.sqlFile);
             if (!schemaFile.open(QIODevice::ReadOnly)) {
                 tx.setError();
@@ -97,7 +100,7 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
                 if (sql.isEmpty()) continue;
                 if (!q.exec(sql)) {
                     tx.setError();
-                    auto err = db.lastError();
+                    auto err = d->db.lastError();
                     qCritical() << "Error executing sql " << sql << ":" << err;
                     return nullptr;
                 }
@@ -106,7 +109,7 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
         }
     }
 
-    return new ClubRepository(parent, db);
+    return new ClubRepository(parent, d.release());
 }
 
 std::optional<SessionId> ClubRepository::getLastSession() const {

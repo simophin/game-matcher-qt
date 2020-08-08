@@ -12,8 +12,6 @@
 #include "ClubRepositoryModels.h"
 
 class QFile;
-class QSqlDatabase;
-
 
 class ClubRepository : public QObject {
 Q_OBJECT
@@ -95,10 +93,10 @@ signals:
     void sessionChanged(SessionId);
 
 private:
-    ClubRepository(QObject *parent, const QSqlDatabase &);
-
     struct Impl;
     Impl *d;
+
+    ClubRepository(QObject *parent, Impl *);
 };
 
 #endif // GAMEREPOSITORY_H
