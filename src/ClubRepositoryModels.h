@@ -31,11 +31,13 @@ struct CourtPlayers {
 public:
     DECLARE_PROPERTY(CourtId, courtId,);
     DECLARE_PROPERTY(QString, courtName,);
+    DECLARE_PROPERTY(int, courtQuality, = 0);
     DECLARE_PROPERTY(QVector<Member>, players,);
 
     bool operator==(const CourtPlayers &rhs) const {
         return courtId == rhs.courtId &&
                courtName == rhs.courtName &&
+               courtQuality == rhs.courtQuality &&
                players == rhs.players;
     }
 

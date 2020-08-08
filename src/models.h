@@ -140,7 +140,8 @@ public:
     inline bool operator<(const GameAllocation &rhs) const {
         return gameId < rhs.gameId ||
                 courtId < rhs.courtId ||
-                memberId < rhs.memberId;
+                memberId < rhs.memberId ||
+                quality < rhs.quality;
     }
 
     bool operator==(const GameAllocation &rhs) const {

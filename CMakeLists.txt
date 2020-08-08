@@ -138,17 +138,11 @@ set(TEST_CLASSES ClubRepositoryTest)
 
 
 foreach(TEST_CLASS ${TEST_CLASSES})
-    set(GEN_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/test/${TEST_CLASS}.cpp)
-    file(GENERATE
-            OUTPUT ${GEN_OUTPUT}
-            CONTENT "#include \"${TEST_CLASS}.h\"\n\n#include <QtTest/QtTest> \nQTEST_MAIN(${TEST_CLASS});\n")
-
-    set(TEST_SOURCES src/test/${TEST_CLASS}.h)
-    qt5_wrap_cpp(TEST_SOURCES ${TEST_SOURCES})
-    add_executable(${TEST_CLASS} ${TEST_SOURCES} ${GEN_OUTPUT} src/test/TestUtils.h)
+    add_executable(${TEST_CLASS} src/test/${TEST_CLASS}.cpp src/test/TestUtils.h)
     add_test(NAME ${TEST_CLASS} COMMAND ${TEST_CLASS})
+    set_property(TARGET ${TEST_CLASS} PROPERTY AUTOMOC ON)
     target_link_libraries(${TEST_CLASS} PRIVATE Qt5::Test GameMatcher_archive)
-    target_include_directories(${TEST_CLASS} PRIVATE src/test)
+    target_include_directories(${TEST_CLASS} PRIVATE src/test ${CMAKE_CURRENT_BINARY_DIR}})
 endforeach()
 
 

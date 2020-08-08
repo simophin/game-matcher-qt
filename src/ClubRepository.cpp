@@ -63,8 +63,7 @@ ClubRepository::~ClubRepository() {
 ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
     std::unique_ptr<Impl> d(new Impl);
     d->db.setDatabaseName(path);
-    d->db.open();
-    if (!d->db.isValid()) {
+    if (! d->db.open() || !d->db.isValid()) {
         qCritical().noquote() << "Error opening: " << path << " : " << d->db.lastError();
         return nullptr;
     }
@@ -259,7 +258,7 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
     }
 
     emit this->sessionChanged(sessionId);
-    return gameId.toOptional();
+    return *gameId;
 }
 
 std::optional<BaseMember>
@@ -274,7 +273,7 @@ ClubRepository::createMember(const QString &firstName,
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
             QStringLiteral("insert into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
-            {firstName, lastName, enumToString(gender), level});
+            {firstName, lastName, enumToString(gender).toLower(), level});
 
     if (!memberId) {
         qWarning() << "Error inserting member";
@@ -384,7 +383,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
             QStringLiteral(
                     "select id, cast(strftime('%s',startTime) as integer) as startTime, durationSeconds from games "
                     "where sessionId = ? "
-                    "order by startTime desc limit 1"),
+                    "order by startTime desc, id desc limit 1"),
             {sessionId});
 
     if (!gameResult) return std::nullopt;
@@ -395,7 +394,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
                            "(case when (P.checkOutTime is not null) then %1 "
                            "when P.paused then %2 "
                            "else %3 "
-                           "end) as status, C.id as courtId, C.name as courtName from game_allocations GA "
+                           "end) as status, C.id as courtId, C.name as courtName, GA.quality as courtQuality from game_allocations GA "
                            "inner join games G on G.id = GA.gameId "
                            "inner join players P on P.memberId = M.id and P.id = GA.playerId "
                            "inner join members M on M.id = P.memberId "
@@ -414,7 +413,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
 
     for (auto &member : *onMembers) {
         if (gameResult->courts.isEmpty() || gameResult->courts.last().courtId != member.courtId) {
-            gameResult->courts.append(CourtPlayers{member.courtId, member.courtName});
+            gameResult->courts.append(CourtPlayers{member.courtId, member.courtName, member.courtQuality});
         }
 
         gameResult->courts.last().players.append(member);
@@ -498,7 +497,7 @@ bool ClubRepository::saveMember(const BaseMember &m) {
             d->db,
             QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
                            " = (?, ?, ?, ?, ?, ?) where id = ?"),
-            {m.firstName, m.lastName, enumToString(m.gender), m.level, m.email, m.phone, m.id})
+            {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.email, m.phone, m.id})
                    .orDefault(0) > 0) {
         emit memberChanged();
         return true;
@@ -574,7 +573,7 @@ size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSup
         auto memberId = DbUtils::insert<MemberId>(
                 d->db,
                 QStringLiteral("insert or replace into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
-                {member.firstName, member.lastName, enumToString(member.gender), member.level});
+                {member.firstName, member.lastName, enumToString(member.gender).toLower(), member.level});
 
         if (!memberId) {
             if (failMembers) failMembers->push_back(member);
