@@ -514,16 +514,60 @@ private slots :
 
         auto session = repo->createSession(
                 0, QStringLiteral("Place"), QString(), 2, {
-                        { QStringLiteral("1"), 1 },
-                        { QStringLiteral("2"), 1 }
+                        {QStringLiteral("1"), 1},
+                        {QStringLiteral("2"), 1}
                 });
 
         struct {
             const char *testName;
             QVector<GameAllocation> allocated;
+            qlonglong durationSeconds;
+            bool successExpected;
         } testData[] = {
-
+                {
+                        "No allocation",
+                        {},
+                        30,
+                        false
+                },
+                {
+                        "Full courts",
+                        {
+                                GameAllocation(0, session->courts[0].id, members[0].id, 100),
+                                GameAllocation(0, session->courts[0].id, members[1].id, 100),
+                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
+                                GameAllocation(0, session->courts[1].id, members[3].id, 80),
+                        },
+                        30,
+                        true
+                },
+                {
+                    "Partial courts",
+                        {
+                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
+                                GameAllocation(0, session->courts[0].id, members[1].id, 100),
+                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
+                                GameAllocation(0, session->courts[1].id, members[0].id, 80),
+                        },
+                        20,
+                        true
+                },
+                {
+                        "Incorrect member in court",
+                        {
+                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
+                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
+                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
+                                GameAllocation(0, session->courts[1].id, members[0].id, 80),
+                        },
+                        20,
+                        false
+                }
         };
+
+        for (const auto &d : testData) {
+
+        }
     }
 
     void cleanup() {

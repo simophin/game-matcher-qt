@@ -228,6 +228,8 @@ MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId 
 std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
                                                  nonstd::span<const GameAllocation> allocations,
                                                  qlonglong durationSeconds) {
+    if (allocations.empty()) return std::nullopt;
+
     SQLTransaction tx(d->db);
 
     auto gameId = DbUtils::insert<GameId>(
