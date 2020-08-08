@@ -39,8 +39,7 @@ inline void sortMembers(MemberList &members) {
 
 template <typename List1, typename List2>
 inline void compareMembers(List1 actual, List2 expected, const char *testName) {
-    bool sameSize = actual.size() == expected.size();
-    QVERIFY2(sameSize, testName);
+    QVERIFY2(actual.size() == expected.size(), testName);
     sortMembers(actual);
     sortMembers(expected);
     auto actualIter = actual.begin();
@@ -52,5 +51,20 @@ inline void compareMembers(List1 actual, List2 expected, const char *testName) {
     }
 }
 
+template <typename List1, typename List2>
+inline void compareGameAllocations(List1 actual, List2 expected, const char *testName) {
+    QVERIFY2(actual.size == expected.size, testName);
+
+    std::sort(actual.begin(), actual.end());
+    std::sort(expected.begin(), actual.end());
+
+    auto actualIter = actual.begin();
+    auto expectedIter = expected.begin();
+    while (actualIter != actual.end() && expectedIter != expected.end()) {
+        QCOMPARE(*actualIter, *expectedIter);
+        actualIter++;
+        expectedIter++;
+    }
+}
 
 #endif //GAMEMATCHER_TESTUTILS_H

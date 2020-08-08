@@ -382,7 +382,7 @@ private slots :
                                 std::make_pair(members[1].id, false),
                         },
                         {
-                                members[2].id
+                         members[2].id
                         }
                 },
         };
@@ -391,11 +391,11 @@ private slots :
             auto session = repo->createSession(0, QStringLiteral("Place1"), QString(), 4, {{QStringLiteral("1"), 1}});
             QVERIFY2(session.has_value(), d.testName);
 
-            for (auto [memberId, paid] : d.checkInMembers) {
+            for (auto[memberId, paid] : d.checkInMembers) {
                 QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
             }
 
-            for (auto [memberId, paid] : d.checkOutMembers) {
+            for (auto[memberId, paid] : d.checkOutMembers) {
                 QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
             }
 
@@ -498,6 +498,32 @@ private slots :
                 }
             }
         }
+    }
+
+    void testGameAllocation() {
+        QVector<BaseMember> members = {
+                createMember("First1", "Last1"),
+                createMember("First2", "Last2"),
+                createMember("First3", "Last3"),
+                createMember("First4", "Last4"),
+        };
+
+        for (auto &item : members) {
+            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+        }
+
+        auto session = repo->createSession(
+                0, QStringLiteral("Place"), QString(), 2, {
+                        { QStringLiteral("1"), 1 },
+                        { QStringLiteral("2"), 1 }
+                });
+
+        struct {
+            const char *testName;
+            QVector<GameAllocation> allocated;
+        } testData[] = {
+
+        };
     }
 
     void cleanup() {
