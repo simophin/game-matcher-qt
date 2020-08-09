@@ -20,6 +20,7 @@ static struct {
 } schemas[] = {
         {1, QStringLiteral(":/sql/db_v1.sql")},
         {2, QStringLiteral(":/sql/db_v2.sql")},
+        {3, QStringLiteral(":/sql/db_v3.sql")},
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");
@@ -262,10 +263,12 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
 }
 
 std::optional<BaseMember>
-ClubRepository::createMember(const QString &firstName,
-                             const QString &lastName,
+ClubRepository::createMember(QString firstName,
+                             QString lastName,
                              const Member::Gender &gender,
                              int level) {
+    firstName = firstName.trimmed();
+    lastName = lastName.trimmed();
     if (firstName.isEmpty() || lastName.isEmpty()) return std::nullopt;
 
     SQLTransaction tx(d->db);

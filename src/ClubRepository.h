@@ -51,7 +51,7 @@ public:
     bool removeSetting(const SettingKey &key);
 
     std::optional<BaseMember> createMember(
-            const QString &firstName, const QString &lastName,
+            QString firstName, QString lastName,
             const Member::Gender &gender, int level);
 
     bool saveMember(const BaseMember &);

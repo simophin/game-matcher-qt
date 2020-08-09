@@ -5,13 +5,13 @@ add_subdirectory(third_party/qtsqlx)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost 1.55.0 REQUIRED)
-
 project(GameMatcher LANGUAGES CXX)
+
+option(BUILD_TESTS "Skip buildling tests" ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED OPTIONAL_COMPONENTS Test)
+find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED)
 
 set(HEADERS
         src/ClubRepository.h
@@ -60,31 +60,31 @@ list(APPEND HEADERS
         )
 
 qt5_add_resources(SOURCES
-    res/db/queries.qrc
-    res/images/images.qrc
-    res/icons/icons.qrc
-    res/fonts/fonts.qrc
-    res/sound/sound.qrc)
+        res/db/queries.qrc
+        res/images/images.qrc
+        res/icons/icons.qrc
+        res/fonts/fonts.qrc
+        res/sound/sound.qrc)
 
 qt5_wrap_ui(SOURCES
-    src/NewClubDialog.ui
-    src/WelcomePage.ui
-    src/ClubPage.ui
-    src/SessionPage.ui
-    src/NewSessionDialog.ui
-    src/EmptySessionPage.ui
-    src/CourtDisplay.ui
-    src/EditMemberDialog.ui
-    src/MemberSelectDialog.ui
-    src/CheckInDialog.ui
-    src/NewGameDialog.ui
-    src/PlayerTablePage.ui
-    src/MainWindow.ui
-    src/MemberImportDialog.ui
-    src/PlayerStatsDialog.ui
-    src/PlayerTableDialog.ui
-    src/ToastDialog.ui
-    )
+        src/NewClubDialog.ui
+        src/WelcomePage.ui
+        src/ClubPage.ui
+        src/SessionPage.ui
+        src/NewSessionDialog.ui
+        src/EmptySessionPage.ui
+        src/CourtDisplay.ui
+        src/EditMemberDialog.ui
+        src/MemberSelectDialog.ui
+        src/CheckInDialog.ui
+        src/NewGameDialog.ui
+        src/PlayerTablePage.ui
+        src/MainWindow.ui
+        src/MemberImportDialog.ui
+        src/PlayerStatsDialog.ui
+        src/PlayerTableDialog.ui
+        src/ToastDialog.ui
+        )
 
 add_library(GameMatcher_archive
         OBJECT
@@ -121,7 +121,7 @@ add_library(GameMatcher_archive
         )
 
 target_compile_definitions(GameMatcher_archive
-        PUBLIC -DQT_NO_CAST_FROM_ASCII=1)
+        PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
 target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher_archive
         PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg QtSQLx)
@@ -133,18 +133,15 @@ add_executable(GameMatcher WIN32 src/main.cpp)
 target_link_libraries(GameMatcher GameMatcher_archive)
 
 
-enable_testing()
+if (BUILD_TESTS)
+    find_package(Catch2 REQUIRED)
+    find_package(Qt5 COMPONENTS Test REQUIRED)
 
-# Testing
-set(TEST_CLASSES ClubRepositoryTest)
-
-foreach(TEST_CLASS ${TEST_CLASSES})
-    add_executable(${TEST_CLASS} src/test/${TEST_CLASS}.cpp src/test/TestUtils.h)
-    add_test(NAME ${TEST_CLASS} COMMAND ${TEST_CLASS})
-    set_property(TARGET ${TEST_CLASS} PROPERTY AUTOMOC ON)
-    target_link_libraries(${TEST_CLASS} PRIVATE Qt5::Test GameMatcher_archive)
-    target_include_directories(${TEST_CLASS} PRIVATE src/test ${CMAKE_CURRENT_BINARY_DIR}})
-endforeach()
-
-
-
+    add_executable(GameMatcher_test
+            src/test/TestUtils.h
+            src/test/NewClubRepositoryTest.cpp
+            src/test/main.cpp
+            )
+    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
+    target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
+endif ()
