@@ -49,7 +49,7 @@ TEST_CASE("ClubRepository") {
         CHECK(!repo->getSetting(name));
     }
 
-    SECTION("Members") {
+    SECTION("member manipulation") {
         QVector<BaseMember> members(50);
         for (size_t i = 0, size = members.size(); i < size; i++) {
             auto &m = members[i];
@@ -131,5 +131,23 @@ TEST_CASE("ClubRepository") {
                 CHECK(toSave.registerDate == actual->registerDate);
             }
         }
+    }
+
+    SECTION("member import") {
+        QVector<BaseMember> members(50);
+        for (size_t i = 0, size = members.size(); i < size; i++) {
+            auto &m = members[i];
+            m.firstName = QStringLiteral("First%1").arg(i);
+            m.lastName = QStringLiteral("Last%1").arg(i);
+            m.gender = (i % 4 != 0) ? BaseMember::Male : BaseMember::Female;
+            m.level = i;
+        }
+
+        members[3].firstName
+
+        auto iter = members.begin();
+        repo->importMembers([&](BaseMember &m) {
+
+        });
     }
 }

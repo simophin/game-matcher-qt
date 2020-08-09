@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/fonts">
-        <file>NotoMono-Regular.ttf</file>
         <file>NotoSans-Bold.ttf</file>
         <file>NotoSans-Regular.ttf</file>
     </qresource>

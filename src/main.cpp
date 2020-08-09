@@ -90,13 +90,13 @@ int main(int argc, char **argv) {
     registerModels();
 
     QApplication app(argc, argv);
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoMono-Regular.ttf"));
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Bold.ttf"));
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSansMono-Medium.ttf"));
     auto fontId = QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSans-Regular.ttf"));
-    QFont font(QFontDatabase::applicationFontFamilies(fontId).first(), 16.0);
-    QApplication::setFont(font);
-
+    auto fontList = QFontDatabase::applicationFontFamilies(fontId);
+    if (!fontList.isEmpty()) {
+        QFont font(fontList.first(), 16.0);
+        QApplication::setFont(font);
+    }
 
     QCoreApplication::setOrganizationName(QStringLiteral("Cloudwalker"));
     QCoreApplication::setOrganizationDomain(QStringLiteral("fanchao.nz"));

@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 
-#set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/vcpkg/scripts/buildsystems/vcpkg.cmake
-#        CACHE STRING "Vcpkg toolchain file")
-
 add_subdirectory(third_party/qtsqlx)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -64,7 +61,6 @@ list(APPEND HEADERS
 
 qt5_add_resources(SOURCES
         res/db/queries.qrc
-        res/images/images.qrc
         res/icons/icons.qrc
         res/fonts/fonts.qrc
         res/sound/sound.qrc)
