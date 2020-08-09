@@ -60,26 +60,25 @@ static void testMatcher() {
         auto memberById = associateBy<QHash<MemberId, Member>>(members, [](auto &m) { return m.id; });
 
         std::vector<GameAllocation> allocations;
-        auto [levelMin, levelMax] = repo->getLevelRange();
 
         const auto playerPerCourt = 4;
 
-        auto result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 0);
+        auto result = GameMatcher::match(allocations, members, courts, playerPerCourt, 0);
         for (auto &game : result) game.gameId = 0;
         printAllocations(QStringLiteral("Game 1"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 1);
+        result = GameMatcher::match(allocations, members, courts, playerPerCourt, 1);
         for (auto &game : result) game.gameId = 1;
         printAllocations(QStringLiteral("Game 2"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 2);
+        result = GameMatcher::match(allocations, members, courts, playerPerCourt, 2);
         for (auto &game : result) game.gameId = 2;
         printAllocations(QStringLiteral("Game 3"), result, memberById);
 
         allocations.insert(allocations.end(), result.begin(), result.end());
-        result = GameMatcher::match(allocations, members, courts, playerPerCourt, levelMin, levelMax, 3);
+        result = GameMatcher::match(allocations, members, courts, playerPerCourt, 3);
         for (auto &game : result) game.gameId = 3;
         printAllocations(QStringLiteral("Game 4"), result, memberById);
     }

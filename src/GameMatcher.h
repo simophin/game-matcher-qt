@@ -8,14 +8,9 @@
 
 class GameMatcher {
 public:
-    static std::vector<GameAllocation> match(
-            nonstd::span<const GameAllocation> pastAllocation,
-            nonstd::span<const Member> eligiblePlayers,
-            nonstd::span<const CourtId> courts,
-            size_t playerPerCourt,
-            unsigned int levelMin,
-            unsigned int levelMax,
-            int seed);
+    static std::vector<GameAllocation>
+    match(nonstd::span<const GameAllocation> pastAllocation, nonstd::span<const Member> members, nonstd::span<const CourtId> courts,
+          size_t playerPerCourt, int seed);
 };
 
 #endif // GAMEMATCHER_H

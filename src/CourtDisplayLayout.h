@@ -8,6 +8,7 @@
 #include <QLayout>
 
 class CourtDisplayLayout : public QLayout {
+    Q_OBJECT
 public:
     CourtDisplayLayout();
     ~CourtDisplayLayout() override;

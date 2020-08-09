@@ -22,7 +22,13 @@ struct BestCombination {
 class BestCourtFinder {
     size_t const numPlayerRequired;
     GameStats const &stats;
-    unsigned int const minLevel, maxLevel;
+    int const minLevel, maxLevel;
+
+public:
+    BestCourtFinder(const size_t numPlayerRequired, const GameStats &stats, const int minLevel, const int maxLevel)
+            : numPlayerRequired(numPlayerRequired), stats(stats), minLevel(minLevel), maxLevel(maxLevel) {}
+
+private:
 
     PlayerInfoIterator inputEnd;
     size_t minMandatoryRequired;
@@ -33,14 +39,6 @@ class BestCourtFinder {
 
 public:
     std::optional<BestCombination> best;
-
-    BestCourtFinder(const size_t numPlayerRequired,
-                    const GameStats &stats,
-                    const unsigned int minLevel,
-                    const unsigned int maxLevel)
-            : numPlayerRequired(numPlayerRequired), stats(stats),
-              minLevel(minLevel), maxLevel(maxLevel) {}
-
 
     void reset(size_t minMandatory, PlayerInfoIterator end) {
         inputEnd = end;
@@ -91,17 +89,27 @@ public:
 
 std::vector<CourtCombinationFinder::CourtAllocation>
 BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailable) const {
+    if (span.empty()) return {};
+
     std::list<PlayerInfo> players;
     size_t numMandatoryRequired = 0;
+    std::optional<int> minLevel, maxLevel;
     for (const auto &item : span) {
         players.emplace_back(item);
         if (item.mandatory) {
             numMandatoryRequired++;
         }
+        if (!minLevel || item.level < *minLevel) {
+            minLevel = item.level;
+        }
+
+        if (!maxLevel || item.level > *maxLevel) {
+            maxLevel = item.level;
+        }
     }
 
     std::vector<CourtAllocation> result;
-    BestCourtFinder finder(numPlayersPerCourt_, stats_, minLevel_, maxLevel_);
+    BestCourtFinder finder(numPlayersPerCourt_, stats_, *minLevel, *maxLevel);
 
     size_t numCourtAllocated = std::min(numCourtAvailable, players.size() / numPlayersPerCourt_);
 

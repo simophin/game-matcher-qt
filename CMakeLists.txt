@@ -133,9 +133,10 @@ add_executable(GameMatcher WIN32 src/main.cpp)
 target_link_libraries(GameMatcher GameMatcher_archive)
 
 
+enable_testing()
+
 # Testing
 set(TEST_CLASSES ClubRepositoryTest)
-
 
 foreach(TEST_CLASS ${TEST_CLASSES})
     add_executable(${TEST_CLASS} src/test/${TEST_CLASS}.cpp src/test/TestUtils.h)

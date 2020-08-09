@@ -62,14 +62,9 @@ static std::vector<PlayerInfo> getEligiblePlayers(
 }
 
 
-std::vector<GameAllocation> GameMatcher::match(
-        span<const GameAllocation> pastAllocation,
-        span<const Member> members,
-        span<const CourtId> courts,
-        size_t playerPerCourt,
-        unsigned int levelMin,
-        unsigned int levelMax,
-        int seed) {
+std::vector<GameAllocation>
+GameMatcher::match(span<const GameAllocation> pastAllocation, span<const Member> members, span<const CourtId> courts,
+                   size_t playerPerCourt, int seed) {
     qDebug() << "Matching using " << pastAllocation.size() << " past allocations, " << members.size()
              << " players and "
              << courts.size() << " courts";
@@ -106,6 +101,6 @@ std::vector<GameAllocation> GameMatcher::match(
     // Find eligible players
     auto eligiblePlayers = getEligiblePlayers(members, numMaxSeats, stats, seed);
 
-    return BFCombinationFinder(stats, playerPerCourt, levelMin, levelMax).find(courts, eligiblePlayers);
+    return BFCombinationFinder(stats, playerPerCourt).find(courts, eligiblePlayers);
 }
 
