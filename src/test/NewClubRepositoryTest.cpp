@@ -51,7 +51,7 @@ TEST_CASE("ClubRepository") {
 
     SECTION("Members") {
         QVector<BaseMember> members(50);
-        for (size_t i = 9, size = members.size(); i < size; i++) {
+        for (size_t i = 0, size = members.size(); i < size; i++) {
             auto &m = members[i];
             m.firstName = QStringLiteral("First%1").arg(i);
             m.lastName = QStringLiteral("Last%1").arg(i);
@@ -62,7 +62,8 @@ TEST_CASE("ClubRepository") {
             REQUIRE(result);
             m.id = result->id;
             m.registerDate = result->registerDate;
-            CHECK(m == result);
+            REQUIRE(m.id >= 0);
+            REQUIRE(m == result);
         }
 
         SECTION("should not create duplicated member") {
@@ -95,6 +96,40 @@ TEST_CASE("ClubRepository") {
             CHECK(actual.has_value() == successExpected);
         }
 
+        SECTION("should save") {
+            auto[oldMember, newFirstName, newLastName, newGender, newLevel, successExpected] = GENERATE_COPY(table<
+                    BaseMember,
+                    std::optional<QString>,
+                    std::optional<QString>,
+                    std::optional<BaseMember::Gender>,
+                    std::optional<int>,
+                    bool
+            >(
+                    {
+                            {members[0], "New first name", "New last name", BaseMember::Female, 1,            true},
+                            {members[1], "First1",         "Last1",         std::nullopt,       std::nullopt, true},
+                            {members[1], "First2",         std::nullopt,    std::nullopt,       std::nullopt, false},
+                            {members[1], "First2 ",        "last2 ",        std::nullopt,       std::nullopt, false},
+                    }));
 
+            BaseMember toSave = oldMember;
+            if (newFirstName) toSave.firstName = *newFirstName;
+            if (newLastName) toSave.lastName = *newLastName;
+            if (newGender) toSave.gender = *newGender;
+            if (newLevel) toSave.level = *newLevel;
+
+            auto ok = repo->saveMember(toSave) == successExpected;
+            REQUIRE(ok);
+            if (successExpected) {
+                auto actual = repo->getMember(toSave.id);
+                REQUIRE(actual.has_value());
+                CHECK(toSave.id == actual->id);
+                CHECK(toSave.firstName.trimmed() == actual->firstName.trimmed());
+                CHECK(toSave.lastName.trimmed() == actual->lastName.trimmed());
+                CHECK(toSave.gender == actual->gender);
+                CHECK(toSave.level == actual->level);
+                CHECK(toSave.registerDate == actual->registerDate);
+            }
+        }
     }
 }
