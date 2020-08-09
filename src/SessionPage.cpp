@@ -102,17 +102,17 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
         connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
     });
 
-    connect(d->ui.adminButton, &QPushButton::clicked, [=] {
-        auto adminMenu = new QMenu(tr("Admin options"), this);
+    connect(d->ui.optionsButton, &QPushButton::clicked, [=] {
+        auto optionMenu = new QMenu(tr("Options"), this);
 
-        connect(adminMenu->addAction(tr("Show player board")), &QAction::triggered,
+        connect(optionMenu->addAction(tr("Show player board")), &QAction::triggered,
                 [=] {
                     auto page = new PlayerTableDialog(d->repo, sessionId(), this);
                     page->show();
                 });
 
         if (d->lastGame && std::abs(QDateTime::currentDateTimeUtc().secsTo(d->lastGame->startDateTime())) < 60) {
-            connect(adminMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
+            connect(optionMenu->addAction(tr("Withdraw last game")), &QAction::triggered, [=] {
                 if (QMessageBox::question(this, tr("Withdrawing game"),
                                           tr("Are you sure to withdraw current game? A new arrangement may be completely different!")) ==
                     QMessageBox::Yes) {
@@ -121,23 +121,24 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
             });
         }
 
-        connect(adminMenu->addAction(tr("Back to club page")), &QAction::triggered,
-                this, &SessionPage::closeSessionRequested);
-
-        connect(adminMenu->addAction(tr("About Qt")), &QAction::triggered,
+        connect(optionMenu->addAction(tr("About Qt")), &QAction::triggered,
                 QCoreApplication::instance(), &QApplication::aboutQt);
 
-        connect(adminMenu->addAction(tr("About")), &QAction::triggered,
+        connect(optionMenu->addAction(tr("About")), &QAction::triggered,
                 [=] {
                     QMessageBox::about(this, tr("About GameMatcher"),
                                        tr("This software is written by <br/>"
                                           "Fanchao Liu (<a href=\"mailto:gamematcher@fanchao.nz\">gamematcher@fanchao.nz</a>)<br/>"
-                                          "Licensed under GPLv3"));
+                                          "Version %1.%2"
+                                          "<br />"
+                                          "Licensed under GPLv3").arg(QString::number(APP_VERSION_MAJOR), QString::number(APP_VERSION_MINOR)));
                 });
 
-        adminMenu->popup(d->ui.adminButton->mapToGlobal(
-                QPoint(d->ui.adminButton->width() / 2, d->ui.adminButton->height() / 2)));
+        optionMenu->popup(d->ui.optionsButton->mapToGlobal(
+                QPoint(d->ui.optionsButton->width() / 2, d->ui.optionsButton->height() / 2)));
     });
+
+    connect(d->ui.backButton, &QPushButton::clicked, this, &SessionPage::closeSessionRequested);
 
     connect(d->ui.bellButton, &QPushButton::clicked, [=](bool checked) {
         if (checked && !d->sound.isPlaying()) {

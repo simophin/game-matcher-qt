@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
+#set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/vcpkg/scripts/buildsystems/vcpkg.cmake
+#        CACHE STRING "Vcpkg toolchain file")
+
 add_subdirectory(third_party/qtsqlx)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -120,17 +123,19 @@ add_library(GameMatcher_archive
         src/models.cpp
         )
 
-target_compile_definitions(GameMatcher_archive
-        PRIVATE -DQT_NO_CAST_FROM_ASCII=1)
+target_compile_definitions(GameMatcher_archive PRIVATE -DQT_NO_CAST_FROM_ASCII=1 -DAPP_VERSION_MAJOR=1 -DAPP_VERSION_MINOR=0)
 target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
-target_link_libraries(GameMatcher_archive
-        PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt::Svg QtSQLx)
+target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg QtSQLx)
 
-qt5_import_plugins(GameMatcher_archive
-        INCLUDE_BY_TYPE imageformats Qt5::QSvgPlugin)
+if (${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+    target_compile_options(GameMatcher_archive PUBLIC -mwindows -static)
+    target_link_options(GameMatcher_archive PUBLIC -static)
+endif ()
 
 add_executable(GameMatcher WIN32 src/main.cpp)
 target_link_libraries(GameMatcher GameMatcher_archive)
+
+qt5_import_plugins(GameMatcher INCLUDE Qt5::QSvgPlugin)
 
 
 if (BUILD_TESTS)

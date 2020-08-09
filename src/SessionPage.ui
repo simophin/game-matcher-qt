@@ -131,13 +131,24 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="adminButton">
+       <widget class="QPushButton" name="optionsButton">
         <property name="text">
-         <string>Admin</string>
+         <string>Options</string>
         </property>
         <property name="icon">
          <iconset resource="../res/icons/icons.qrc">
-          <normaloff>:/icons/User/admin-line.svg</normaloff>:/icons/User/admin-line.svg</iconset>
+          <normaloff>:/icons/System/more-fill.svg</normaloff>:/icons/System/more-fill.svg</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="backButton">
+        <property name="text">
+         <string>Back</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/icons/icons.qrc">
+          <normaloff>:/icons/System/arrow-go-back-line.svg</normaloff>:/icons/System/arrow-go-back-line.svg</iconset>
         </property>
        </widget>
       </item>
