@@ -249,10 +249,11 @@ TEST_CASE("ClubRepository") {
                     {members[0], true},
                     {members[3], false},
                     {members[5], true},
+                    {members[6], true},
             };
 
-            QVector<BaseMember> pausedMembers = {
-                    checkedInMembers[1].first,
+            QVector<std::pair<BaseMember, bool>> pausedMembers = {
+                    checkedInMembers[1],
             };
 
             QVector<std::pair<BaseMember, bool>> checkedOutMembers = {
@@ -268,14 +269,15 @@ TEST_CASE("ClubRepository") {
             }
 
             for (const auto &m : pausedMembers) {
-                REQUIRE(repo->setPaused(sessionId, m.id, true));
+                REQUIRE(repo->setPaused(sessionId, m.first.id, true));
             }
 
             for (const auto &[m, paid]: checkedOutMembers) {
                 REQUIRE(repo->checkOut(sessionId, m.id));
             }
 
-            REQUIRE(sessionChangeSpy.size() == checkedInMembers.size() + checkedOutMembers.size() * 2 + pausedMembers.size());
+            REQUIRE(sessionChangeSpy.size() ==
+                    checkedInMembers.size() + checkedOutMembers.size() * 2 + pausedMembers.size());
             sessionChangeSpy.clear();
 
             SECTION("getMembers with session filter") {
@@ -287,6 +289,7 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[0], Member::CheckedIn, true),
                                                 createMemberFrom(members[3], Member::CheckedInPaused, false),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
                                                 createMemberFrom(members[7], Member::CheckedOut, false),
                                                 createMemberFrom(members[8], Member::CheckedOut, true),
                                         }
@@ -297,6 +300,7 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[0], Member::CheckedIn, true),
                                                 createMemberFrom(members[3], Member::CheckedInPaused, false),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
                                         }
                                 },
                                 {
@@ -310,6 +314,7 @@ TEST_CASE("ClubRepository") {
                                         {
                                                 createMemberFrom(members[0], Member::CheckedIn, true),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
                                         }
                                 },
                         }));
@@ -357,7 +362,7 @@ TEST_CASE("ClubRepository") {
 
             SECTION("Toggle pausing") {
                 for (const auto &m : pausedMembers) {
-                    REQUIRE(repo->setPaused(sessionId, m.id, false));
+                    REQUIRE(repo->setPaused(sessionId, m.first.id, false));
                 }
                 REQUIRE(sessionChangeSpy.size() == pausedMembers.size());
                 REQUIRE(repo->getMembers(CheckedIn{sessionId, true}).isEmpty());
@@ -370,7 +375,8 @@ TEST_CASE("ClubRepository") {
             }
 
             SECTION("Check in after check out") {
-                auto member = createMemberFrom(checkedOutMembers[0].first, Member::CheckedIn, checkedOutMembers[0].second);
+                auto member = createMemberFrom(checkedOutMembers[0].first, Member::CheckedIn,
+                                               checkedOutMembers[0].second);
                 REQUIRE(repo->checkIn(sessionId, member.id, member.paid.toBool()));
                 auto allCheckedIn = repo->getMembers(CheckedIn{sessionId});
                 auto found = std::find_if(allCheckedIn.begin(), allCheckedIn.end(), [&](const Member &m) {
@@ -386,17 +392,61 @@ TEST_CASE("ClubRepository") {
                     REQUIRE(repo->getPastAllocations(sessionId).isEmpty());
                 }
 
-                auto &[allocations, duration, successExpected] = GENERATE(table<QVector<GameAllocation>, qlonglong, bool>(
-                        {
+                auto &[allocations, duration, successExpected] = GENERATE_COPY(
+                        table<QVector<GameAllocation>, qlonglong, bool>(
                                 {
-                                        {},
-                                        15,
-                                        false
-                                }
-                        }));
+                                        {
+                                                {},
+                                                15,
+                                                false
+                                        },
+
+                                        {
+                                                {
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[1].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[2].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[3].first.id, 100),
+                                                },
+                                                15,
+                                                true
+                                        },
+                                }));
 
                 auto gameId = repo->createGame(sessionId, allocations, duration);
                 REQUIRE(gameId.has_value() == successExpected);
+                REQUIRE(sessionChangeSpy.size() == (successExpected ? 1 : 0));
+                sessionChangeSpy.clear();
+                if (!gameId) return;
+
+
+                SECTION("getPastAllocations should work") {
+                    auto expectedAllocations = allocations;
+                    for (auto &ga : expectedAllocations) {
+                        ga.gameId = *gameId;
+                    }
+
+                    auto actual = repo->getPastAllocations(sessionId);
+                    std::sort(actual.begin(), actual.end());
+                    std::sort(expectedAllocations.begin(), expectedAllocations.end());
+                    REQUIRE(actual == expectedAllocations);
+
+                    auto newGameId = repo->createGame(sessionId, allocations, duration);
+                    REQUIRE(newGameId);
+                    for (auto &ga : allocations) {
+                        expectedAllocations.push_back(ga);
+                        expectedAllocations.last().gameId = *newGameId;
+                    }
+
+                    actual = repo->getPastAllocations(sessionId);
+                    std::sort(actual.begin(), actual.end());
+                    std::sort(expectedAllocations.begin(), expectedAllocations.end());
+                    REQUIRE(actual == expectedAllocations);
+                }
             }
         }
     }

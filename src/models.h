@@ -78,6 +78,16 @@ public:
     DECLARE_PROPERTY(QVariant, status,);
     DECLARE_PROPERTY(QVariant, paid,);
 
+    bool operator==(const Member &rhs) const {
+        return static_cast<const BaseMember &>(*this) == static_cast<const BaseMember &>(rhs) &&
+               status == rhs.status &&
+               paid.toBool() == rhs.paid.toBool();
+    }
+
+    bool operator!=(const Member &rhs) const {
+        return !(rhs == *this);
+    }
+
     QString displayName;
 };
 

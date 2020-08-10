@@ -80,7 +80,7 @@ public:
     std::optional<SessionData>
     createSession(unsigned fee, const QString &place, const QString &announcement, unsigned numPlayersPerCourt, const QVector<CourtConfiguration> &);
 
-    QVector<GameAllocation> getPastAllocations(SessionId, std::optional<size_t> numGames = std::nullopt) const;
+    QVector<GameAllocation> getPastAllocations(SessionId id) const;
 
     MemberGameStats getMemberGameStats(MemberId, SessionId) const;
 

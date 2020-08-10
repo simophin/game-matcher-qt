@@ -64,7 +64,7 @@ ClubRepository::~ClubRepository() {
 ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
     std::unique_ptr<Impl> d(new Impl);
     d->db.setDatabaseName(path);
-    if (! d->db.open() || !d->db.isValid()) {
+    if (!d->db.open() || !d->db.isValid()) {
         qCritical().noquote() << "Error opening: " << path << " : " << d->db.lastError();
         return nullptr;
     }
@@ -75,7 +75,8 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
 
     bool hasSettingsTable = DbUtils::queryFirst<int>(
             d->db,
-            QStringLiteral("select count(*) from sqlite_master where type = 'table' and name = 'settings'")).orDefault(0) > 0;
+            QStringLiteral("select count(*) from sqlite_master where type = 'table' and name = 'settings'")).orDefault(
+            0) > 0;
 
     if (hasSettingsTable) {
         if (auto result = DbUtils::queryFirst<int>(
@@ -120,7 +121,8 @@ std::optional<SessionId> ClubRepository::getLastSession() const {
 }
 
 std::optional<SessionData>
-ClubRepository::createSession(unsigned fee, const QString &place, const QString &announcement, unsigned numPlayersPerCourt,
+ClubRepository::createSession(unsigned fee, const QString &place, const QString &announcement,
+                              unsigned numPlayersPerCourt,
                               const QVector<CourtConfiguration> &courts) {
     if (courts.isEmpty() || numPlayersPerCourt == 0) return std::nullopt;
 
@@ -156,19 +158,14 @@ ClubRepository::createSession(unsigned fee, const QString &place, const QString 
     return std::nullopt;
 }
 
-QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id, std::optional<size_t> numGames) const {
-    auto sql = QStringLiteral("select GA.gameId, GA.courtId, P.memberId, GA.quality from game_allocations GA "
-                              "inner join players P on P.id = GA.playerId "
-                              "where GA.gameId in ( "
-                              "select id from games where sessionId = ? ");
-
-    if (numGames) {
-        sql += QStringLiteral("order by startTime desc limit %1 ").arg(*numGames);
-    }
-
-    sql += QStringLiteral(")");
-
-    return DbUtils::queryList<GameAllocation>(d->db, sql, {id}).orDefault();
+QVector<GameAllocation> ClubRepository::getPastAllocations(SessionId id) const {
+    return DbUtils::queryList<GameAllocation>(
+            d->db,
+            QStringLiteral("select GA.gameId, GA.courtId, P.memberId, GA.quality from game_allocations GA "
+                           "inner join players P on P.id = GA.playerId "
+                           "where GA.gameId in ( "
+                           "select id from games where sessionId = ?)"),
+            {id}).orDefault();
 }
 
 MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId sessionId) const {
@@ -197,10 +194,11 @@ MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId 
                 if (pastGames.isEmpty() ||
                     (pastGames.last().gameId != gameId || pastGames.last().courtId != courtId)) {
                     pastGames.push_back({
-                        gameId, courtId, record.value(QStringLiteral("courtName")).toString(),
-                        QDateTime::fromSecsSinceEpoch(record.value(QStringLiteral("startTime")).toLongLong()),
-                        record.value(QStringLiteral("quality")).toInt()
-                    });
+                                                gameId, courtId, record.value(QStringLiteral("courtName")).toString(),
+                                                QDateTime::fromSecsSinceEpoch(
+                                                        record.value(QStringLiteral("startTime")).toLongLong()),
+                                                record.value(QStringLiteral("quality")).toInt()
+                                        });
                 }
 
                 auto &pastGame = pastGames.last();
@@ -212,7 +210,7 @@ MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId 
                 return true;
             });
 
-    MemberGameStats gameStats = { numGames };
+    MemberGameStats gameStats = {numGames};
 
     for (const auto &game : pastGames) {
         for (const auto &player : game.players) {
@@ -490,7 +488,7 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
                                             {sessionId});
     if (!courts) return std::nullopt;
 
-    return SessionData { *session, *courts };
+    return SessionData{*session, *courts};
 }
 
 std::optional<MemberId> ClubRepository::findMemberBy(QString firstName, QString lastName) {
@@ -507,7 +505,7 @@ bool ClubRepository::saveMember(const BaseMember &m) {
             QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
                            " = (?, ?, ?, ?, ?, ?) where id = ?"),
             {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.email, m.phone, m.id})
-                   .orDefault(0) > 0) {
+                .orDefault(0) > 0) {
         emit memberChanged();
         return true;
     }
@@ -528,8 +526,8 @@ bool ClubRepository::setPaused(SessionId sessionId, MemberId memberId, bool paus
 
 bool ClubRepository::setPaid(SessionId sessionId, MemberId memberId, bool paid) {
     if (DbUtils::update(d->db,
-                                  QStringLiteral("update players set paid = ? where sessionId = ? and memberId = ?"),
-                                  {paid, sessionId, memberId}).orDefault(0) > 0) {
+                        QStringLiteral("update players set paid = ? where sessionId = ? and memberId = ?"),
+                        {paid, sessionId, memberId}).orDefault(0) > 0) {
         emit this->sessionChanged(sessionId);
         emit memberChanged();
         return true;
@@ -573,7 +571,8 @@ bool ClubRepository::saveClubInfo(const QString &name, LevelRange range) {
     return true;
 }
 
-size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, QVector<BaseMember> *failMembers) {
+size_t
+ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, QVector<BaseMember> *failMembers) {
     SQLTransaction tx(d->db);
 
     size_t success = 0;
@@ -587,7 +586,8 @@ size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSup
 
         auto memberId = DbUtils::insert<MemberId>(
                 d->db,
-                QStringLiteral("insert or replace into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
+                QStringLiteral(
+                        "insert or replace into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),
                 {member.firstName, member.lastName, enumToString(member.gender).toLower(), member.level});
 
         if (!memberId) {
