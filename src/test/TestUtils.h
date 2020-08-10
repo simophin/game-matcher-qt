@@ -33,7 +33,7 @@ inline std::ostream& operator << ( std::ostream& os, const T *value ) {
     for (int i = 0, size = obj.propertyCount(); i < size; i++) {
         auto p = obj.property(i);
         os << p.name() << " = " << (p.read(value).toString().toUtf8().data());
-        if (i < size - 1) os << ",";
+        if (i < size - 1) os << ", ";
     }
     os << "}";
     return os;
@@ -56,7 +56,7 @@ inline std::ostream& operator << ( std::ostream& os, const T *value ) {
     for (int i = 0, size = obj.propertyCount(); i < size; i++) {
         auto p = obj.property(i);
         os << p.name() << " = " << (p.readOnGadget(value).toString().toUtf8().data());
-        if (i < size - 1) os << ",";
+        if (i < size - 1) os << ", ";
     }
     os << "}";
     return os;
@@ -70,9 +70,15 @@ inline std::ostream& operator << ( std::ostream& os, const T &value ) {
     return os;
 }
 
-inline std::ostream& operator << ( std::ostream& os, const QDateTime &value ) {
-    os << value.toString().toUtf8().data();
-    return os;
+inline std::ostream& operator << ( std::ostream& os, const QString &value ) { return os << value.toUtf8().data(); }
+inline std::ostream& operator << ( std::ostream& os, const QDateTime &value ) { return os << value.toString(); }
+
+inline Member createMemberFrom(const BaseMember &base, Member::Status status, bool paid) {
+    Member m;
+    static_cast<BaseMember &>(m) = base;
+    m.status = status;
+    m.paid = paid;
+    return m;
 }
 
 inline void verifyMember(const BaseMember &testSubject, const BaseMember &expected, const char *name) {

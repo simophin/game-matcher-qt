@@ -148,6 +148,7 @@ ClubRepository::createSession(unsigned fee, const QString &place, const QString 
     }
 
     if (auto data = getSession(*sessionId)) {
+        emit this->sessionChanged(*sessionId);
         return data;
     }
 
@@ -492,7 +493,8 @@ std::optional<SessionData> ClubRepository::getSession(SessionId sessionId) const
     return SessionData { *session, *courts };
 }
 
-std::optional<MemberId> ClubRepository::findMemberBy(const QString &firstName, const QString &lastName) {
+std::optional<MemberId> ClubRepository::findMemberBy(QString firstName, QString lastName) {
+    sanitizeMemberNames(firstName, lastName);
     return DbUtils::queryFirst<MemberId>(
             d->db,
             QStringLiteral("select id from members where firstName = ? collate nocase and lastName = ? collate nocase"),
