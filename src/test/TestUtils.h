@@ -6,9 +6,12 @@
 #define GAMEMATCHER_TESTUTILS_H
 
 #include "models.h"
+#include "TypeUtils.h"
 
 #include <QtTest/QtTest>
 #include <algorithm>
+#include <type_traits>
+#include <QtDebug>
 
 inline Member createMember(const char *firstName,
                            const char *lastName,
@@ -19,6 +22,57 @@ inline Member createMember(const char *firstName,
     m.gender = gender;
     m.level = level;
     return m;
+}
+
+template <typename T,
+        std::enable_if_t<sqlx::HasMetaObject<T, const QMetaObject>::value, int> = 0,
+        std::enable_if_t<std::is_base_of_v<QObject, T>, int> = 0>
+inline std::ostream& operator << ( std::ostream& os, const T *value ) {
+    const QMetaObject &obj = T::staticMetaObject;
+    os << obj.className() << "{";
+    for (int i = 0, size = obj.propertyCount(); i < size; i++) {
+        auto p = obj.property(i);
+        os << p.name() << " = " << (p.read(value).toString().toUtf8().data());
+        if (i < size - 1) os << ",";
+    }
+    os << "}";
+    return os;
+}
+
+template <typename T,
+        std::enable_if_t<sqlx::HasMetaObject<T, const QMetaObject>::value, int> = 0,
+        std::enable_if_t<std::is_base_of_v<QObject, T>, int> = 0>
+inline std::ostream& operator << ( std::ostream& os, const T &value ) {
+    os << &value;
+    return os;
+}
+
+template <typename T,
+        std::enable_if_t<sqlx::HasMetaObject<T, const QMetaObject>::value, int> = 0,
+        std::enable_if_t<!std::is_base_of_v<QObject, T>, int> = 0>
+inline std::ostream& operator << ( std::ostream& os, const T *value ) {
+    const QMetaObject &obj = T::staticMetaObject;
+    os << obj.className() << "{";
+    for (int i = 0, size = obj.propertyCount(); i < size; i++) {
+        auto p = obj.property(i);
+        os << p.name() << " = " << (p.readOnGadget(value).toString().toUtf8().data());
+        if (i < size - 1) os << ",";
+    }
+    os << "}";
+    return os;
+}
+
+template <typename T,
+        std::enable_if_t<sqlx::HasMetaObject<T, const QMetaObject>::value, int> = 0,
+        std::enable_if_t<!std::is_base_of_v<QObject, T>, int> = 0>
+inline std::ostream& operator << ( std::ostream& os, const T &value ) {
+    os << &value;
+    return os;
+}
+
+inline std::ostream& operator << ( std::ostream& os, const QDateTime &value ) {
+    os << value.toString().toUtf8().data();
+    return os;
 }
 
 inline void verifyMember(const BaseMember &testSubject, const BaseMember &expected, const char *name) {

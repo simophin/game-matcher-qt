@@ -262,13 +262,17 @@ std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
     return *gameId;
 }
 
+static void sanitizeMemberNames(QString &firstName, QString &lastName) {
+    firstName = firstName.trimmed();
+    lastName = lastName.trimmed();
+}
+
 std::optional<BaseMember>
 ClubRepository::createMember(QString firstName,
                              QString lastName,
                              const Member::Gender &gender,
                              int level) {
-    firstName = firstName.trimmed();
-    lastName = lastName.trimmed();
+    sanitizeMemberNames(firstName, lastName);
     if (firstName.isEmpty() || lastName.isEmpty()) return std::nullopt;
 
     SQLTransaction tx(d->db);
@@ -573,6 +577,12 @@ size_t ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSup
     size_t success = 0;
     Member member;
     while (memberSupplier(member)) {
+        sanitizeMemberNames(member.firstName, member.lastName);
+        if (member.firstName.isEmpty() || member.lastName.isEmpty()) {
+            if (failMembers) failMembers->push_back(member);
+            continue;
+        }
+
         auto memberId = DbUtils::insert<MemberId>(
                 d->db,
                 QStringLiteral("insert or replace into members (firstName, lastName, gender, level) values (?, ?, ?, ?)"),

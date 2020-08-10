@@ -48,6 +48,10 @@ public:
         return fullNameCache;
     }
 
+    inline bool operator<(const BaseMember &rhs) const {
+        return id < rhs.id;
+    }
+
     bool operator==(const BaseMember &rhs) const {
         return id == rhs.id &&
                registerDate == rhs.registerDate &&
