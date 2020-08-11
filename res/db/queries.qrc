@@ -3,5 +3,6 @@
         <file>db_v1.sql</file>
         <file>db_v2.sql</file>
         <file>db_v3.sql</file>
+        <file>db_v4.sql</file>
     </qresource>
 </RCC>

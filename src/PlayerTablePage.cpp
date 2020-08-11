@@ -84,7 +84,7 @@ void PlayerTablePage::reload() {
     for (int i = 0; i < members.size(); i++) {
         const auto &member = members[i];
         auto memberItem = new QTableWidgetItem(member.displayName);
-        auto status = member.status.value<Member::Status>();
+        auto status = member.status;
 
         memberFont.setStrikeOut(status == Member::CheckedOut);
         memberItem->setFont(memberFont);

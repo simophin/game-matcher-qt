@@ -33,8 +33,6 @@ public:
     DECLARE_PROPERTY(QString, firstName,);
     DECLARE_PROPERTY(QString, lastName,);
     DECLARE_PROPERTY(Gender, gender, = Gender::Male);
-    DECLARE_PROPERTY(QString, email,);
-    DECLARE_PROPERTY(QString, phone,);
     DECLARE_PROPERTY(int, level, = 0);
 
     QString genderString() const {
@@ -70,12 +68,12 @@ struct Member : BaseMember {
 Q_GADGET
 public:
     enum Status {
-        NotCheckedIn, CheckedIn, CheckedInPaused, CheckedOut
+        Unknown, NotCheckedIn, CheckedIn, CheckedInPaused, CheckedOut
     };
 
     Q_ENUM(Status);
 
-    DECLARE_PROPERTY(QVariant, status,);
+    DECLARE_PROPERTY(Status, status, = Unknown);
     DECLARE_PROPERTY(QVariant, paid,);
 
     bool operator==(const Member &rhs) const {

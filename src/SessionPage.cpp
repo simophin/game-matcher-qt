@@ -42,7 +42,9 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     d->ui.setupUi(this);
     d->ui.courtFrame->setLayout(d->courtLayout = new CourtDisplayLayout());
 
-    d->ui.timeLabel->setFont(QFont(QStringLiteral("Noto Mono"), 21));
+    QFont timeFont;
+    timeFont.setPointSizeF(21.0);
+    d->ui.timeLabel->setFont(timeFont);
 
     setWindowTitle(tr("%1 game session").arg(d->repo->getClubName()));
 

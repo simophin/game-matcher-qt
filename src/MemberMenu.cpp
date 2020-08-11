@@ -64,9 +64,9 @@ void MemberMenu::showAt(QWidget *parent,
                         const QPoint &globalPos,
                         QRect *itemRect) {
     auto menu = new QMenu(QObject::tr("Member options"), parent);
-    auto status = m.status.isValid() ? m.status.value<Member::Status>() : Member::NotCheckedIn;
-    switch (status) {
+    switch (m.status) {
         case Member::NotCheckedIn:
+        case Member::Unknown:
         case Member::CheckedOut:
             if (sessionId) {
                 QObject::connect(
@@ -90,14 +90,14 @@ void MemberMenu::showAt(QWidget *parent,
             }
     }
 
-    if (status == Member::CheckedIn && sessionId) {
+    if (m.status == Member::CheckedIn && sessionId) {
         QObject::connect(
                 menu->addAction(QObject::tr("Pause playing")),
                 &QAction::triggered,
                 [=] {
                     pausePlaying(parent, repo, *sessionId, m);
                 });
-    } else if (status == Member::CheckedInPaused && sessionId) {
+    } else if (m.status == Member::CheckedInPaused && sessionId) {
         QObject::connect(
                 menu->addAction(QObject::tr("Resume playing")),
                 &QAction::triggered,

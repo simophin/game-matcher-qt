@@ -415,6 +415,20 @@ TEST_CASE("ClubRepository") {
                                                 15,
                                                 true
                                         },
+                                        {
+                                                {
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[2].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[3].first.id, 100),
+                                                },
+                                                15,
+                                                false
+                                        },
                                 }));
 
                 auto gameId = repo->createGame(sessionId, allocations, duration);

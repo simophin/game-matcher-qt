@@ -21,6 +21,7 @@ static struct {
         {1, QStringLiteral(":/sql/db_v1.sql")},
         {2, QStringLiteral(":/sql/db_v2.sql")},
         {3, QStringLiteral(":/sql/db_v3.sql")},
+        {4, QStringLiteral(":/sql/db_v4.sql")},
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");
@@ -296,43 +297,23 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
     QString sql;
     QVector<QVariant> args;
     if (std::get_if<AllMembers>(&filter)) {
-        sql += QStringLiteral("select * from members M where 1");
+        sql += QStringLiteral("select * from normalized_members where 1");
     } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
-        sql += QStringLiteral("select M.*, P.paid as paid, "
-                              " (case "
-                              "     when P.paused then %1 "
-                              "     else %2 "
-                              " end) as status "
-                              "from members M "
-                              "inner join players P on P.memberId = M.id "
-                              "where P.checkOutTime is null "
-                              " and P.sessionId = ? ").arg(QString::number(Member::CheckedInPaused),
-                                                           QString::number(Member::CheckedIn));
-        args.push_back(checkedIn->sessionId);
-
-        if (checkedIn->paused) {
-            sql += QStringLiteral(" and P.paused = ?");
-            args.push_back(*checkedIn->paused);
+        if (checkedIn->paused == true) {
+            sql += QStringLiteral("select * from paused_members where sessionId = ?");
+        } else if (checkedIn->paused == false) {
+            sql += QStringLiteral("select * from checked_in_non_paused_members where sessionId = ?");
+        } else {
+            sql += QStringLiteral("select * from session_members where status != ? and sessionId = ?");
+            args.push_back(enumToString(Member::CheckedOut));
         }
+
+        args.push_back(checkedIn->sessionId);
     } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
-        sql += QStringLiteral("select M.*, %1 as status from members M "
-                              "  where id not in (select memberId from players where sessionId = ? and checkOutTime is null)")
-                .arg(Member::NotCheckedIn);
+        sql += QStringLiteral("select * from unchecked_in_members where sessionId = ?");
         args.push_back(nonCheckedIn->sessionId);
     } else if (auto allSession = std::get_if<AllSession>(&filter)) {
-        sql += QStringLiteral("select M.*, "
-                              " (case "
-                              "     when (P.checkoutTime is not null) then %1 "
-                              "     when P.paused then %2 "
-                              "     else %3 "
-                              " end) as status, "
-                              "P.paid as paid "
-                              "from members M "
-                              "inner join players P on P.memberId = M.id "
-                              "where P.sessionId = ?").arg(
-                QString::number(Member::CheckedOut),
-                QString::number(Member::CheckedInPaused),
-                QString::number(Member::CheckedIn));
+        sql += QStringLiteral("select * from session_members where sessionId = ?");
         args.push_back(allSession->sessionId);
     }
 
@@ -343,7 +324,7 @@ QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QStr
     auto[sql, args] = constructFindMembersSql(filter);
     auto trimmed = needle;
     if (!trimmed.isEmpty()) {
-        sql += QStringLiteral(" and (M.firstName like ?)");
+        sql += QStringLiteral(" and (firstName like ?)");
         auto realNeedle = QStringLiteral("%1%%").arg(trimmed);
         args.push_back(realNeedle);
     }
@@ -396,20 +377,14 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
 
     auto onMembers = DbUtils::queryList<GameAllocationMember>(
             d->db,
-            QStringLiteral("select M.*, P.paid as paid, "
-                           "(case when (P.checkOutTime is not null) then %1 "
-                           "when P.paused then %2 "
-                           "else %3 "
-                           "end) as status, C.id as courtId, C.name as courtName, GA.quality as courtQuality from game_allocations GA "
+            QStringLiteral("select M.*, "
+                           "C.id as courtId, C.name as courtName, GA.quality as courtQuality from game_allocations GA "
                            "inner join games G on G.id = GA.gameId "
                            "inner join players P on P.memberId = M.id and P.id = GA.playerId "
-                           "inner join members M on M.id = P.memberId "
+                           "inner join session_members M on M.id = P.memberId "
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
-                           "order by C.sortOrder").arg(
-                    QString::number(Member::CheckedOut),
-                    QString::number(Member::CheckedInPaused),
-                    QString::number(Member::CheckedIn)),
+                           "order by C.sortOrder"),
             {gameResult->id, sessionId});
 
     if (!onMembers) return std::nullopt;
@@ -461,7 +436,7 @@ bool ClubRepository::removeSetting(const SettingKey &key) {
 
 std::optional<BaseMember> ClubRepository::getMember(MemberId id) const {
     auto[sql, args] = constructFindMembersSql(AllMembers{});
-    sql += QStringLiteral(" and M.id = ?");
+    sql += QStringLiteral(" and id = ?");
     args.push_back(id);
 
     return DbUtils::queryFirst<BaseMember>(d->db, sql, args).toOptional();
@@ -502,9 +477,9 @@ std::optional<MemberId> ClubRepository::findMemberBy(QString firstName, QString 
 bool ClubRepository::saveMember(const BaseMember &m) {
     if (DbUtils::update(
             d->db,
-            QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
-                           " = (?, ?, ?, ?, ?, ?) where id = ?"),
-            {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.email, m.phone, m.id})
+            QStringLiteral("update members set (firstName, lastName, gender, level)"
+                           " = (?, ?, ?, ?) where id = ?"),
+            {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.id})
                 .orDefault(0) > 0) {
         emit memberChanged();
         return true;
