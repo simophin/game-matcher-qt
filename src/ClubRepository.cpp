@@ -381,7 +381,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
                            "C.id as courtId, C.name as courtName, GA.quality as courtQuality from game_allocations GA "
                            "inner join games G on G.id = GA.gameId "
                            "inner join players P on P.memberId = M.id and P.id = GA.playerId "
-                           "inner join session_members M on M.id = P.memberId "
+                           "inner join session_members M on M.id = P.memberId and M.sessionId = P.sessionId "
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
                            "order by C.sortOrder"),

@@ -250,6 +250,7 @@ TEST_CASE("ClubRepository") {
                     {members[3], false},
                     {members[5], true},
                     {members[6], true},
+                    {members[7], true},
             };
 
             QVector<std::pair<BaseMember, bool>> pausedMembers = {
@@ -257,8 +258,8 @@ TEST_CASE("ClubRepository") {
             };
 
             QVector<std::pair<BaseMember, bool>> checkedOutMembers = {
-                    {members[7], false},
-                    {members[8], true},
+                    {members[8], false},
+                    {members[9], true},
             };
 
             for (const auto &[m, paid] : checkedInMembers) {
@@ -290,8 +291,9 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[3], Member::CheckedInPaused, false),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
                                                 createMemberFrom(members[6], Member::CheckedIn, true),
-                                                createMemberFrom(members[7], Member::CheckedOut, false),
-                                                createMemberFrom(members[8], Member::CheckedOut, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
+                                                createMemberFrom(members[8], Member::CheckedOut, false),
+                                                createMemberFrom(members[9], Member::CheckedOut, true),
                                         }
                                 },
                                 {
@@ -301,6 +303,7 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[3], Member::CheckedInPaused, false),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
                                                 createMemberFrom(members[6], Member::CheckedIn, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
                                         }
                                 },
                                 {
@@ -315,6 +318,7 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[0], Member::CheckedIn, true),
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
                                                 createMemberFrom(members[6], Member::CheckedIn, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
                                         }
                                 },
                         }));
@@ -437,6 +441,39 @@ TEST_CASE("ClubRepository") {
                 sessionChangeSpy.clear();
                 if (!gameId) return;
 
+                SECTION("getLastGameInfo should work") {
+                    auto gameInfo = repo->getLastGameInfo(sessionId);
+                    REQUIRE(gameInfo.has_value());
+
+                    REQUIRE(gameInfo->durationSeconds == duration);
+                    REQUIRE(gameInfo->id == *gameId);
+                    REQUIRE(gameInfo->startDateTime().isValid());
+                    REQUIRE(gameInfo->courts.size() == 1);
+                    REQUIRE(gameInfo->courts.first().players.size() == allocations.size());
+                    std::sort(gameInfo->courts.first().players.begin(), gameInfo->courts.first().players.end());
+                    for (int i = 0, size = allocations.size(); i < size; i++) {
+                        REQUIRE(gameInfo->courts.first().players[i].id == allocations[i].memberId);
+                        REQUIRE(sessionData->courts[0].id == gameInfo->courts.first().courtId);
+                        REQUIRE(allocations[i].quality == gameInfo->courts.first().courtQuality);
+                    }
+
+                    QVector<BaseMember> expectedWaiting;
+                    for (const auto &item : checkedInMembers) {
+                        auto inAllocation = std::find_if(allocations.begin(), allocations.end(), [&](auto &ga) {
+                            return ga.memberId == item.first.id;
+                        });
+                        if (inAllocation == allocations.end()) {
+                            expectedWaiting.push_back(item.first);
+                        }
+                    }
+
+                    REQUIRE(expectedWaiting.size() == gameInfo->waiting.size());
+                    std::sort(expectedWaiting.begin(), expectedWaiting.end());
+                    std::sort(gameInfo->waiting.begin(), gameInfo->waiting.end());
+                    for (int i = 0, size = expectedWaiting.size(); i < size; i++) {
+                        REQUIRE(expectedWaiting[i] == gameInfo->waiting[i]);
+                    }
+                }
 
                 SECTION("getPastAllocations should work") {
                     auto expectedAllocations = allocations;
