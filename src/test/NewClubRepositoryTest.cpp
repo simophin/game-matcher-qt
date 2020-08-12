@@ -406,7 +406,7 @@ TEST_CASE("ClubRepository") {
                 REQUIRE(*found == member);
             }
 
-            SECTION("game manipulation") {
+            SECTION("Game manipulation") {
                 SECTION("should have no game") {
                     REQUIRE(repo->getLastGameInfo(sessionId) == std::nullopt);
                     REQUIRE(repo->getPastAllocations(sessionId).isEmpty());

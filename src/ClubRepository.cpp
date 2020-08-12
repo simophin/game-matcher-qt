@@ -576,5 +576,9 @@ ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, 
     return success;
 }
 
+void ClubRepository::exportMembers(MemberSearchFilter filter, std::function<bool(Member &)> cb) const {
+    auto [sql, args] = constructFindMembersSql(filter);
+    DbUtils::queryStream<Member>(d->db, sql, args, cb);
+}
 
 

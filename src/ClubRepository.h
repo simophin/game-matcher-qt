@@ -61,6 +61,8 @@ public:
 
     std::optional<MemberId> findMemberBy(QString firstName, QString lastName);
 
+    void exportMembers(MemberSearchFilter, std::function<bool(Member &)>) const;
+
     std::optional<BaseMember> getMember(MemberId) const;
 
     QVector<Member> getMembers(MemberSearchFilter) const;
