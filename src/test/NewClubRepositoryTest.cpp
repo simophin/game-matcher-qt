@@ -280,6 +280,7 @@ TEST_CASE("ClubRepository") {
             REQUIRE(sessionChangeSpy.size() ==
                     checkedInMembers.size() + checkedOutMembers.size() * 2 + pausedMembers.size());
             sessionChangeSpy.clear();
+            memberChangeSpy.clear();
 
             SECTION("getMembers with session filter") {
                 auto[filter, expected] = GENERATE_COPY(table<MemberSearchFilter, QVector<Member>>(
@@ -362,6 +363,21 @@ TEST_CASE("ClubRepository") {
                 auto result = repo->findMember(filter, needle);
                 std::sort(result.begin(), result.end());
                 REQUIRE(result == expected);
+            }
+
+            SECTION("Toggle paid") {
+                auto expected = !checkedInMembers[0].second;
+                REQUIRE(repo->setPaid(sessionId, checkedInMembers[0].first.id, expected));
+                REQUIRE(sessionChangeSpy.size() == 1);
+                REQUIRE(sessionChangeSpy.first().first() == sessionId);
+                REQUIRE(memberChangeSpy.size() == 1);
+
+                auto allCheckedIn = repo->getMembers(CheckedIn{sessionId});
+                auto found = std::find_if(allCheckedIn.begin(), allCheckedIn.end(), [&](auto &m) {
+                    return m.id == checkedInMembers[0].first.id;
+                });
+                REQUIRE(found != allCheckedIn.end());
+                REQUIRE(found->paid == expected);
             }
 
             SECTION("Toggle pausing") {
@@ -497,6 +513,14 @@ TEST_CASE("ClubRepository") {
                     std::sort(actual.begin(), actual.end());
                     std::sort(expectedAllocations.begin(), expectedAllocations.end());
                     REQUIRE(actual == expectedAllocations);
+                }
+
+                SECTION("withdrawLastGame should work") {
+                    REQUIRE(repo->withdrawLastGame(sessionId));
+                    auto lastGame = repo->getLastGameInfo(sessionId);
+                    if (lastGame) {
+                        REQUIRE(lastGame->id != gameId);
+                    }
                 }
             }
         }

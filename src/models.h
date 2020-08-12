@@ -29,7 +29,7 @@ public:
     Q_ENUM(Gender);
 
     DECLARE_PROPERTY(MemberId, id, = 0);
-    DECLARE_PROPERTY(QDateTime, registerDate,);
+    DECLARE_PROPERTY(qlonglong, registerDate, = 0);
     DECLARE_PROPERTY(QString, firstName,);
     DECLARE_PROPERTY(QString, lastName,);
     DECLARE_PROPERTY(Gender, gender, = Gender::Male);
