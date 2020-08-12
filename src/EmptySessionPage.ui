@@ -101,62 +101,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_3">
-       <property name="title">
-        <string>Membership</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QPushButton" name="newMemberButton">
-            <property name="text">
-             <string>New member registration</string>
-            </property>
-            <property name="icon">
-             <iconset resource="../res/icons/icons.qrc">
-              <normaloff>:/icons/User/account-box-line.svg</normaloff>:/icons/User/account-box-line.svg</iconset>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>32</width>
-              <height>32</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
       <widget class="QGroupBox" name="groupBox_2">
        <property name="title">
         <string>Club administration</string>
@@ -255,6 +199,40 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="reportButton">
+          <property name="text">
+           <string>Generate report</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../res/icons/icons.qrc">
+            <normaloff>:/icons/System/checkbox-multiple-blank-line.svg</normaloff>:/icons/System/checkbox-multiple-blank-line.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="membersButton">
+          <property name="text">
+           <string>Members</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../res/icons/icons.qrc">
+            <normaloff>:/icons/System/information-line.svg</normaloff>:/icons/System/information-line.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

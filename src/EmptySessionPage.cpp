@@ -45,15 +45,6 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
         connect(dialog, &NewSessionDialog::sessionCreated, this, &EmptySessionPage::newSessionCreated);
     });
 
-    connect(d->ui.newMemberButton, &QPushButton::clicked, [=] {
-        auto dialog = new EditMemberDialog(d->repo, this);
-        dialog->show();
-        connect(dialog, &EditMemberDialog::newMemberCreated, [=] {
-            QMessageBox::information(this, tr("Welcome"),
-                                     tr("Register successfully. Welcome to %1.").arg(d->repo->getClubName()));
-        });
-    });
-
     connect(d->ui.exportButton, &QPushButton::clicked, [=] {
         auto csvFileName = QFileDialog::getSaveFileName(this, tr("Save as..."));
         if (csvFileName.isEmpty()) return;
