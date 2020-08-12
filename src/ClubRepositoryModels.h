@@ -96,4 +96,15 @@ public:
     }
 };
 
+struct PaymentRecord {
+    Q_GADGET
+public:
+    DECLARE_PROPERTY(MemberId, memberId, = 0);
+    DECLARE_PROPERTY(QString, memberFirstName, );
+    DECLARE_PROPERTY(QString, memberLastName, );
+    DECLARE_PROPERTY(bool, paid, = false);
+    DECLARE_PROPERTY(SessionId, sessionId,  = 0);
+    DECLARE_PROPERTY(qlonglong, sessionStartTime,  = 0);
+};
+
 #endif //GAMEMATCHER_CLUBREPOSITORYMODELS_H

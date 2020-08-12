@@ -581,4 +581,20 @@ void ClubRepository::exportMembers(MemberSearchFilter filter, std::function<bool
     DbUtils::queryStream<Member>(d->db, sql, args, cb);
 }
 
+QVector<PaymentRecord> ClubRepository::getPaymentRecords(const QSet<SessionId> &sessionIds) const {
+    auto sql = QStringLiteral("select M.id as memberId, "
+                              "M.firstName as memberFirstName, "
+                              "M.lastName as memberLastName, "
+                              "M.paid, M.sessionId, (select startTime from sessions where id = M.sessionId) from session_members M "
+                              "where M.sessionId in (");
+    for (const auto &id : sessionIds) {
+        sql += QString::number(id);
+        sql += QStringLiteral(",");
+    }
+
+    sql.replace(sql.length() - 1, 1, QStringLiteral(")"));
+
+    return DbUtils::queryList<PaymentRecord>(d->db, sql).orDefault();
+}
+
 

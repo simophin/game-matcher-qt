@@ -35,6 +35,8 @@ set(HEADERS
         src/MemberImportDialog.h
         src/PlayerStatsDialog.h
         src/PlayerTableDialog.h
+        src/ReportsDialog.h
+        src/BaseReport.h
         src/ClubRepositoryModels.h
         src/ClubRepositoryInternal.h)
 
@@ -57,6 +59,7 @@ list(APPEND HEADERS
         src/MemberPainter.h
         src/MemberMenu.h
         src/LastSelectedCourts.h
+        src/MembersPaymentReport.h
         )
 
 qt5_add_resources(SOURCES
@@ -83,6 +86,7 @@ qt5_wrap_ui(SOURCES
         src/PlayerStatsDialog.ui
         src/PlayerTableDialog.ui
         src/ToastDialog.ui
+        src/ReportsDialog.ui
         )
 
 add_library(GameMatcher_archive
@@ -116,6 +120,8 @@ add_library(GameMatcher_archive
         src/MemberImportDialog.cpp
         src/PlayerStatsDialog.cpp
         src/PlayerTableDialog.cpp
+        src/ReportsDialog.cpp
+        src/MembersPaymentReport.cpp
         src/models.cpp
         )
 

@@ -88,6 +88,8 @@ public:
 
     std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, qlonglong durationSeconds);
 
+    QVector<PaymentRecord> getPaymentRecords(const QSet<SessionId> &) const;
+
 signals:
 
     void clubInfoChanged();

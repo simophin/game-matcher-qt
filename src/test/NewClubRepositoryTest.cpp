@@ -282,6 +282,8 @@ TEST_CASE("ClubRepository") {
             sessionChangeSpy.clear();
             memberChangeSpy.clear();
 
+
+
             SECTION("getMembers with session filter") {
                 auto[filter, expected] = GENERATE_COPY(table<MemberSearchFilter, QVector<Member>>(
                         {
