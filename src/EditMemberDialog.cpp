@@ -129,6 +129,8 @@ void EditMemberDialog::accept() {
         m.lastName = lastName;
         m.level = level;
         m.gender = gender;
+        m.phone = phone;
+        m.email = email;
         if (!d->repo->saveMember(m)) {
             QMessageBox::warning(this, tr("Error"),
                                  tr("Unable to save to database. Probably nothing you can do about this. You should try again."));
