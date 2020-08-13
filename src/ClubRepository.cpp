@@ -282,7 +282,7 @@ ClubRepository::createMember(QString firstName,
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
             QStringLiteral(
-                    "insert into members (firstName, lastName, gender, level, registerDate, phone, email) values (?, ?, ?, ?, ?)"),
+                    "insert into members (firstName, lastName, gender, level, registerDate, phone, email) values (?, ?, ?, ?, ?, ?, ?)"),
             {firstName, lastName, enumToString(gender).toLower(), level, QDateTime::currentSecsSinceEpoch(),
              phone.trimmed(), email.trimmed()});
 

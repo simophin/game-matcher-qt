@@ -66,7 +66,7 @@ TEST_CASE("ClubRepository") {
             m.level = i;
 
             memberChangeSpy.clear();
-            auto result = repo->createMember(m.firstName, m.lastName, m.gender, m.level);
+            auto result = repo->createMember(m.firstName, m.lastName, m.gender, m.level, "", "");
             REQUIRE(result);
             m.id = result->id;
             m.registerDate = result->registerDate;
@@ -89,7 +89,7 @@ TEST_CASE("ClubRepository") {
                             {" First1",     "last1 ", false},
                     }));
 
-            auto actual = repo->createMember(first, last, BaseMember::Male, 1);
+            auto actual = repo->createMember(first, last, BaseMember::Male, 1, "", "");
             REQUIRE(actual.has_value() == successExpected);
             REQUIRE(memberChangeSpy.size() == (successExpected ? 1 : 0));
         }
@@ -104,7 +104,7 @@ TEST_CASE("ClubRepository") {
                             {" ",      "Last",  false},
                     }));
 
-            auto actual = repo->createMember(first, last, BaseMember::Female, 2);
+            auto actual = repo->createMember(first, last, BaseMember::Female, 2, "", "");
             REQUIRE(actual.has_value() == successExpected);
             REQUIRE(memberChangeSpy.size() == (successExpected ? 1 : 0));
         }
@@ -210,7 +210,8 @@ TEST_CASE("ClubRepository") {
             auto m = repo->createMember(QStringLiteral("%1First").arg(i),
                                         QStringLiteral("%1Last").arg(i),
                                         i % 2 == 0 ? BaseMember::Male : BaseMember::Female,
-                                        i % 4);
+                                        i % 4,
+                                        "", "");
             REQUIRE(m);
             members.push_back(*m);
         }
