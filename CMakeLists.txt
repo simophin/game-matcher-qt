@@ -39,6 +39,7 @@ set(HEADERS
         src/BaseReport.h
         src/ClubRepositoryModels.h
         src/SessionSelectionDialog.h
+        src/MemberListDialog.h
         src/ClubRepositoryInternal.h)
 
 qt5_wrap_cpp(SOURCES ${HEADERS})
@@ -90,6 +91,7 @@ qt5_wrap_ui(SOURCES
         src/ToastDialog.ui
         src/ReportsDialog.ui
         src/SessionSelectionDialog.ui
+        src/MemberListDialog.ui
         )
 
 add_library(GameMatcher_archive
@@ -126,6 +128,7 @@ add_library(GameMatcher_archive
         src/ReportsDialog.cpp
         src/MembersPaymentReport.cpp
         src/SessionSelectionDialog.cpp
+        src/MemberListDialog.cpp
         src/models.cpp
         )
 
