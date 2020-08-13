@@ -19,6 +19,9 @@ public:
 
     void changeEvent(QEvent *) override;
 
+private slots:
+    void reload();
+
 private:
     struct Impl;
     Impl *d;
