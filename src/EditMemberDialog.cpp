@@ -85,11 +85,24 @@ void EditMemberDialog::setMember(MemberId id) {
             d->ui.genderComboBox->setCurrentIndex(index);
         }
 
+        d->ui.phoneLineEdit->setText(m->phone);
+        d->ui.emailLineEdit->setText(m->email);
+
         setWindowTitle(tr("Editing member info"));
     }
 }
 
 void EditMemberDialog::accept() {
+    auto phone = d->ui.phoneLineEdit->text().trimmed();
+    auto email = d->ui.emailLineEdit->text().trimmed();
+    if (phone.isEmpty() && email.isEmpty()) {
+        QMessageBox::critical(
+                this, tr("Can not save your form"),
+                tr("You need to at least give us a phone number or the email address")
+        );
+        return;
+    }
+
     auto names = d->splitNames(d->ui.fullNameValue->text());
     if (!names) return;
 
@@ -124,7 +137,7 @@ void EditMemberDialog::accept() {
             ToastDialog::show(tr("Member %1 updated successfully").arg(m.fullName()));
             QDialog::accept();
         }
-    } else if (auto newMember = d->repo->createMember(firstName, lastName, gender, level)) {
+    } else if (auto newMember = d->repo->createMember(firstName, lastName, gender, level, phone, email)) {
         emit this->newMemberCreated(newMember->id);
         ToastDialog::show(tr("Member %1 created successfully").arg(newMember->fullName()));
         QDialog::accept();

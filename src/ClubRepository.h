@@ -52,7 +52,8 @@ public:
 
     std::optional<BaseMember> createMember(
             QString firstName, QString lastName,
-            const Member::Gender &gender, int level);
+            const Member::Gender &gender, int level,
+            QString phone, QString email);
 
     bool saveMember(const BaseMember &);
     size_t importMembers(std::function<bool(BaseMember&)> memberSupplier, QVector<BaseMember> *failMembers = nullptr);

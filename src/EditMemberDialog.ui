@@ -87,6 +87,26 @@ font-size: 13pt;</string>
        </item>
       </layout>
      </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="phoneLabel">
+       <property name="text">
+        <string>Phone</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="phoneLineEdit"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="emailLabel">
+       <property name="text">
+        <string>Email</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="emailLineEdit"/>
+     </item>
     </layout>
    </item>
    <item>

@@ -34,6 +34,8 @@ public:
     DECLARE_PROPERTY(QString, lastName,);
     DECLARE_PROPERTY(Gender, gender, = Gender::Male);
     DECLARE_PROPERTY(int, level, = 0);
+    DECLARE_PROPERTY(QString, phone,);
+    DECLARE_PROPERTY(QString, email,);
 
     QString genderString() const {
         return QLatin1String(QMetaEnum::fromType<Gender>().valueToKey(gender));
@@ -56,7 +58,9 @@ public:
                firstName == rhs.firstName &&
                lastName == rhs.lastName &&
                gender == rhs.gender &&
-               level == rhs.level;
+               level == rhs.level &&
+               phone == rhs.phone &&
+               email == rhs.email;
     }
 
     bool operator!=(const BaseMember &rhs) const {

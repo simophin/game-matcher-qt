@@ -8,7 +8,9 @@ select M.id,
        M.firstName,
        M.lastName,
        M.gender,
-       M.level from members M;
+       M.level,
+       M.email,
+       M.phone from members M;
 ---
 create view session_members as
 select M.*,

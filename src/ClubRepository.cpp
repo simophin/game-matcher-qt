@@ -271,7 +271,9 @@ std::optional<BaseMember>
 ClubRepository::createMember(QString firstName,
                              QString lastName,
                              const Member::Gender &gender,
-                             int level) {
+                             int level,
+                             QString phone,
+                             QString email) {
     sanitizeMemberNames(firstName, lastName);
     if (firstName.isEmpty() || lastName.isEmpty()) return std::nullopt;
 
@@ -279,8 +281,10 @@ ClubRepository::createMember(QString firstName,
 
     auto memberId = DbUtils::insert<MemberId>(
             d->db,
-            QStringLiteral("insert into members (firstName, lastName, gender, level, registerDate) values (?, ?, ?, ?, ?)"),
-            {firstName, lastName, enumToString(gender).toLower(), level, QDateTime::currentSecsSinceEpoch()});
+            QStringLiteral(
+                    "insert into members (firstName, lastName, gender, level, registerDate, phone, email) values (?, ?, ?, ?, ?)"),
+            {firstName, lastName, enumToString(gender).toLower(), level, QDateTime::currentSecsSinceEpoch(),
+             phone.trimmed(), email.trimmed()});
 
     if (!memberId) {
         qWarning() << "Error inserting member";
@@ -477,9 +481,10 @@ std::optional<MemberId> ClubRepository::findMemberBy(QString firstName, QString 
 bool ClubRepository::saveMember(const BaseMember &m) {
     if (DbUtils::update(
             d->db,
-            QStringLiteral("update members set (firstName, lastName, gender, level)"
-                           " = (?, ?, ?, ?) where id = ?"),
-            {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.id})
+            QStringLiteral("update members set (firstName, lastName, gender, level, email, phone)"
+                           " = (?, ?, ?, ?, ?, ?) where id = ?"),
+            {m.firstName, m.lastName, enumToString(m.gender).toLower(), m.level, m.email.trimmed(), m.phone.trimmed(),
+             m.id})
                 .orDefault(0) > 0) {
         emit memberChanged();
         return true;
@@ -577,7 +582,7 @@ ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, 
 }
 
 void ClubRepository::exportMembers(MemberSearchFilter filter, std::function<bool(Member &)> cb) const {
-    auto [sql, args] = constructFindMembersSql(filter);
+    auto[sql, args] = constructFindMembersSql(filter);
     DbUtils::queryStream<Member>(d->db, sql, args, cb);
 }
 
