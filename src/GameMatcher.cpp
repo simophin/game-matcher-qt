@@ -56,6 +56,10 @@ static std::vector<PlayerInfo> getEligiblePlayers(
             // If we have higher than lowestNumGamesOff, they are people must on.
             players.emplace_back(*info.member, info.eligibilityScore > lowestScore);
         }
+    } else {
+        for (const auto &info : memberInfo) {
+            players.emplace_back(*info.member, true);
+        }
     }
 
     return players;
