@@ -8,10 +8,12 @@
 
 #include <QDialog>
 
+class ClubRepository;
+
 class ReportsDialog : public QDialog {
 Q_OBJECT
 public:
-    explicit ReportsDialog(QWidget *parent = nullptr);
+    explicit ReportsDialog(ClubRepository *, QWidget *parent = nullptr);
 
     ~ReportsDialog() override;
 

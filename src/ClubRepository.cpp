@@ -585,7 +585,7 @@ QVector<PaymentRecord> ClubRepository::getPaymentRecords(const QSet<SessionId> &
     auto sql = QStringLiteral("select M.id as memberId, "
                               "M.firstName as memberFirstName, "
                               "M.lastName as memberLastName, "
-                              "M.paid, M.sessionId, (select startTime from sessions where id = M.sessionId) from session_members M "
+                              "M.paid, M.sessionId, (select cast(strftime('%s', startTime) as INTEGER) from sessions where id = M.sessionId) as sessionStartTime from session_members M "
                               "where M.sessionId in (");
     for (const auto &id : sessionIds) {
         sql += QString::number(id);
@@ -595,6 +595,17 @@ QVector<PaymentRecord> ClubRepository::getPaymentRecords(const QSet<SessionId> &
     sql.replace(sql.length() - 1, 1, QStringLiteral(")"));
 
     return DbUtils::queryList<PaymentRecord>(d->db, sql).orDefault();
+}
+
+QVector<Session> ClubRepository::getAllSessions(std::optional<size_t> limit) {
+    auto sql = QStringLiteral("select * from sessions order by startTime desc");
+    QVector<QVariant> args;
+    if (limit) {
+        sql += QStringLiteral(" limit ?");
+        args.push_back(QVariant::fromValue(*limit));
+    }
+
+    return DbUtils::queryList<Session>(d->db, sql, args).orDefault();
 }
 
 

@@ -90,6 +90,9 @@ public:
 
     QVector<PaymentRecord> getPaymentRecords(const QSet<SessionId> &) const;
 
+    QVector<Session> getAllSessions(std::optional<size_t> limit = std::nullopt);
+
+
 signals:
 
     void clubInfoChanged();

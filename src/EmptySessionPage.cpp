@@ -10,6 +10,7 @@
 #include "EditMemberDialog.h"
 #include "FakeNames.h"
 #include "MemberImportDialog.h"
+#include "ReportsDialog.h"
 
 #include <QRandomGenerator>
 #include <QMessageBox>
@@ -79,6 +80,11 @@ EmptySessionPage::EmptySessionPage(ClubRepository *repo, QWidget *parent)
 
     connect(d->ui.importButton, &QPushButton::clicked, [=] {
         auto dialog = new MemberImportDialog(d->repo, this);
+        dialog->show();
+    });
+
+    connect(d->ui.reportButton, &QPushButton::clicked, [=] {
+        auto dialog = new ReportsDialog(d->repo, this);
         dialog->show();
     });
 

@@ -9,19 +9,10 @@
 #include <optional>
 #include <QHash>
 #include <QVector>
-#include <set>
+#include <QMap>
 
 
 struct MembersPaymentReport::Impl {
-    struct MemberEntry {
-        MemberId id;
-        QString name;
-
-        inline bool operator<(const MemberEntry &rhs) const {
-            return id < rhs.id;
-        }
-    };
-
     struct SessionPaymentHistory {
         QDateTime startTime;
         QHash<MemberId, bool> history;
@@ -30,7 +21,7 @@ struct MembersPaymentReport::Impl {
     ClubRepository * const repo;
     QSet<SessionId> sessions;
     bool dataDirty = true;
-    std::set<MemberEntry> members;
+    QMap<MemberId, QString> members;
     QHash<SessionId, SessionPaymentHistory> paymentHistory;
 
     void loadDataIfNecessary() {
@@ -44,10 +35,9 @@ struct MembersPaymentReport::Impl {
         for (const auto &record : repo->getPaymentRecords(sessions)) {
             paymentHistory[record.sessionId].startTime.setSecsSinceEpoch(record.sessionStartTime);
             paymentHistory[record.sessionId].history[record.memberId] = record.paid;
-            members.insert(MemberEntry {
-                    record.memberId,
-                    tr("%1 %2").arg(record.memberFirstName, record.memberLastName)
-            });
+            if (!members.contains(record.memberId)) {
+                members[record.memberId] = tr("%1 %2").arg(record.memberFirstName, record.memberLastName);
+            }
         }
     }
 };
@@ -67,21 +57,21 @@ void MembersPaymentReport::setSessions(const QSet<SessionId> &sessions) {
 void MembersPaymentReport::forEachRow(BaseReport::RowCallback cb) {
     d->loadDataIfNecessary();
 
-    QVector<QVariant> columns(d->paymentHistory.size() + 1);
+    QVector<QVariant> columns(d->paymentHistory.size() + 2);
 
-    for (const auto &[memberId, memberName] : d->members) {
-        columns[0] = memberName;
+    for (auto memberIter = d->members.begin(); memberIter != d->members.end(); ++memberIter) {
+        columns[0] = memberIter.value();
 
         int i = 2;
         int totalUnpaid = 0;
         for (auto iter = d->paymentHistory.begin(); iter != d->paymentHistory.end(); ++iter) {
-            auto paid = iter->history.find(memberId);
+            auto paid = iter->history.find(memberIter.key());
             if (paid == iter->history.end()) {
                 columns[i++] = tr("N/A");
             } else if (paid.value()) {
-                columns[i++] = tr("Yes");
+                columns[i++] = tr("Paid");
             } else {
-                columns[i++] = tr("No");
+                columns[i++] = tr("Unpaid");
                 totalUnpaid++;
             }
         }
@@ -91,6 +81,51 @@ void MembersPaymentReport::forEachRow(BaseReport::RowCallback cb) {
             break;
         }
     }
+
+    // Empty line
+    if (!cb({})) return;
+
+    // Member played
+    {
+        columns[0] = tr("Total member played");
+        columns[1].clear();
+
+        int i = 2;
+        for (auto iter = d->paymentHistory.begin(); iter != d->paymentHistory.end(); ++iter) {
+            columns[i++] = QString::number(iter->history.size());
+        }
+        if (!cb(columns)) return;
+    }
+
+    // Member paid
+    {
+        columns[0] = tr("Total paid");
+        columns[1].clear();
+
+        int i = 2;
+        for (auto iter = d->paymentHistory.begin(); iter != d->paymentHistory.end(); ++iter) {
+            columns[i++] = QString::number(std::count_if(iter->history.begin(), iter->history.end(), [&](bool paid) {
+                return paid;
+            }));
+        }
+
+        if (!cb(columns)) return;
+    }
+
+    // Member unpaid
+    {
+        columns[0] = tr("Total unpaid");
+        columns[1].clear();
+
+        int i = 2;
+        for (auto iter = d->paymentHistory.begin(); iter != d->paymentHistory.end(); ++iter) {
+            columns[i++] = QString::number(std::count_if(iter->history.begin(), iter->history.end(), [&](bool paid) {
+                return !paid;
+            }));
+        }
+
+        if (!cb(columns)) return;
+    }
 }
 
 QStringList MembersPaymentReport::columnNames() const {
@@ -99,14 +134,14 @@ QStringList MembersPaymentReport::columnNames() const {
     QStringList names;
     names.reserve(d->paymentHistory.size() + 2);
     names.append(tr("Name"));
-    names.append(tr("Total unpaid times"));
+    names.append(tr("Total unpaid"));
     for (const auto &history : d->paymentHistory) {
-        names.append(history.startTime.toString());
+        names.append(history.startTime.toLocalTime().toString(DATE_TIME_FORMAT));
     }
     return names;
 }
 
 size_t MembersPaymentReport::numRows() const {
     d->loadDataIfNecessary();
-    return d->members.size();
+    return d->members.size() + 4;
 }

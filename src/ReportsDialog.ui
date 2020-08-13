@@ -16,13 +16,19 @@
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0,0,0">
    <item row="1" column="2">
     <widget class="QPushButton" name="selectSessionButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Select sessions</string>
      </property>
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="sessionsLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Sessions</string>
      </property>
@@ -45,7 +51,11 @@
     </spacer>
    </item>
    <item row="4" column="0" colspan="5">
-    <widget class="QTableWidget" name="dataTable"/>
+    <widget class="QTableWidget" name="dataTable">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+    </widget>
    </item>
    <item row="0" column="0">
     <widget class="QLabel" name="reportTypeLabel">
@@ -90,6 +100,9 @@
    </item>
    <item row="1" column="1">
     <widget class="QLabel" name="selectedSessionLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>0 selected</string>
      </property>

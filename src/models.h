@@ -181,4 +181,6 @@ inline static QDebug operator<<(QDebug dbg, const GameAllocation &c) {
 
 void registerModels();
 
+static inline auto DATE_TIME_FORMAT = QStringLiteral("hh:mma dd MMM");
+
 #endif // MODELS_H

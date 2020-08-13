@@ -13,8 +13,8 @@ public:
 
     virtual ~MembersPaymentReport();
 
-    DataRequirement sessionRequirement() const override {
-        return AtLeast { 1 };
+    SizeRange sessionRequirement() const override {
+        return SizeRange(1, std::nullopt);
     }
 
     void forEachRow(RowCallback) override;
