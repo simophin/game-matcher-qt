@@ -73,11 +73,13 @@ inline std::ostream& operator << ( std::ostream& os, const T &value ) {
 inline std::ostream& operator << ( std::ostream& os, const QString &value ) { return os << value.toUtf8().data(); }
 inline std::ostream& operator << ( std::ostream& os, const QDateTime &value ) { return os << value.toString(); }
 
-inline Member createMemberFrom(const BaseMember &base, Member::Status status, bool paid) {
+inline Member createMemberFrom(const BaseMember &base, Member::Status status, std::optional<bool> paid) {
     Member m;
     static_cast<BaseMember &>(m) = base;
     m.status = status;
-    m.paid = paid;
+    if (paid) {
+        m.paid = *paid;
+    }
     return m;
 }
 

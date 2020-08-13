@@ -581,11 +581,6 @@ ClubRepository::importMembers(std::function<bool(BaseMember &)> memberSupplier, 
     return success;
 }
 
-void ClubRepository::exportMembers(MemberSearchFilter filter, std::function<bool(Member &)> cb) const {
-    auto[sql, args] = constructFindMembersSql(filter);
-    DbUtils::queryStream<Member>(d->db, sql, args, cb);
-}
-
 QVector<PaymentRecord> ClubRepository::getPaymentRecords(const QSet<SessionId> &sessionIds) const {
     auto sql = QStringLiteral("select M.id as memberId, "
                               "M.firstName as memberFirstName, "
@@ -603,7 +598,7 @@ QVector<PaymentRecord> ClubRepository::getPaymentRecords(const QSet<SessionId> &
 }
 
 QVector<Session> ClubRepository::getAllSessions(std::optional<size_t> limit) {
-    auto sql = QStringLiteral("select * from sessions order by startTime desc");
+    auto sql = QStringLiteral("select * from sessions order by startTime desc, id desc");
     QVector<QVariant> args;
     if (limit) {
         sql += QStringLiteral(" limit ?");

@@ -206,7 +206,7 @@ TEST_CASE("ClubRepository") {
 
     SECTION("session manipulation") {
         QVector<BaseMember> members;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 11; i++) {
             auto m = repo->createMember(QStringLiteral("%1First").arg(i),
                                         QStringLiteral("%1Last").arg(i),
                                         i % 2 == 0 ? BaseMember::Male : BaseMember::Female,
@@ -239,6 +239,21 @@ TEST_CASE("ClubRepository") {
 
         SECTION("getSession should work") {
             REQUIRE(repo->getSession(sessionId) == sessionData);
+        }
+
+        SECTION("getAllSessions should work") {
+            REQUIRE(repo->getAllSessions().size() == 1);
+            REQUIRE(repo->getAllSessions().first() == sessionData->session);
+
+            auto newSession = repo->createSession(fee, place, announcement, numPlayersPerCourt, courts);
+            REQUIRE(newSession);
+            REQUIRE(repo->getAllSessions().size() == 2);
+            REQUIRE(repo->getAllSessions().first() == newSession->session);
+            REQUIRE(repo->getAllSessions().last() == sessionData->session);
+
+            // Check limit
+            REQUIRE(repo->getAllSessions(1).size() == 1);
+            REQUIRE(repo->getAllSessions().first() == newSession->session);
         }
 
         SECTION("getLastSession should work") {
@@ -284,6 +299,18 @@ TEST_CASE("ClubRepository") {
             memberChangeSpy.clear();
 
 
+            SECTION("getPaymentRecords should work") {
+                auto records = repo->getPaymentRecords({sessionId});
+                auto expected = checkedInMembers + checkedOutMembers;
+                REQUIRE(records.size() == expected.size());
+                for (int i = 0, size = records.size(); i < size; i++) {
+                    REQUIRE(records[i].sessionId == sessionId);
+                    REQUIRE(records[i].memberId == expected[i].first.id);
+                    REQUIRE(records[i].memberFirstName == expected[i].first.firstName);
+                    REQUIRE(records[i].memberLastName == expected[i].first.lastName);
+                    REQUIRE(records[i].paid == expected[i].second);
+                }
+            }
 
             SECTION("getMembers with session filter") {
                 auto[filter, expected] = GENERATE_COPY(table<MemberSearchFilter, QVector<Member>>(
@@ -325,6 +352,15 @@ TEST_CASE("ClubRepository") {
                                                 createMemberFrom(members[7], Member::CheckedIn, true),
                                         }
                                 },
+                                {
+                                        NonCheckedIn{sessionId},
+                                        {
+                                                createMemberFrom(members[1], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[2], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[4], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[10], Member::NotCheckedIn, std::nullopt),
+                                        }
+                                },
                         }));
 
                 auto result = repo->getMembers(filter);
@@ -359,6 +395,14 @@ TEST_CASE("ClubRepository") {
                                         "5",
                                         {
                                                 createMemberFrom(members[5], Member::CheckedIn, true),
+                                        }
+                                },
+                                {
+                                        NonCheckedIn{sessionId},
+                                        "1",
+                                        {
+                                                createMemberFrom(members[1], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[10], Member::NotCheckedIn, std::nullopt),
                                         }
                                 },
                         }));
@@ -459,6 +503,26 @@ TEST_CASE("ClubRepository") {
                 REQUIRE(sessionChangeSpy.size() == (successExpected ? 1 : 0));
                 sessionChangeSpy.clear();
                 if (!gameId) return;
+
+
+                SECTION("getGameStats should work") {
+                    auto stats = repo->getMemberGameStats(checkedInMembers[0].first.id, sessionId);
+                    REQUIRE(stats.numGamesOff == 0);
+                    REQUIRE(stats.pastGames.size() == 1);
+
+                    auto &pg = stats.pastGames.first();
+                    REQUIRE(pg.startTime.isValid());
+                    REQUIRE(pg.quality == allocations[0].quality);
+                    REQUIRE(pg.courtName == sessionData->courts[0].name);
+                    REQUIRE(pg.courtId == sessionData->courts[0].id);
+                    REQUIRE(pg.players.size() == allocations.size());
+                    std::sort(pg.players.begin(), pg.players.end());
+
+                    int i = 0;
+                    for (const auto &ga : allocations) {
+                        REQUIRE(ga.memberId == pg.players[i++].id);
+                    }
+                }
 
                 SECTION("getLastGameInfo should work") {
                     auto gameInfo = repo->getLastGameInfo(sessionId);
