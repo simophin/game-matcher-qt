@@ -5,8 +5,8 @@
 #ifndef GAMEMATCHER_GAMESTATS_H
 #define GAMEMATCHER_GAMESTATS_H
 
-#include <map>
 #include <QSet>
+#include <map>
 
 #include "models.h"
 #include "span.h"
@@ -18,7 +18,9 @@ class GameStats {
     int numTotalGames = 0;
 
 public:
-    explicit GameStats(nonstd::span<const GameAllocation> pastAllocation) {
+
+    template <typename AllocationList>
+    GameStats(const AllocationList &pastAllocation) {
         for (const auto &allocation : pastAllocation) {
             games[allocation.gameId][allocation.courtId].insert(allocation.memberId);
         }
@@ -26,7 +28,7 @@ public:
         numTotalGames = games.size();
     }
 
-    int numGamesFor(MemberId memberId) const {
+    auto numGamesFor(MemberId memberId) const {
         int rc = 0;
         for (const auto &[id, courts] : games) {
             for (const auto &[courtId, members] : courts) {
@@ -38,7 +40,7 @@ public:
         return rc;
     }
 
-    int numGamesOff(MemberId memberId) const {
+    auto numGamesOff(MemberId memberId) const {
         int i = 0;
         for (auto iter = games.rbegin(); iter != games.rend(); ++iter) {
             for (const auto &court : iter->second) {
@@ -52,7 +54,7 @@ public:
         return i;
     }
 
-    int numGames() const { return this->numTotalGames; }
+    auto numGames() const { return this->numTotalGames; }
 
     template<typename PlayerInfoList>
     int similarityScore(const PlayerInfoList &players) const {

@@ -9,14 +9,17 @@
 #include "models.h"
 
 #include <vector>
-#include "span.h"
 
 class GameStats;
 
 class EligiblePlayerFinder {
 public:
-    static std::vector<PlayerInfo> getEligiblePlayers(
-            nonstd::span<const Member> members, int numMaxSeats, const GameStats &stats, int randomSeed);
+    static QVector<PlayerInfo> findEligiblePlayers(
+            const QVector<Member> &members,
+            size_t playerPerCourt,
+            size_t numCourt,
+            const GameStats &stats,
+            int randomSeed);
 };
 
 

@@ -1,4 +1,7 @@
-//
-// Created by Fanchao Liu on 14/08/20.
-//
+#include <catch2/catch.hpp>
 
+#include "EligiblePlayerFinder.h"
+
+TEST_CASE("EligiblePlayerFinder") {
+
+}
