@@ -10,7 +10,7 @@
 
 QVector<PlayerInfo>
 EligiblePlayerFinder::findEligiblePlayers(
-        const QVector<Member> &members,
+        const QVector<BasePlayerInfo> &members,
         size_t playerPerCourt,
         size_t numCourt,
         const GameStats &stats,
@@ -20,10 +20,9 @@ EligiblePlayerFinder::findEligiblePlayers(
     if (members.empty() || playerPerCourt == 0 || numCourt == 0) return players;
 
     if (stats.numGames() == 0) {
-        players.reserve(members.size());
         // First game everyone is eligible
         for (const auto &m : members) {
-            players.push_back(PlayerInfo{m, false});
+            players.push_back(PlayerInfo(m, false));
         }
         return players;
     }
@@ -31,25 +30,24 @@ EligiblePlayerFinder::findEligiblePlayers(
     // The number of people that will be on the court. Will be less or equal than number of members
     const size_t numMembersOn = members.size() / playerPerCourt * numCourt;
 
-
     struct MemberInfo {
-        const Member *member;
+        const BasePlayerInfo *member;
         int eligibilityScore;
+
+        inline bool operator<(const MemberInfo &rhs) const {  return rhs.eligibilityScore < eligibilityScore; }
     };
 
     QVector<MemberInfo> memberInfo;
     memberInfo.reserve(members.size());
     for (const auto &member : members) {
-        memberInfo.append(MemberInfo{&member, stats.numGamesOff(member.id) * 2000 - stats.numGamesFor(member.id)});
+        memberInfo.append(MemberInfo{&member, stats.numGamesOff(member.memberId) * 2000 - stats.numGamesFor(member.memberId)});
     }
 
     // Shuffle the list so we don't end up using the same order withing same level.
     std::shuffle(memberInfo.begin(), memberInfo.end(), std::default_random_engine(randomSeed));
 
     // Sort by number of games off
-    std::stable_sort(memberInfo.begin(), memberInfo.end(), [](MemberInfo &a, MemberInfo &b) {
-        return b.eligibilityScore < a.eligibilityScore;
-    });
+    std::stable_sort(memberInfo.begin(), memberInfo.end());
 
     if (memberInfo.size() > numMembersOn) {
         // If we don't have enough seats for all players, we will have two groups of people

@@ -8,14 +8,14 @@
 #include "PlayerInfo.h"
 #include "models.h"
 
-#include <vector>
+#include <QVector>
 
 class GameStats;
 
 class EligiblePlayerFinder {
 public:
     static QVector<PlayerInfo> findEligiblePlayers(
-            const QVector<Member> &members,
+            const QVector<BasePlayerInfo> &members,
             size_t playerPerCourt,
             size_t numCourt,
             const GameStats &stats,

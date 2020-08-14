@@ -5,8 +5,8 @@
 #include "CourtCombinationFinder.h"
 #include "PlayerInfo.h"
 
-std::vector<GameAllocation> CourtCombinationFinder::find(nonstd::span<const CourtId> courts, nonstd::span<const PlayerInfo> players) {
-    std::vector<GameAllocation> result;
+QVector<GameAllocation> CourtCombinationFinder::find(const QVector<CourtId> &courts, const QVector<PlayerInfo> &players) {
+    QVector<GameAllocation> result;
 
     auto allocations = doFind(players, courts.size());
     auto courtId = courts.begin();
@@ -14,7 +14,7 @@ std::vector<GameAllocation> CourtCombinationFinder::find(nonstd::span<const Cour
 
     while (courtId != courts.end() && allocation != allocations.end()) {
         for (auto p : allocation->players) {
-            result.emplace_back(0, *courtId, p.memberId, allocation->quality);
+            result.push_back(GameAllocation(0, *courtId, p.memberId, allocation->quality));
         }
         courtId++;
         allocation++;

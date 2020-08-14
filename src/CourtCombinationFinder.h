@@ -5,28 +5,29 @@
 #ifndef GAMEMATCHER_COURTCOMBINATIONFINDER_H
 #define GAMEMATCHER_COURTCOMBINATIONFINDER_H
 
-#include "span.h"
 #include "models.h"
+
+#include <QVector>
 
 class GameStats;
 struct PlayerInfo;
 
 class CourtCombinationFinder {
 public:
-    CourtCombinationFinder(const GameStats &stats, size_t numPlayersPerCourt)
+    CourtCombinationFinder(const GameStats &stats, unsigned numPlayersPerCourt)
             : stats_(stats), numPlayersPerCourt_(numPlayersPerCourt) {}
 
-    std::vector<GameAllocation> find(nonstd::span<const CourtId> courts, nonstd::span<const PlayerInfo> players);
+    QVector<GameAllocation> find(const QVector<CourtId> &courts, const QVector<PlayerInfo> &players);
 
 protected:
     struct CourtAllocation {
-        std::vector<PlayerInfo> players;
+        QVector<PlayerInfo> players;
         int quality;
     };
-    virtual std::vector<CourtAllocation> doFind(nonstd::span<const PlayerInfo>, size_t numCourtAvailable) const = 0;
+    virtual QVector<CourtAllocation> doFind(const QVector<PlayerInfo> &, unsigned numCourtAvailable) const = 0;
 
     GameStats const &stats_;
-    size_t const numPlayersPerCourt_;
+    unsigned const numPlayersPerCourt_;
 };
 
 

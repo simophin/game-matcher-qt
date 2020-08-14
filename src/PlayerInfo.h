@@ -10,21 +10,30 @@
 #include <optional>
 #include <QtDebug>
 
-struct PlayerInfo {
+struct BasePlayerInfo {
     MemberId memberId;
-    Member::Gender gender;
+    BaseMember::Gender gender;
     int level;
+
+    inline BasePlayerInfo(MemberId id, BaseMember::Gender gender, int level)
+            : memberId(id), gender(gender), level(level) {}
+
+    inline explicit BasePlayerInfo(const Member &m) : BasePlayerInfo(m.id, m.gender, m.level) {}
+};
+
+struct PlayerInfo : BasePlayerInfo {
     bool mandatory;
 
     inline PlayerInfo(const Member &m, bool mandatory)
-            : memberId(m.id), gender(m.gender), level(m.level), mandatory(mandatory) {}
+            : BasePlayerInfo(m), mandatory(mandatory) {}
 
-    PlayerInfo(MemberId memberId, Member::Gender gender, int level, bool mandatory)
-            : memberId(memberId),
-              gender(gender), level(level),
-              mandatory(mandatory) {}
+    inline PlayerInfo(MemberId memberId, Member::Gender gender, int level, bool mandatory)
+            : BasePlayerInfo(memberId, gender, level), mandatory(mandatory) {}
 
-    PlayerInfo(const PlayerInfo&) = default;
+    inline PlayerInfo(const BasePlayerInfo &rhs, bool mandatory)
+            : BasePlayerInfo(rhs), mandatory(mandatory) {}
+
+    PlayerInfo(const PlayerInfo &) = default;
 };
 
 

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <QtDebug>
+#include <ostream>
 
 inline Member createMember(const char *firstName,
                            const char *lastName,
