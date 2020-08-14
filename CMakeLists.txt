@@ -63,6 +63,7 @@ list(APPEND HEADERS
         src/LastSelectedCourts.h
         src/MembersPaymentReport.h
         src/NumericRange.h
+        src/EligiblePlayerFinder.h
         )
 
 qt5_add_resources(SOURCES
@@ -129,6 +130,7 @@ add_library(GameMatcher_archive
         src/MembersPaymentReport.cpp
         src/SessionSelectionDialog.cpp
         src/MemberListDialog.cpp
+        src/EligiblePlayerFinder.cpp
         src/models.cpp
         )
 
@@ -153,9 +155,9 @@ if (BUILD_TESTS)
 
     add_executable(GameMatcher_test
             src/test/TestUtils.h
-            src/test/NewClubRepositoryTest.cpp
+            src/test/ClubRepositoryTest.cpp
             src/test/main.cpp
-            )
+            src/test/EligiblePlayerFinderTest.cpp)
     target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
 endif ()

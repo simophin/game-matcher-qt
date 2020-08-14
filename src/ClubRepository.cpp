@@ -110,6 +110,7 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
                 }
             }
             qDebug() << "Migrated to schema version " << schema.schemaVersion;
+            currSchemaVersion = schema.schemaVersion;
         }
     }
 

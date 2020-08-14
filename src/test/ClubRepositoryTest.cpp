@@ -1,711 +1,595 @@
 //
-// Created by Fanchao Liu on 7/08/20.
+// Created by Fanchao Liu on 9/08/20.
 //
 
-#ifndef GAMEMATCHER_CLUBREPOSITORYTEST_CPP
-#define GAMEMATCHER_CLUBREPOSITORYTEST_CPP
-
-#include "../ClubRepository.h"
-
-#include <QtTest/QtTest>
+#include "ClubRepository.h"
 
 #include "TestUtils.h"
-#include "CollectionUtils.h"
 
-class ClubRepositoryTest : public QObject {
-Q_OBJECT
-private slots :
+#include <catch2/catch.hpp>
+#include <memory>
+#include <QSignalSpy>
 
-    void init() {
-        registerModels();
-        repo = ClubRepository::open(this, QStringLiteral(":memory:"));
-        QVERIFY(repo != nullptr);
+TEST_CASE("ClubRepository") {
+    registerModels();
+
+    std::unique_ptr<ClubRepository> repo(ClubRepository::open(nullptr, ":memory:"));
+    REQUIRE(repo);
+
+    QSignalSpy clubChangeSpy(repo.get(), &ClubRepository::clubInfoChanged);
+    QSignalSpy memberChangeSpy(repo.get(), &ClubRepository::memberChanged);
+    QSignalSpy sessionChangeSpy(repo.get(), &ClubRepository::sessionChanged);
+
+    SECTION("clubName") {
+        auto name = GENERATE(QStringLiteral("Name 1"), QStringLiteral("Name 2"));
+
+        REQUIRE(repo->getClubName().isEmpty());
+        REQUIRE(repo->saveClubName(name));
+        REQUIRE(repo->getClubName() == name);
     }
 
-    void testClubName_data() {
-        QTest::addColumn<QString>("clubName");
-
-        QTest::newRow("Happy day") << "Test club name";
-    }
-
-    void testClubName() {
-        QFETCH(QString, clubName);
-
-        QVERIFY(repo->saveClubName(clubName));
-        QCOMPARE(repo->getClubName(), clubName);
-    }
-
-    void testClubInfo_data() {
-        QTest::addColumn<QString>("clubName");
-        QTest::addColumn<LevelRange>("range");
-
-        QTest::newRow("Happy day") << "Test club name" << LevelRange{10, 12};
-    }
-
-    void testClubInfo() {
-        QFETCH(QString, clubName);
-        QFETCH(LevelRange, range);
-
-        QVERIFY(repo->saveClubInfo(clubName, range));
-        QCOMPARE(repo->getLevelRange(), range);
-        QCOMPARE(repo->getClubName(), clubName);
-    }
-
-    void testSettings_data() {
-        QTest::addColumn<SettingKey>("key");
-        QTest::addColumn<QVariant>("value");
-
-        QTest::newRow("Strings") << "Key1" << QVariant::fromValue(QStringLiteral("Value1"));
-        QTest::newRow("Integers") << "Key2" << QVariant::fromValue(5);
-    }
-
-    void testSettings() {
-        QFETCH(SettingKey, key);
-        QFETCH(QVariant, value);
-
-        QVERIFY(!repo->getSetting(key));
-        QVERIFY(repo->saveSetting(key, value));
-        QCOMPARE(value.toString(), repo->getSetting(key).value_or(QString()));
-        QVERIFY(repo->removeSetting(key));
-        QVERIFY(!repo->getSetting(key));
-    }
-
-    void testCreateMember() {
-        struct {
-            const char *name;
-            BaseMember member;
-            bool successExpected;
-        } testData[] = {
+    SECTION("clubInfo") {
+        auto[name, range, successExpected] = GENERATE(table<QString, LevelRange, bool>(
                 {
-                        "Happy data",
-                        createMember("First", "Last", Member::Male, 1),
-                        true
-                },
-                {
-                        "Duplicated not allowed",
-                        createMember("First", "Last", Member::Male, 1),
-                        false
-                },
-                {
-                        "First name not allowed blank",
-                        createMember("", "Last", Member::Male, 1),
-                        false
-                },
-                {
-                        "Last name not allowed blank",
-                        createMember("First", "", Member::Male, 1),
-                        false
-                },
-        };
+                        {"Name1", {1, 2}, true},
+                        {"Name1", {2, 1}, false},
+                }));
 
-        for (const auto &[name, member, successExpected] : testData) {
-            auto actual = repo->createMember(member.firstName, member.lastName, member.gender, member.level);
+        REQUIRE(repo->saveClubInfo(name, range) == successExpected);
+        if (successExpected) {
+            REQUIRE(repo->getClubName() == name);
+            REQUIRE(repo->getLevelRange() == range);
+        }
+    }
+
+    SECTION("settings") {
+        auto[name, value] = GENERATE(table<SettingKey, QVariant>(
+                {
+                        {"key", "value1"},
+                        {"key", 5},
+                }));
+
+        CHECK(!repo->getSetting(name));
+        CHECK(repo->saveSetting(name, value));
+        CHECK(repo->getSetting(name) == value.toString());
+        CHECK(repo->removeSetting(name));
+        CHECK(!repo->getSetting(name));
+    }
+
+    SECTION("member manipulation") {
+        QVector<BaseMember> members(50);
+        for (size_t i = 0, size = members.size(); i < size; i++) {
+            auto &m = members[i];
+            m.firstName = QStringLiteral("First%1").arg(i);
+            m.lastName = QStringLiteral("Last%1").arg(i);
+            m.gender = (i % 4 != 0) ? BaseMember::Male : BaseMember::Female;
+            m.level = i;
+
+            memberChangeSpy.clear();
+            auto result = repo->createMember(m.firstName, m.lastName, m.gender, m.level, "", "");
+            REQUIRE(result);
+            m.id = result->id;
+            m.registerDate = result->registerDate;
+            REQUIRE(m.id >= 0);
+            REQUIRE(m == result);
+            REQUIRE(memberChangeSpy.size() == (result ? 1 : 0));
+            REQUIRE(repo->getMember(m.id) == m);
+        }
+        memberChangeSpy.clear();
+
+        SECTION("should not create duplicated member") {
+            auto[first, last, successExpected] = GENERATE(table<QString, QString, bool>(
+                    {
+                            {"NoDuplicate", "Last",   true},
+                            {"First1",      "Last1",  false},
+                            {"first1",      "last1",  false},
+                            {"first1",      "Last1",  false},
+                            {"First1",      "last1",  false},
+                            {"First1",      "last1 ", false},
+                            {" First1",     "last1 ", false},
+                    }));
+
+            auto actual = repo->createMember(first, last, BaseMember::Male, 1, "", "");
+            REQUIRE(actual.has_value() == successExpected);
+            REQUIRE(memberChangeSpy.size() == (successExpected ? 1 : 0));
+        }
+
+        SECTION("name shouldn't be empty or blank") {
+            auto[first, last, successExpected] = GENERATE(table<QString, QString, bool>(
+                    {
+                            {"OK ",    "Last ", true},
+                            {"First1", "",      false},
+                            {"First1", " ",     false},
+                            {"",       "Last",  false},
+                            {" ",      "Last",  false},
+                    }));
+
+            auto actual = repo->createMember(first, last, BaseMember::Female, 2, "", "");
+            REQUIRE(actual.has_value() == successExpected);
+            REQUIRE(memberChangeSpy.size() == (successExpected ? 1 : 0));
+        }
+
+        SECTION("should save") {
+            auto[oldMember, newFirstName, newLastName, newGender, newLevel, successExpected] = GENERATE_COPY(table<
+                    BaseMember,
+                    std::optional<QString>,
+                    std::optional<QString>,
+                    std::optional<BaseMember::Gender>,
+                    std::optional<int>,
+                    bool
+            >(
+                    {
+                            {members[0], "New first name", "New last name", BaseMember::Female, 1,            true},
+                            {members[1], "First1",         "Last1",         std::nullopt,       std::nullopt, true},
+                            {members[1], "First2",         "Last2",         std::nullopt,       std::nullopt, false},
+                            {members[1], "First2 ",        "last2 ",        std::nullopt,       std::nullopt, false},
+                    }));
+
+            BaseMember toSave = oldMember;
+            if (newFirstName) toSave.firstName = *newFirstName;
+            if (newLastName) toSave.lastName = *newLastName;
+            if (newGender) toSave.gender = *newGender;
+            if (newLevel) toSave.level = *newLevel;
+
+            REQUIRE(repo->saveMember(toSave) == successExpected);
             if (successExpected) {
-                QVERIFY2(actual, name);
-                verifyMember(*actual, member, name);
-            } else {
-                QVERIFY2(!actual, name);
+                auto actual = repo->getMember(toSave.id);
+                REQUIRE(actual.has_value());
+                REQUIRE(toSave.id == actual->id);
+                REQUIRE(toSave.firstName.trimmed() == actual->firstName.trimmed());
+                REQUIRE(toSave.lastName.trimmed() == actual->lastName.trimmed());
+                REQUIRE(toSave.gender == actual->gender);
+                REQUIRE(toSave.level == actual->level);
+                REQUIRE(toSave.registerDate == actual->registerDate);
             }
+
+            REQUIRE(memberChangeSpy.size() == (successExpected ? 1 : 0));
+        }
+
+        SECTION("should find member by first & last name") {
+            auto[firstName, lastName, expected] = GENERATE_COPY(table<QString, QString, std::optional<MemberId>>(
+                    {
+                            {"First0",  "Last0",  members[0].id},
+                            {" First0", " Last0", members[0].id},
+                            {"first0",  "last0",  members[0].id},
+                            {"first0 ", " last0", members[0].id},
+                            {"first0",  "",       std::nullopt},
+                            {"",        "last0",  std::nullopt},
+                            {"",        "",       std::nullopt},
+                    }));
+
+            auto actual = repo->findMemberBy(firstName, lastName);
+            REQUIRE(actual == expected);
         }
     }
 
-    void testSaveMember() {
-        struct {
-            const char *name;
-            Member member, updatedMember;
-            bool successExpected;
-        } testData[] = {
-                {
-                        "Happy day",
-                        createMember("First1", "Last1", Member::Male, 1),
-                        createMember("First1", "Last2", Member::Female, 2),
-                        true,
-                },
-                {
-                        "Name unchanged",
-                        createMember("First2", "Last1", Member::Male, 1),
-                        createMember("First2", "Last1", Member::Female, 2),
-                        true
-                },
-                {
-                        "Name change to existing name",
-                        createMember("First3", "Last1", Member::Male, 1),
-                        createMember("First2", "Last1", Member::Female, 2),
-                        false
-                },
-        };
-
-        for (auto &[name, member, updated, successExpected] : testData) {
-            const auto created = repo->createMember(member.firstName, member.lastName, member.gender, member.level);
-            QVERIFY2(created.has_value(), name);
-            updated.id = created->id;
-            QCOMPARE(repo->saveMember(updated), successExpected);
-
-            const auto latest = repo->getMember(created->id);
-            QVERIFY2(latest.has_value(), name);
-            if (successExpected) {
-                verifyMember(*latest, updated, name);
-            } else {
-                verifyMember(*latest, *created, name);
-            }
+    SECTION("member import") {
+        QVector<BaseMember> members(50);
+        for (size_t i = 0, size = members.size(); i < size; i++) {
+            auto &m = members[i];
+            m.firstName = QStringLiteral("First%1").arg(i);
+            m.lastName = QStringLiteral("Last%1").arg(i);
+            m.gender = (i % 4 != 0) ? BaseMember::Male : BaseMember::Female;
+            m.level = i;
         }
 
+        members[1].firstName.clear();
 
-    }
+        auto iter = members.begin();
+        QVector<BaseMember> failed;
+        auto numImported = repo->importMembers([&](auto &m) {
+            if (iter == members.end()) return false;
+            m = *iter;
+            iter++;
+            return true;
+        }, &failed);
 
-    void testImportMembers() {
-        struct {
-            const char *name;
-            QVector<BaseMember> inputMembers;
-            size_t sizeExpected, failExpected;
-        } testData[] = {
-                {"Happy day",
-                        {createMember("First", "Last", Member::Male, 2)},
-                        1,
-                        0
-                },
-        };
+        REQUIRE(numImported == members.size() - 1);
+        REQUIRE(!failed.isEmpty());
+        REQUIRE(failed[0].firstName == members[1].firstName);
+        REQUIRE(failed[0].lastName == members[1].lastName);
+        REQUIRE(memberChangeSpy.size() == 1);
 
-        for (auto &[name, inputMembers, sizeExpected, failExpected] : testData) {
-            auto &list = inputMembers;
-            auto iter = list.begin();
-            QVector<BaseMember> failed;
-            auto imported = repo->importMembers([&](BaseMember &m) {
-                if (iter == list.end()) return false;
-                m = *iter;
-                iter++;
-                return true;
-            }, &failed);
-            QCOMPARE(imported, sizeExpected);
-            QCOMPARE(failed.size(), failExpected);
+        auto allMembers = repo->getMembers(AllMembers{});
+        std::sort(allMembers.begin(), allMembers.end());
+
+        members.erase(members.begin() + 1);
+
+        REQUIRE(members.size() == allMembers.size());
+        for (size_t i = 0, size = members.size(); i < size; i++) {
+            REQUIRE(members[i].firstName == allMembers[i].firstName);
+            REQUIRE(members[i].lastName == allMembers[i].lastName);
+            REQUIRE(members[i].gender == allMembers[i].gender);
+            REQUIRE(members[i].level == allMembers[i].level);
         }
     }
 
-    void testFindMemberByNames() {
-        QVector<BaseMember> members = {
-                createMember("First1", "Last1"),
-                createMember("First2", "Last2"),
-                createMember("First3", "Last3"),
-        };
-
-        for (auto &item : members) {
-            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+    SECTION("session manipulation") {
+        QVector<BaseMember> members;
+        for (int i = 0; i < 11; i++) {
+            auto m = repo->createMember(QStringLiteral("%1First").arg(i),
+                                        QStringLiteral("%1Last").arg(i),
+                                        i % 2 == 0 ? BaseMember::Male : BaseMember::Female,
+                                        i % 4,
+                                        "", "");
+            REQUIRE(m);
+            members.push_back(*m);
         }
 
-        struct {
-            const char *testName;
-            std::pair<const char *, const char *> names;
-            std::optional<MemberId> expected;
-        } testData[] = {
-                {"Exact match",
-                        std::make_pair("First1", "Last1"),
-                        members[0].id},
-
-                {"Case insensitive first name",
-                        std::make_pair("first1", "Last1"),
-                        members[0].id},
-
-                {"Case insensitive last name",
-                        std::make_pair("First1", "last1"),
-                        members[0].id},
-
-                {"Case insensitive names",
-                        std::make_pair("first1", "last1"),
-                        members[0].id},
-
-                {"Found nothing",
-                        std::make_pair("First4", "Last4"),
-                        std::nullopt
-                }
-        };
-
-        for (auto &[testName, names, expected] : testData) {
-            auto actual = repo->findMemberBy(
-                    QLatin1String(names.first), QLatin1String(names.second));
-            QCOMPARE(actual, expected);
-        }
-    }
-
-    void testCreateSession() {
-        struct {
-            const char *testName;
-            unsigned fee;
-            QString place;
-            QString announcement;
-            unsigned numPlayersPerCourt;
-            QVector<CourtConfiguration> courtConfigurations;
-            bool expectedSuccess;
-        } testData[] = {
-                {
-                        "Happy day",
-                        5,
-                        QStringLiteral("Place 1"),
-                        QStringLiteral("Annoucement 1"),
-                        4,
+        auto[fee, place, announcement, numPlayersPerCourt, courts, successExpected] = GENERATE(
+                table<unsigned, QString, QString, unsigned, QVector<CourtConfiguration>, bool>(
                         {
-                                {QStringLiteral("1"), 1},
-                                {QStringLiteral("2"), 2},
-                        },
-                        true
-                },
-                {
-                        "No fee",
-                        0,
-                        QStringLiteral("Place 1"),
-                        QStringLiteral("Annoucement 1"),
-                        4,
-                        {
-                                {QStringLiteral("1"), 1},
-                                {QStringLiteral("2"), 2},
-                        },
-                        true
-                },
-                {
-                        "No announcement",
-                        5,
-                        QStringLiteral("Place 1"),
-                        QString(),
-                        4,
-                        {
-                                {QStringLiteral("1"), 1},
-                                {QStringLiteral("2"), 2},
-                        },
-                        true
-                },
-                {
-                        "No court",
-                        5,
-                        QStringLiteral("Place 1"),
-                        QString(),
-                        4,
-                        {},
-                        false
-                },
-                {
-                        "zero numPlayersPerCourt",
-                        5,
-                        QStringLiteral("Place 1"),
-                        QStringLiteral("Announcement"),
-                        0,
-                        {
-                                {QStringLiteral("1"), 1},
-                                {QStringLiteral("2"), 2},
-                        },
-                        false
-                }
-        };
+                                {500, "Place 1", "Announcement 1", 4, {{"Court1", 1}, {"Court2", 2}}, true},
+                                {0,   "Place 1", "Announcement 1", 4, {{"Court1", 1}, {"Court2", 2}}, true},
+                                {0,   "",        "Announcement 1", 4, {{"Court1", 1}, {"Court2", 2}}, true},
+                                {0,   "",        "",               4, {{"Court1", 1}, {"Court2", 2}}, true},
+                                {500, "Place 1", "Announcement 1", 0, {{"Court1", 1}, {"Court2", 2}}, false},
+                                {500, "Place 1", "Announcement 1", 4, {},                             false},
+                        }));
 
-        for (const auto &d : testData) {
-            auto session = repo->createSession(d.fee, d.place, d.announcement, d.numPlayersPerCourt,
-                                               d.courtConfigurations);
-            if (d.expectedSuccess) {
-                QVERIFY2(session.has_value(), d.testName);
-                QCOMPARE(*repo->getLastSession(), session->session.id);
-                QCOMPARE(repo->getSession(session->session.id), session);
-                QCOMPARE(session->session.place, d.place);
-                QCOMPARE(session->session.numPlayersPerCourt, d.numPlayersPerCourt);
-                QCOMPARE(session->session.announcement, d.announcement);
-                QCOMPARE(session->session.fee, d.fee);
-                QVERIFY2(session->session.startTime.isValid(), d.testName);
-                QVERIFY2(session->session.id > 0, d.testName);
-            } else {
-                QVERIFY2(!session.has_value(), d.testName);
-            }
-        }
-    }
+        auto sessionData = repo->createSession(fee, place, announcement, numPlayersPerCourt, courts);
+        REQUIRE(sessionData.has_value() == successExpected);
+        if (!sessionData) return;
 
-    void testMemberGameOperation() {
-        QVector<BaseMember> members = {
-                createMember("First", "Last1", Member::Male, 1),
-                createMember("First", "Last2", Member::Female, 2),
-                createMember("First", "Last3", Member::Male, 3),
-        };
+        auto sessionId = sessionData->session.id;
 
-        for (auto &item : members) {
-            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+        REQUIRE(sessionChangeSpy.size() == 1);
+        REQUIRE(sessionChangeSpy[0].first() == sessionId);
+        sessionChangeSpy.clear();
+
+        SECTION("getSession should work") {
+            REQUIRE(repo->getSession(sessionId) == sessionData);
         }
 
-        auto membersById = associateBy<QHash<MemberId, BaseMember>>(members, [](auto &m) {
-            return m.id;
-        });
+        SECTION("getAllSessions should work") {
+            REQUIRE(repo->getAllSessions().size() == 1);
+            REQUIRE(repo->getAllSessions().first() == sessionData->session);
 
-        compareMembers(repo->getMembers(AllMembers{}), members, "testMemberGameOperation");
+            auto newSession = repo->createSession(fee, place, announcement, numPlayersPerCourt, courts);
+            REQUIRE(newSession);
+            REQUIRE(repo->getAllSessions().size() == 2);
+            REQUIRE(repo->getAllSessions().first() == newSession->session);
+            REQUIRE(repo->getAllSessions().last() == sessionData->session);
 
-        typedef bool Paid;
-
-        struct {
-            const char *testName;
-            std::map<MemberId, Paid> checkInMembers;
-            std::map<MemberId, Paid> checkOutMembers;
-            QSet<MemberId> paused;
-        } testData[] = {
-                {
-                        "No one checkout nor pause",
-                        {
-                                std::make_pair(members[0].id, false),
-                                std::make_pair(members[1].id, false),
-                        },
-                        {},
-                        {}
-                },
-                {
-                        "No on check in",
-                        {},
-                        {},
-                        {}
-                },
-                {
-                        "Somebody pauses, nobody checks out",
-                        {
-                                std::make_pair(members[0].id, true),
-                                std::make_pair(members[1].id, true),
-                        },
-                        {},
-                        {members[0].id}
-                },
-                {
-                        "Somebody checked out, nobody pauses",
-                        {
-                                std::make_pair(members[0].id, true),
-                        },
-                        {
-                                std::make_pair(members[1].id, true),
-                        },
-                        {}
-                },
-                {
-                        "Somebody checked out, somebody pauses",
-                        {
-                                std::make_pair(members[0].id, true),
-                                std::make_pair(members[2].id, true),
-                        },
-                        {
-                                std::make_pair(members[1].id, false),
-                        },
-                        {
-                         members[2].id
-                        }
-                },
-        };
-
-        for (const auto &d : testData) {
-            auto session = repo->createSession(0, QStringLiteral("Place1"), QString(), 4, {{QStringLiteral("1"), 1}});
-            QVERIFY2(session.has_value(), d.testName);
-
-            for (auto[memberId, paid] : d.checkInMembers) {
-                QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
-            }
-
-            for (auto[memberId, paid] : d.checkOutMembers) {
-                QVERIFY2(repo->checkIn(session->session.id, memberId, paid), d.testName);
-            }
-
-            for (const auto &item : d.paused) {
-                QVERIFY2(repo->setPaused(session->session.id, item, true), d.testName);
-            }
-
-            for (const auto &[memberId, paid] : d.checkOutMembers) {
-                QVERIFY2(repo->checkOut(session->session.id, memberId), d.testName);
-            }
-
-            // Test non checked in filter
-            {
-                auto nonCheckedIn = associateBy<QHash<MemberId, BaseMember>>(
-                        members,
-                        [](auto &m) {
-                            return m.id;
-                        });
-
-                for (auto[memberId, paid] : d.checkInMembers) {
-                    nonCheckedIn.remove(memberId);
-                }
-
-                auto actual = repo->getMembers(NonCheckedIn{session->session.id});
-                compareMembers(actual, nonCheckedIn.values(), d.testName);
-                for (const auto &m : actual) {
-                    QCOMPARE(Member::NotCheckedIn, m.status);
-                }
-            }
-
-            // Test check in filter
-            {
-                auto actualCheckedIn = repo->getMembers(CheckedIn{session->session.id});
-                QCOMPARE(actualCheckedIn.size(), d.checkInMembers.size());
-                for (const auto &m : actualCheckedIn) {
-                    auto found = d.checkInMembers.find(m.id);
-                    QVERIFY2(found != d.checkInMembers.end(), d.testName);
-                    verifyMember(m, membersById[m.id], d.testName);
-                    QCOMPARE(found->second, m.paid.toBool());
-                    if (d.paused.contains(m.id)) {
-                        QCOMPARE(Member::CheckedInPaused, m.status);
-                    } else {
-                        QCOMPARE(Member::CheckedIn, m.status);
-                    }
-                }
-            }
-
-            // Test check in non pause filter
-            {
-                QVector<BaseMember> expected;
-                for (const auto &[memberId, paid] : d.checkInMembers) {
-                    if (!d.paused.contains(memberId)) {
-                        expected.push_back(membersById[memberId]);
-                    }
-                }
-
-                auto actual = repo->getMembers(CheckedIn{session->session.id, false});
-                compareMembers(actual, expected, d.testName);
-                for (const auto &m : actual) {
-                    QCOMPARE(Member::CheckedIn, m.status);
-                }
-            }
-
-            // Test check in pause filter
-            {
-                QVector<BaseMember> expected;
-                for (const auto &[memberId, paid] : d.checkInMembers) {
-                    if (d.paused.contains(memberId)) {
-                        expected.push_back(membersById[memberId]);
-                    }
-                }
-
-                auto actual = repo->getMembers(CheckedIn{session->session.id, true});
-                compareMembers(actual, expected, d.testName);
-                for (const auto &m : actual) {
-                    QCOMPARE(Member::CheckedInPaused, m.status);
-                }
-            }
-
-            // Test AllSession filter
-            {
-                QVector<BaseMember> expected;
-                for (const auto &[memberId, paid] : d.checkInMembers) {
-                    expected.push_back(membersById[memberId]);
-                }
-                for (const auto &[memberId, paid] : d.checkOutMembers) {
-                    expected.push_back(membersById[memberId]);
-                }
-
-                auto actual = repo->getMembers(AllSession{session->session.id});
-                compareMembers(actual, expected, d.testName);
-                for (const auto &m : actual) {
-                    if (d.checkOutMembers.find(m.id) != d.checkOutMembers.end()) {
-                        QCOMPARE(Member::CheckedOut, m.status);
-                    } else if (d.paused.contains(m.id)) {
-                        QCOMPARE(Member::CheckedInPaused, m.status);
-                    } else {
-                        QCOMPARE(Member::CheckedIn, m.status);
-                    }
-                }
-            }
-        }
-    }
-
-    void testGameAllocation() {
-        QVector<BaseMember> members = {
-                createMember("First1", "Last1"),
-                createMember("First2", "Last2"),
-                createMember("First3", "Last3"),
-                createMember("First4", "Last4"),
-        };
-
-        for (auto &item : members) {
-            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
+            // Check limit
+            REQUIRE(repo->getAllSessions(1).size() == 1);
+            REQUIRE(repo->getAllSessions().first() == newSession->session);
         }
 
-        auto session = repo->createSession(
-                0, QStringLiteral("Place"), QString(), 2, {
-                        {QStringLiteral("1"), 1},
-                        {QStringLiteral("2"), 2}
+        SECTION("getLastSession should work") {
+            REQUIRE(repo->getLastSession() == sessionId);
+        }
+
+        SECTION("Checked in") {
+            QVector<std::pair<BaseMember, bool>> checkedInMembers = {
+                    {members[0], true},
+                    {members[3], false},
+                    {members[5], true},
+                    {members[6], true},
+                    {members[7], true},
+            };
+
+            QVector<std::pair<BaseMember, bool>> pausedMembers = {
+                    checkedInMembers[1],
+            };
+
+            QVector<std::pair<BaseMember, bool>> checkedOutMembers = {
+                    {members[8], false},
+                    {members[9], true},
+            };
+
+            for (const auto &[m, paid] : checkedInMembers) {
+                REQUIRE(repo->checkIn(sessionId, m.id, paid));
+            }
+            for (const auto &[m, paid]: checkedOutMembers) {
+                REQUIRE(repo->checkIn(sessionId, m.id, paid));
+            }
+
+            for (const auto &m : pausedMembers) {
+                REQUIRE(repo->setPaused(sessionId, m.first.id, true));
+            }
+
+            for (const auto &[m, paid]: checkedOutMembers) {
+                REQUIRE(repo->checkOut(sessionId, m.id));
+            }
+
+            REQUIRE(sessionChangeSpy.size() ==
+                    checkedInMembers.size() + checkedOutMembers.size() * 2 + pausedMembers.size());
+            sessionChangeSpy.clear();
+            memberChangeSpy.clear();
+
+
+            SECTION("getPaymentRecords should work") {
+                auto records = repo->getPaymentRecords({sessionId});
+                auto expected = checkedInMembers + checkedOutMembers;
+                REQUIRE(records.size() == expected.size());
+                for (int i = 0, size = records.size(); i < size; i++) {
+                    REQUIRE(records[i].sessionId == sessionId);
+                    REQUIRE(records[i].memberId == expected[i].first.id);
+                    REQUIRE(records[i].memberFirstName == expected[i].first.firstName);
+                    REQUIRE(records[i].memberLastName == expected[i].first.lastName);
+                    REQUIRE(records[i].paid == expected[i].second);
+                }
+            }
+
+            SECTION("getMembers with session filter") {
+                auto[filter, expected] = GENERATE_COPY(table<MemberSearchFilter, QVector<Member>>(
+                        {
+                                {
+                                        AllSession{sessionId},
+                                        {
+                                                createMemberFrom(members[0], Member::CheckedIn, true),
+                                                createMemberFrom(members[3], Member::CheckedInPaused, false),
+                                                createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
+                                                createMemberFrom(members[8], Member::CheckedOut, false),
+                                                createMemberFrom(members[9], Member::CheckedOut, true),
+                                        }
+                                },
+                                {
+                                        CheckedIn{sessionId},
+                                        {
+                                                createMemberFrom(members[0], Member::CheckedIn, true),
+                                                createMemberFrom(members[3], Member::CheckedInPaused, false),
+                                                createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
+                                        }
+                                },
+                                {
+                                        CheckedIn{sessionId, true},
+                                        {
+                                                createMemberFrom(members[3], Member::CheckedInPaused, false),
+                                        }
+                                },
+                                {
+                                        CheckedIn{sessionId, false},
+                                        {
+                                                createMemberFrom(members[0], Member::CheckedIn, true),
+                                                createMemberFrom(members[5], Member::CheckedIn, true),
+                                                createMemberFrom(members[6], Member::CheckedIn, true),
+                                                createMemberFrom(members[7], Member::CheckedIn, true),
+                                        }
+                                },
+                                {
+                                        NonCheckedIn{sessionId},
+                                        {
+                                                createMemberFrom(members[1], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[2], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[4], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[10], Member::NotCheckedIn, std::nullopt),
+                                        }
+                                },
+                        }));
+
+                auto result = repo->getMembers(filter);
+                std::sort(result.begin(), result.end());
+                REQUIRE(result == expected);
+            }
+
+            SECTION("findMember with session filter") {
+                auto[filter, needle, expected] = GENERATE_COPY(table<MemberSearchFilter, QString, QVector<Member>>(
+                        {
+                                {
+                                        AllSession{sessionId},
+                                        "0",
+                                        {
+                                                createMemberFrom(members[0], Member::CheckedIn, true),
+                                        }
+                                },
+                                {
+                                        CheckedIn{sessionId},
+                                        "3",
+                                        {
+                                                createMemberFrom(members[3], Member::CheckedInPaused, false),
+                                        }
+                                },
+                                {
+                                        CheckedIn{sessionId, true},
+                                        "5",
+                                        {}
+                                },
+                                {
+                                        CheckedIn{sessionId, false},
+                                        "5",
+                                        {
+                                                createMemberFrom(members[5], Member::CheckedIn, true),
+                                        }
+                                },
+                                {
+                                        NonCheckedIn{sessionId},
+                                        "1",
+                                        {
+                                                createMemberFrom(members[1], Member::NotCheckedIn, std::nullopt),
+                                                createMemberFrom(members[10], Member::NotCheckedIn, std::nullopt),
+                                        }
+                                },
+                        }));
+
+                auto result = repo->findMember(filter, needle);
+                std::sort(result.begin(), result.end());
+                REQUIRE(result == expected);
+            }
+
+            SECTION("Toggle paid") {
+                auto expected = !checkedInMembers[0].second;
+                REQUIRE(repo->setPaid(sessionId, checkedInMembers[0].first.id, expected));
+                REQUIRE(sessionChangeSpy.size() == 1);
+                REQUIRE(sessionChangeSpy.first().first() == sessionId);
+                REQUIRE(memberChangeSpy.size() == 1);
+
+                auto allCheckedIn = repo->getMembers(CheckedIn{sessionId});
+                auto found = std::find_if(allCheckedIn.begin(), allCheckedIn.end(), [&](auto &m) {
+                    return m.id == checkedInMembers[0].first.id;
                 });
-        QVERIFY(session);
+                REQUIRE(found != allCheckedIn.end());
+                REQUIRE(found->paid == expected);
+            }
 
-        for (const auto &item : members) {
-            QVERIFY(repo->checkIn(session->session.id, item.id, true));
-        }
-
-        struct {
-            const char *testName;
-            QVector<GameAllocation> allocated;
-            qlonglong durationSeconds;
-            bool successExpected;
-        } testData[] = {
-                {
-                        "No allocation",
-                        {},
-                        30,
-                        false
-                },
-                {
-                        "Full courts",
-                        {
-                                GameAllocation(0, session->courts[0].id, members[0].id, 100),
-                                GameAllocation(0, session->courts[0].id, members[1].id, 100),
-                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
-                                GameAllocation(0, session->courts[1].id, members[3].id, 80),
-                        },
-                        30,
-                        true
-                },
-                {
-                        "Partial courts",
-                        {
-                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
-                                GameAllocation(0, session->courts[0].id, members[1].id, 100),
-                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
-                                GameAllocation(0, session->courts[1].id, members[0].id, 80),
-                        },
-                        20,
-                        true
-                },
-                {
-                        "Incorrect member in court",
-                        {
-                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
-                                GameAllocation(0, session->courts[0].id, members[3].id, 100),
-                                GameAllocation(0, session->courts[1].id, members[2].id, 80),
-                                GameAllocation(0, session->courts[1].id, members[0].id, 80),
-                        },
-                        20,
-                        false
+            SECTION("Toggle pausing") {
+                for (const auto &m : pausedMembers) {
+                    REQUIRE(repo->setPaused(sessionId, m.first.id, false));
                 }
-        };
-
-        QVector<GameAllocation> expected;
-        for (auto &d : testData) {
-            auto gameId = repo->createGame(session->session.id, d.allocated, d.durationSeconds);
-            if (!d.successExpected) {
-                QVERIFY(!gameId.has_value());
-                continue;
+                REQUIRE(sessionChangeSpy.size() == pausedMembers.size());
+                REQUIRE(repo->getMembers(CheckedIn{sessionId, true}).isEmpty());
+                auto actualMembers = repo->getMembers(CheckedIn{sessionId, false});
+                std::sort(actualMembers.begin(), actualMembers.end());
+                REQUIRE(actualMembers.size() == checkedInMembers.size());
+                for (int i = 0, size = actualMembers.size(); i < size; i++) {
+                    REQUIRE(checkedInMembers[i].first == actualMembers[i]);
+                }
             }
 
-            for (auto &ga : d.allocated) {
-                ga.gameId = *gameId;
+            SECTION("Check in after check out") {
+                auto member = createMemberFrom(checkedOutMembers[0].first, Member::CheckedIn,
+                                               checkedOutMembers[0].second);
+                REQUIRE(repo->checkIn(sessionId, member.id, member.paid.toBool()));
+                auto allCheckedIn = repo->getMembers(CheckedIn{sessionId});
+                auto found = std::find_if(allCheckedIn.begin(), allCheckedIn.end(), [&](const Member &m) {
+                    return m.id == member.id;
+                });
+                REQUIRE(found != allCheckedIn.end());
+                REQUIRE(*found == member);
             }
 
-            QVERIFY(gameId.has_value());
+            SECTION("Game manipulation") {
+                SECTION("should have no game") {
+                    REQUIRE(repo->getLastGameInfo(sessionId) == std::nullopt);
+                    REQUIRE(repo->getPastAllocations(sessionId).isEmpty());
+                }
 
-            for (const auto &ga : d.allocated) {
-                expected.push_back(GameAllocation(*gameId, ga.courtId, ga.memberId, ga.quality));
-            }
+                auto &[allocations, duration, successExpected] = GENERATE_COPY(
+                        table<QVector<GameAllocation>, qlonglong, bool>(
+                                {
+                                        {
+                                                {},
+                                                15,
+                                                false
+                                        },
 
-            auto gameInfo = repo->getLastGameInfo(session->session.id);
-            QVERIFY(gameInfo);
-            QCOMPARE(*gameId, gameInfo->id);
-            QVERIFY(gameInfo->startTime > 0);
-            QCOMPARE(gameInfo->durationSeconds, d.durationSeconds);
+                                        {
+                                                {
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[1].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[2].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[3].first.id, 100),
+                                                },
+                                                15,
+                                                true
+                                        },
+                                        {
+                                                {
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[0].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[2].first.id, 100),
+                                                        GameAllocation(0, sessionData->courts[0].id,
+                                                                       checkedInMembers[3].first.id, 100),
+                                                },
+                                                15,
+                                                false
+                                        },
+                                }));
 
-            {
-                QVector<GameAllocation> actual, expectedAllocations;
-                for (const auto &court : gameInfo->courts) {
-                    for (const auto &player : court.players) {
-                        actual.push_back(GameAllocation(gameInfo->id, court.courtId, player.id, court.courtQuality));
+                auto gameId = repo->createGame(sessionId, allocations, duration);
+                REQUIRE(gameId.has_value() == successExpected);
+                REQUIRE(sessionChangeSpy.size() == (successExpected ? 1 : 0));
+                sessionChangeSpy.clear();
+                if (!gameId) return;
+
+
+                SECTION("getGameStats should work") {
+                    auto stats = repo->getMemberGameStats(checkedInMembers[0].first.id, sessionId);
+                    REQUIRE(stats.numGamesOff == 0);
+                    REQUIRE(stats.pastGames.size() == 1);
+
+                    auto &pg = stats.pastGames.first();
+                    REQUIRE(pg.startTime.isValid());
+                    REQUIRE(pg.quality == allocations[0].quality);
+                    REQUIRE(pg.courtName == sessionData->courts[0].name);
+                    REQUIRE(pg.courtId == sessionData->courts[0].id);
+                    REQUIRE(pg.players.size() == allocations.size());
+                    std::sort(pg.players.begin(), pg.players.end());
+
+                    int i = 0;
+                    for (const auto &ga : allocations) {
+                        REQUIRE(ga.memberId == pg.players[i++].id);
                     }
                 }
-                expectedAllocations = d.allocated;
-                std::sort(actual.begin(), actual.end());
-                std::sort(expectedAllocations.begin(), expectedAllocations.end());
-                QVERIFY2(actual == expectedAllocations, d.testName);
-            }
 
-            QCOMPARE(repo->getPastAllocations(session->session.id), expected);
-        }
-    }
+                SECTION("getLastGameInfo should work") {
+                    auto gameInfo = repo->getLastGameInfo(sessionId);
+                    REQUIRE(gameInfo.has_value());
 
-    void testSetPaid() {
-        auto member = repo->createMember(
-                QStringLiteral("First1"),
-                QStringLiteral("Last1"), Member::Male, 10);
-        QVERIFY(member);
+                    REQUIRE(gameInfo->durationSeconds == duration);
+                    REQUIRE(gameInfo->id == *gameId);
+                    REQUIRE(gameInfo->startDateTime().isValid());
+                    REQUIRE(gameInfo->courts.size() == 1);
+                    REQUIRE(gameInfo->courts.first().players.size() == allocations.size());
+                    std::sort(gameInfo->courts.first().players.begin(), gameInfo->courts.first().players.end());
+                    for (int i = 0, size = allocations.size(); i < size; i++) {
+                        REQUIRE(gameInfo->courts.first().players[i].id == allocations[i].memberId);
+                        REQUIRE(sessionData->courts[0].id == gameInfo->courts.first().courtId);
+                        REQUIRE(allocations[i].quality == gameInfo->courts.first().courtQuality);
+                    }
 
-        auto session = repo->createSession(0, QStringLiteral("Place"), QString(), 2, {
-                {QStringLiteral("1"), 1},
-                {QStringLiteral("2"), 2}
-        });
-        QVERIFY(session);
+                    QVector<BaseMember> expectedWaiting;
+                    for (const auto &item : checkedInMembers) {
+                        auto inAllocation = std::find_if(allocations.begin(), allocations.end(), [&](auto &ga) {
+                            return ga.memberId == item.first.id;
+                        });
+                        if (inAllocation == allocations.end()) {
+                            expectedWaiting.push_back(item.first);
+                        }
+                    }
 
-        QVERIFY(repo->checkIn(session->session.id, member->id, false));
-        auto members = repo->getMembers(AllSession{session->session.id});
-        QVERIFY(!members.isEmpty());
-        QCOMPARE(false, members.first().paid);
-
-        QVERIFY(repo->setPaid(session->session.id, member->id, true));
-        members = repo->getMembers(AllSession{session->session.id});
-        QVERIFY(!members.isEmpty());
-        QCOMPARE(true, members.first().paid);
-    }
-
-    void testFindMember() {
-        QVector<BaseMember> members = {
-                createMember("Able", "Last1"),
-                createMember("Bee", "Last2"),
-                createMember("Clinton", "Last3"),
-                createMember("Dog", "Last4"),
-                createMember("Ella", "Last4"),
-                createMember("Ellie", "Last5"),
-        };
-
-        for (auto &item : members) {
-            item = *repo->createMember(item.firstName, item.lastName, item.gender, item.level);
-        }
-
-        struct {
-            const char *testName;
-            MemberSearchFilter filter;
-            QString needle;
-            QVector<BaseMember> expected;
-        } testData[] = {
-                {
-                        "Partial match",
-                        AllMembers{},
-                        QStringLiteral("Ab"),
-                        {members[0]},
-                },
-                {
-                        "Partial case-insensitive match",
-                        AllMembers{},
-                        QStringLiteral("ab"),
-                        {members[0]},
-                },
-                {
-                        "Full case-insensitive match",
-                        AllMembers{},
-                        QStringLiteral("Able"),
-                        {members[0]},
-                },
-                {
-                        "Multiple result",
-                        AllMembers{},
-                        QStringLiteral("Ell"),
-                        {members[4], members[5],}
-                },
-                {
-                        "Non result",
-                        CheckedIn{1},
-                        QStringLiteral("Able"),
-                        {},
+                    REQUIRE(expectedWaiting.size() == gameInfo->waiting.size());
+                    std::sort(expectedWaiting.begin(), expectedWaiting.end());
+                    std::sort(gameInfo->waiting.begin(), gameInfo->waiting.end());
+                    for (int i = 0, size = expectedWaiting.size(); i < size; i++) {
+                        REQUIRE(expectedWaiting[i] == gameInfo->waiting[i]);
+                    }
                 }
-        };
 
-        for (const auto &d : testData) {
-            auto actual = repo->findMember(d.filter, d.needle);
-            compareMembers(actual, d.expected, d.testName);
+                SECTION("getPastAllocations should work") {
+                    auto expectedAllocations = allocations;
+                    for (auto &ga : expectedAllocations) {
+                        ga.gameId = *gameId;
+                    }
+
+                    auto actual = repo->getPastAllocations(sessionId);
+                    std::sort(actual.begin(), actual.end());
+                    std::sort(expectedAllocations.begin(), expectedAllocations.end());
+                    REQUIRE(actual == expectedAllocations);
+
+                    auto newGameId = repo->createGame(sessionId, allocations, duration);
+                    REQUIRE(newGameId);
+                    for (auto &ga : allocations) {
+                        expectedAllocations.push_back(ga);
+                        expectedAllocations.last().gameId = *newGameId;
+                    }
+
+                    actual = repo->getPastAllocations(sessionId);
+                    std::sort(actual.begin(), actual.end());
+                    std::sort(expectedAllocations.begin(), expectedAllocations.end());
+                    REQUIRE(actual == expectedAllocations);
+                }
+
+                SECTION("withdrawLastGame should work") {
+                    REQUIRE(repo->withdrawLastGame(sessionId));
+                    auto lastGame = repo->getLastGameInfo(sessionId);
+                    if (lastGame) {
+                        REQUIRE(lastGame->id != gameId);
+                    }
+                }
+            }
         }
     }
-
-
-
-    void cleanup() {
-        delete repo;
-    }
-
-private:
-    ClubRepository *repo = nullptr;
-};
-
-QTEST_MAIN(ClubRepositoryTest)
-
-#include "ClubRepositoryTest.moc"
-
-
-#endif //GAMEMATCHER_CLUBREPOSITORYTEST_CPP
+}
