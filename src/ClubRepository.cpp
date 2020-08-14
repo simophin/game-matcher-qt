@@ -113,6 +113,11 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
         }
     }
 
+    if (currSchemaVersion != schemas[sizeof(schemas)/sizeof(schemas[0]) - 1].schemaVersion) {
+        qWarning() << "Unable to migrate to target schema version";
+        return nullptr;
+    }
+
     return new ClubRepository(parent, d.release());
 }
 
