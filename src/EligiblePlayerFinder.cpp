@@ -11,15 +11,15 @@
 QVector<PlayerInfo>
 EligiblePlayerFinder::findEligiblePlayers(
         const QVector<BasePlayerInfo> &members,
-        size_t playerPerCourt,
-        size_t numCourt,
-        const GameStats &stats,
+        unsigned playerPerCourt,
+        unsigned numCourt,
+        const GameStats *stats,
         int randomSeed) {
     QVector<PlayerInfo> players;
 
     if (members.empty() || playerPerCourt == 0 || numCourt == 0) return players;
 
-    if (stats.numGames() == 0) {
+    if (!stats || stats->numGames() == 0) {
         // First game everyone is eligible
         for (const auto &m : members) {
             players.push_back(PlayerInfo(m, false));
@@ -40,7 +40,7 @@ EligiblePlayerFinder::findEligiblePlayers(
     QVector<MemberInfo> memberInfo;
     memberInfo.reserve(members.size());
     for (const auto &member : members) {
-        memberInfo.append(MemberInfo{&member, stats.numGamesOff(member.memberId) * 2000 - stats.numGamesFor(member.memberId)});
+        memberInfo.append(MemberInfo{&member, stats->numGamesOff(member.memberId) * 2000 - stats->numGamesFor(member.memberId)});
     }
 
     // Shuffle the list so we don't end up using the same order withing same level.

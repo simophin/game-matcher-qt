@@ -56,7 +56,7 @@ list(APPEND HEADERS
         src/CombinationsFinder.h
         src/MatchingScore.h
         src/PlayerInfo.h
-        src/CourtCombinationFinder.h
+        src/CombinationFinder.h
         src/BFCombinationFinder.h
         src/MemberPainter.h
         src/MemberMenu.h
@@ -64,6 +64,7 @@ list(APPEND HEADERS
         src/MembersPaymentReport.h
         src/NumericRange.h
         src/EligiblePlayerFinder.h
+        src/SortingLevelCombinationFinder.h
         )
 
 qt5_add_resources(SOURCES
@@ -116,7 +117,7 @@ add_library(GameMatcher_archive
         src/PlayerTablePage.cpp
         src/ToastDialog.cpp
         src/MatchingScore.cpp
-        src/CourtCombinationFinder.cpp
+        src/CombinationFinder.cpp
         src/BFCombinationFinder.cpp
         src/MainWindow.cpp
         src/MemberPainter.cpp

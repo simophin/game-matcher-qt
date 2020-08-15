@@ -6,14 +6,22 @@
 #define GAMEMATCHER_BFCOMBINATIONFINDER_H
 
 
-#include "CourtCombinationFinder.h"
+#include "CombinationFinder.h"
 
-class BFCombinationFinder : public CourtCombinationFinder {
+class GameStats;
+
+class BFCombinationFinder : public CombinationFinder {
 public:
-    using CourtCombinationFinder::CourtCombinationFinder;
+
+    BFCombinationFinder(unsigned int numPlayersPerCourt, const GameStats &stats)
+            : CombinationFinder(numPlayersPerCourt), stats_(stats) {}
 
 protected:
-    std::vector<CourtAllocation> doFind(nonstd::span<const PlayerInfo> span, size_t numCourtAvailable) const override;
+    QVector<CourtAllocation> doFind(const QVector<PlayerInfo> &,
+                                    unsigned numCourtAvailable) const override;
+
+private:
+    GameStats const &stats_;
 };
 
 

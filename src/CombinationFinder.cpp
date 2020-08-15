@@ -2,10 +2,10 @@
 // Created by Fanchao Liu on 16/07/20.
 //
 
-#include "CourtCombinationFinder.h"
+#include "CombinationFinder.h"
 #include "PlayerInfo.h"
 
-QVector<GameAllocation> CourtCombinationFinder::find(const QVector<CourtId> &courts, const QVector<PlayerInfo> &players) {
+QVector<GameAllocation> CombinationFinder::find(const QVector<CourtId> &courts, const QVector<PlayerInfo> &players) {
     QVector<GameAllocation> result;
 
     auto allocations = doFind(players, courts.size());

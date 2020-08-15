@@ -3,14 +3,16 @@
 
 #include "models.h"
 
-#include "span.h"
-#include <vector>
+#include <QVector>
 
 class GameMatcher {
 public:
-    static std::vector<GameAllocation>
-    match(nonstd::span<const GameAllocation> pastAllocation, nonstd::span<const Member> members, nonstd::span<const CourtId> courts,
-          size_t playerPerCourt, int seed);
+    static QVector<GameAllocation>
+    match(const QVector<GameAllocation> &pastAllocation,
+          const QVector<Member> &members,
+          const QVector<CourtId> &courts,
+          unsigned playerPerCourt,
+          int seed);
 };
 
 #endif // GAMEMATCHER_H

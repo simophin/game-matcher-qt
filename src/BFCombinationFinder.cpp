@@ -8,7 +8,6 @@
 #include <list>
 #include <optional>
 
-using nonstd::span;
 
 typedef std::list<PlayerInfo> PlayerInfoList;
 typedef typename PlayerInfoList::iterator PlayerInfoIterator;
@@ -16,31 +15,31 @@ typedef typename PlayerInfoList::iterator PlayerInfoIterator;
 struct BestCombination {
     std::vector<PlayerInfoIterator> players;
     int score = 0;
-    size_t numMandatory = 0;
+    unsigned numMandatory = 0;
 };
 
 class BestCourtFinder {
-    size_t const numPlayerRequired;
+    unsigned const numPlayerRequired;
     GameStats const &stats;
     int const minLevel, maxLevel;
 
 public:
-    BestCourtFinder(const size_t numPlayerRequired, const GameStats &stats, const int minLevel, const int maxLevel)
+    BestCourtFinder(const unsigned numPlayerRequired, const GameStats &stats, const int minLevel, const int maxLevel)
             : numPlayerRequired(numPlayerRequired), stats(stats), minLevel(minLevel), maxLevel(maxLevel) {}
 
 private:
 
     PlayerInfoIterator inputEnd;
-    size_t minMandatoryRequired;
-    size_t numEstimated = 0;
+    unsigned minMandatoryRequired;
+    unsigned numEstimated = 0;
 
     std::vector<PlayerInfoIterator> arrangement;
-    size_t numMandatory = 0;
+    unsigned numMandatory = 0;
 
 public:
     std::optional<BestCombination> best;
 
-    void reset(size_t minMandatory, PlayerInfoIterator end) {
+    void reset(unsigned minMandatory, PlayerInfoIterator end) {
         inputEnd = end;
         minMandatoryRequired = minMandatory;
         numEstimated = numMandatory = 0;
@@ -87,12 +86,12 @@ public:
 };
 
 
-std::vector<CourtCombinationFinder::CourtAllocation>
-BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailable) const {
+QVector<CombinationFinder::CourtAllocation>
+BFCombinationFinder::doFind(const QVector<PlayerInfo> &span, unsigned numCourtAvailable) const {
     if (span.empty()) return {};
 
     std::list<PlayerInfo> players;
-    size_t numMandatoryRequired = 0;
+    unsigned numMandatoryRequired = 0;
     std::optional<int> minLevel, maxLevel;
     for (const auto &item : span) {
         players.emplace_back(item);
@@ -108,13 +107,13 @@ BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailabl
         }
     }
 
-    std::vector<CourtAllocation> result;
+    QVector<CourtAllocation> result;
     BestCourtFinder finder(numPlayersPerCourt_, stats_, *minLevel, *maxLevel);
 
-    size_t numCourtAllocated = std::min(numCourtAvailable, players.size() / numPlayersPerCourt_);
+    auto numCourtAllocated = std::min<unsigned>(numCourtAvailable, players.size() / numPlayersPerCourt_);
 
     for (int i = 0; i < numCourtAllocated; i++) {
-        finder.reset(static_cast<size_t>(std::ceil(
+        finder.reset(static_cast<unsigned>(std::ceil(
                 static_cast<double>(numMandatoryRequired) / (numCourtAllocated - i))),
                      players.end());
 
@@ -124,9 +123,10 @@ BFCombinationFinder::doFind(span<const PlayerInfo> span, size_t numCourtAvailabl
             break;
         }
 
-        auto &allocation = result.emplace_back();
+        result.push_back(CourtAllocation());
+        auto &allocation = *result.rbegin();
         for (const auto &player : finder.best->players) {
-            allocation.players.emplace_back(*player);
+            allocation.players.push_back(*player);
             players.erase(player);
         }
         allocation.quality = finder.best->score;

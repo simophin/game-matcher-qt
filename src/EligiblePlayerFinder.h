@@ -16,9 +16,9 @@ class EligiblePlayerFinder {
 public:
     static QVector<PlayerInfo> findEligiblePlayers(
             const QVector<BasePlayerInfo> &members,
-            size_t playerPerCourt,
-            size_t numCourt,
-            const GameStats &stats,
+            unsigned playerPerCourt,
+            unsigned numCourt,
+            const GameStats *stats,
             int randomSeed);
 };
 

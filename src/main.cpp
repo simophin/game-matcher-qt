@@ -5,10 +5,10 @@
 #include "models.h"
 #include "ClubRepository.h"
 
-#include "GameMatcher.h"
 #include "CollectionUtils.h"
 #include "span.h"
 #include "MainWindow.h"
+#include "GameMatcher.h"
 
 #include <QSettings>
 
@@ -59,7 +59,7 @@ static void testMatcher() {
 
         auto memberById = associateBy<QHash<MemberId, Member>>(members, [](auto &m) { return m.id; });
 
-        std::vector<GameAllocation> allocations;
+        QVector<GameAllocation> allocations;
 
         const auto playerPerCourt = 4;
 
@@ -67,17 +67,17 @@ static void testMatcher() {
         for (auto &game : result) game.gameId = 0;
         printAllocations(QStringLiteral("Game 1"), result, memberById);
 
-        allocations.insert(allocations.end(), result.begin(), result.end());
+        allocations.append(result);
         result = GameMatcher::match(allocations, members, courts, playerPerCourt, 1);
         for (auto &game : result) game.gameId = 1;
         printAllocations(QStringLiteral("Game 2"), result, memberById);
 
-        allocations.insert(allocations.end(), result.begin(), result.end());
+        allocations.append(result);
         result = GameMatcher::match(allocations, members, courts, playerPerCourt, 2);
         for (auto &game : result) game.gameId = 2;
         printAllocations(QStringLiteral("Game 3"), result, memberById);
 
-        allocations.insert(allocations.end(), result.begin(), result.end());
+        allocations.append(result);
         result = GameMatcher::match(allocations, members, courts, playerPerCourt, 3);
         for (auto &game : result) game.gameId = 3;
         printAllocations(QStringLiteral("Game 4"), result, memberById);

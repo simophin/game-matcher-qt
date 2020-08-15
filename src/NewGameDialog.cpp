@@ -6,12 +6,13 @@
 #include "ui_NewGameDialog.h"
 
 #include "ClubRepository.h"
-#include "GameMatcher.h"
 #include "NameFormatUtils.h"
 #include "ToastDialog.h"
 #include "MemberMenu.h"
 #include "MemberPainter.h"
 #include "LastSelectedCourts.h"
+
+#include "GameMatcher.h"
 
 #include <QEvent>
 #include <QMenu>
@@ -98,7 +99,8 @@ NewGameDialog::NewGameDialog(Impl *d, QWidget *parent)
         }
     });
 
-    auto lastSelectedCourts = LastSelectedCourt::fromString(d->repo->getSettingValue<QString>(skLastSelectedCourts).value_or(QString()));
+    auto lastSelectedCourts = LastSelectedCourt::fromString(
+            d->repo->getSettingValue<QString>(skLastSelectedCourts).value_or(QString()));
     if (lastSelectedCourts && lastSelectedCourts->sessionId != d->session.session.id) {
         lastSelectedCourts.reset();
     }
@@ -193,7 +195,7 @@ void NewGameDialog::accept() {
     auto progressDialog = new QProgressDialog(tr("Calculating..."), tr("Cancel"), 0, 0, this);
     progressDialog->open();
 
-    auto resultWatcher = new QFutureWatcher<std::vector<GameAllocation>>(this);
+    auto resultWatcher = new QFutureWatcher<QVector<GameAllocation>>(this);
     connect(resultWatcher, &QFutureWatcherBase::finished, [=] {
         progressDialog->close();
 
@@ -206,28 +208,29 @@ void NewGameDialog::accept() {
         resultWatcher->deleteLater();
     });
 
-    QVector<Member> eligiblePlayers;
+    QVector<Member> players;
     for (int i = 0, size = d->ui.playerList->count(); i < size; i++) {
         auto member = d->ui.playerList->item(i)->data(dataRoleMember).value<Member>();
         if (member.status == Member::CheckedIn) {
-            eligiblePlayers.push_back(member);
+            players.push_back(member);
         }
     }
 
     auto pastAllocations = d->repo->getPastAllocations(d->session.session.id);
-    size_t numPlayersPerCourt = d->session.session.numPlayersPerCourt;
+    unsigned numPlayersPerCourt = d->session.session.numPlayersPerCourt;
 
     resultWatcher->setFuture(
-            QtConcurrent::run([pastAllocations, eligiblePlayers, courtIds, numPlayersPerCourt] {
+            QtConcurrent::run([pastAllocations = std::move(pastAllocations),
+                                      allPlayers = std::move(players),
+                                      courtIds,
+                                      numPlayersPerCourt] {
                 return GameMatcher::match(pastAllocations,
-                                          eligiblePlayers,
-                                          courtIds,
-                                          numPlayersPerCourt,
+                                          allPlayers, courtIds, numPlayersPerCourt,
                                           QDateTime::currentMSecsSinceEpoch());
             })
     );
 
-    LastSelectedCourt lastSelected = { d->session.session.id };
+    LastSelectedCourt lastSelected = {d->session.session.id};
     for (auto courtId : courtIds) {
         lastSelected.selectedCourts.insert(courtId);
     }

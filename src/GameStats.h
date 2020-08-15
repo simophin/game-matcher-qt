@@ -19,8 +19,7 @@ class GameStats {
 
 public:
 
-    template <typename AllocationList>
-    GameStats(const AllocationList &pastAllocation) {
+    explicit GameStats(const QVector<GameAllocation> &pastAllocation) {
         for (const auto &allocation : pastAllocation) {
             games[allocation.gameId][allocation.courtId].insert(allocation.memberId);
         }
