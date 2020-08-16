@@ -2,23 +2,25 @@
 
 #include "EligiblePlayerFinder.h"
 
-TEST_CASE("EligiblePlayerFinder") {
-    auto numCourt = GENERATE(1, 2, 3, 4);
-//    auto playerPerCourt = GENERATE();
+auto createPlayers(unsigned num) {
+    QVector<BasePlayerInfo> players;
+    players.reserve(num);
+    for (unsigned i = 0; i < num; i++) {
+        players.push_back(BasePlayerInfo(
+                i + 1, (i % 2 == 0) ? BaseMember::Male : BaseMember::Female, 1 + (i % 4)));
+    }
+    return players;
+}
 
-//    auto &[gameAllocations, members, playerPerCourt, numCourt] =
-//    GENERATE(table<QVector<GameAllocation>, QVector<BasePlayerInfo>, size_t, size_t>(
-//            {
-//                    {
-//                            {},
-//                            {
-//                                BasePlayerInfo(1, BaseMember::Male, 1),
-//                                BasePlayerInfo(2, BaseMember::Female, 2),
-//                                BasePlayerInfo(3, BaseMember::Female, 3),
-//                                BasePlayerInfo(4, BaseMember::Female, 4),
-//                            },
-//                            4,
-//                            4,
-//                    },
-//            }));
+TEST_CASE("EligiblePlayerFinder") {
+    auto[members, pastAllocations, playerPerCourt, numCourt] = GENERATE(
+            table<QVector<BasePlayerInfo>, QVector<GameAllocation>, unsigned, unsigned>(
+                    {
+                            {
+                                    createPlayers(30),
+                                    {
+                                            GameAllocation(0, 1, 1, 100),
+                                    }
+                            },
+                    }));
 }
