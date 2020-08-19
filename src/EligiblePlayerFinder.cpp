@@ -28,7 +28,7 @@ EligiblePlayerFinder::findEligiblePlayers(
     }
 
     // The number of people that will be on the court. Will be less or equal than number of members
-    const size_t numMembersOn = members.size() / playerPerCourt * numCourt;
+    const size_t numMembersOn = std::min(numCourt, members.size() / playerPerCourt) * playerPerCourt;
 
     struct MemberInfo {
         const BasePlayerInfo *member;

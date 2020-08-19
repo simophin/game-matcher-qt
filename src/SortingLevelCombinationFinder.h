@@ -46,7 +46,7 @@ protected:
 
         unsigned numPlayerOnCourt = players.size() / numCourtAvailable * numPlayersPerCourt_;
         unsigned numCourt = numPlayerOnCourt / numPlayersPerCourt_;
-        ret.reserve(numCourt);
+        ret.resize(numCourt);
 
         for (unsigned i = 0; i < numPlayerOnCourt; i++) {
             auto &court = ret[i / numPlayersPerCourt_];

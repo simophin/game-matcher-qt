@@ -13,14 +13,14 @@ auto createPlayers(unsigned num) {
 }
 
 TEST_CASE("EligiblePlayerFinder") {
-    auto[members, pastAllocations, playerPerCourt, numCourt] = GENERATE(
-            table<QVector<BasePlayerInfo>, QVector<GameAllocation>, unsigned, unsigned>(
-                    {
-                            {
-                                    createPlayers(30),
-                                    {
-                                            GameAllocation(0, 1, 1, 100),
-                                    }
-                            },
-                    }));
+//    auto[members, pastAllocations, playerPerCourt, numCourt] = GENERATE(
+//            table<QVector<BasePlayerInfo>, QVector<GameAllocation>, unsigned, unsigned>(
+//                    {
+//                            {
+//                                    createPlayers(30),
+//                                    {
+//                                            GameAllocation(0, 1, 1, 100),
+//                                    }
+//                            },
+//                    }));
 }
