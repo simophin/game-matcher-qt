@@ -25,9 +25,8 @@ static bool compare(const MemberId &lhs, const MemberId &rhs) {
 }
 
 TEST_CASE("EligiblePlayerFinder") {
-    MockGameStats stats;
-
     SECTION("First game everyone is equally eligible") {
+        MockGameStats stats;
         auto numPlayers = GENERATE(0, 1, 4, 10, 20);
         auto input = createPlayers(numPlayers);
         QVector<PlayerInfo> output;
@@ -49,68 +48,57 @@ TEST_CASE("EligiblePlayerFinder") {
         REQUIRE(actual == expected);
     }
 
-//    auto numPlayers = GENERATE(5, 10, 20, 40);
-//    auto numCourt = GENERATE(1, 4, 6, 10);
-//    auto playerPerCourt = GENERATE(2, 4);
-//
-//    auto players = createPlayers(numPlayers);
-
     SECTION("Non-first game previously off people will be on") {
-        stats.numGamesOffByMember = {
-                {1, 1},
-                {3, 1},
-                {5, 2},
-                {7, 1},
-        };
-        for (int i = 0; i < 8; i++) {
-            stats.numGamesByMember[i] = 2;
-        }
+        auto[numCourt, players, numGamesOff, numGames, mandatoryIds, optionalIds] = GENERATE(
+                table<int, QVector<BasePlayerInfo>, std::map<MemberId, int>, std::map<MemberId, int>, QVector<MemberId>, QVector<MemberId>>(
+                        {
+                                {
+                                        1,
+                                        createPlayers(8),
+                                        {{1, 1}, {3, 1}, {5, 1}, {7, 1}},
+                                        {},
+                                        {},
+                                        {1, 3, 5, 7},
+                                },
+                                {       1,
+                                        createPlayers(8),
+                                        {{1, 1}, {3, 1}, {2, 2}, {5, 1}, {7, 1}},
+                                        {},
+                                        {2},
+                                        {1, 3, 5, 7},
+                                },
+                                {       2,
+                                        createPlayers(8),
+                                        {{1, 1}, {3, 1}, {2, 2}, {5, 1}, {7, 1}},
+                                        {},
+                                        {},
+                                        {1, 2, 3, 4, 5, 6, 7, 8},
+                                },
+                        }
+                ));
 
+        MockGameStats stats;
+        stats.numGamesOffByMember = numGamesOff;
         stats.totalGame = 2;
+        stats.numGamesByMember = numGames;
 
-        // all 'off' people can be on
-        auto input = createPlayers(8);
-        auto actual = EligiblePlayerFinder::findEligiblePlayers(
-                input,
-                4, 1, &stats);
-        REQUIRE((actual
+        auto actual = EligiblePlayerFinder::findEligiblePlayers(players, 4, numCourt, &stats);
+        REQUIRE(
+                (actual
+                 | views::filter([](PlayerInfo p) { return p.mandatory; })
                  | views::transform([](PlayerInfo p) { return p.memberId; })
                  | to<QVector<MemberId>>()
-                 | actions::sort(&compare)
-                 )
-                == (stats.numGamesOffByMember
-                    | views::transform([](auto entry) { return entry.first; })
-                    | to<QVector<MemberId>>()
-                    | actions::sort(&compare)
-                    )
+                 | actions::sort(&compare))
+                == mandatoryIds
         );
 
-        stats.numGamesOffByMember[2] = 1;
-        actual = EligiblePlayerFinder::findEligiblePlayers(
-                createPlayers(8),
-                4, 1, &stats);
-        REQUIRE((actual
-                 | views::transform([](PlayerInfo p) { return p.memberId; })
-                 | to<QVector<MemberId>>()
-                 | actions::sort(&compare)
-                )
-                == (stats.numGamesOffByMember
-                    | views::transform([](auto entry) { return entry.first; })
-                    | to<QVector<MemberId>>()
-                    | actions::sort(&compare)
-                )
-        );
-
-        REQUIRE((actual
-            | views::filter([](PlayerInfo p) { return p.mandatory; })
-            | views::transform([](PlayerInfo p) { return p.memberId; })
-            | to<QVector<MemberId>>()) == QVector<MemberId>{ 5 }
-            );
-
-        REQUIRE((actual
+        REQUIRE(
+                (actual
                  | views::filter([](PlayerInfo p) { return !p.mandatory; })
                  | views::transform([](PlayerInfo p) { return p.memberId; })
-                 | to<QVector<MemberId>>()) == QVector<MemberId>{ 1, 2, 3, 7 }
+                 | to<QVector<MemberId>>()
+                 | actions::sort(&compare))
+                == optionalIds
         );
     }
 
