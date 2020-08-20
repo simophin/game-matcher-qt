@@ -14,12 +14,8 @@ class GameStats;
 
 class EligiblePlayerFinder {
 public:
-    static QVector<PlayerInfo> findEligiblePlayers(
-            const QVector<BasePlayerInfo> &members,
-            unsigned playerPerCourt,
-            unsigned numCourt,
-            const GameStats *stats,
-            int randomSeed);
+    static QVector<PlayerInfo> findEligiblePlayers(const QVector<BasePlayerInfo> &members, unsigned playerPerCourt,
+                                                   unsigned numCourt, const GameStats *stats);
 };
 
 

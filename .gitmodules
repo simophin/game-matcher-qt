@@ -4,3 +4,6 @@
 [submodule "third_party/qtsqlx"]
 	path = third_party/qtsqlx
 	url = git@gitlab.com:simophin/qtsqlx.git
+[submodule "third_party/range-v3"]
+	path = third_party/range-v3
+	url = https://github.com/ericniebler/range-v3.git

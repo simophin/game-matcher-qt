@@ -19,6 +19,16 @@ struct BasePlayerInfo {
             : memberId(id), gender(gender), level(level) {}
 
     inline explicit BasePlayerInfo(const Member &m) : BasePlayerInfo(m.id, m.gender, m.level) {}
+
+    bool operator==(const BasePlayerInfo &rhs) const {
+        return memberId == rhs.memberId &&
+               gender == rhs.gender &&
+               level == rhs.level;
+    }
+
+    bool operator!=(const BasePlayerInfo &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 struct PlayerInfo : BasePlayerInfo {
@@ -34,6 +44,15 @@ struct PlayerInfo : BasePlayerInfo {
             : BasePlayerInfo(rhs), mandatory(mandatory) {}
 
     PlayerInfo(const PlayerInfo &) = default;
+
+    bool operator==(const PlayerInfo &rhs) const {
+        return static_cast<const BasePlayerInfo &>(*this) == static_cast<const BasePlayerInfo &>(rhs) &&
+               mandatory == rhs.mandatory;
+    }
+
+    bool operator!=(const PlayerInfo &rhs) const {
+        return !(rhs == *this);
+    }
 };
 
 

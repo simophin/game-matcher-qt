@@ -5,6 +5,8 @@ add_subdirectory(third_party/qtsqlx)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_subdirectory(third_party/range-v3)
+
 project(GameMatcher LANGUAGES CXX)
 
 option(BUILD_TESTS "Skip buildling tests" ON)
@@ -158,7 +160,7 @@ if (BUILD_TESTS)
             src/test/TestUtils.h
             src/test/ClubRepositoryTest.cpp
             src/test/main.cpp
-            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp)
-    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
+            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h)
+    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test range-v3)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
 endif ()

@@ -39,6 +39,6 @@ GameMatcher::match(const QVector<GameAllocation> &pastAllocations,
     return finder->find(
             courtIds,
             EligiblePlayerFinder::findEligiblePlayers(
-                    players, playerPerCourt, courtIds.size(), stats.get(), seed));
+                    players, playerPerCourt, courtIds.size(), stats.get()));
 }
 

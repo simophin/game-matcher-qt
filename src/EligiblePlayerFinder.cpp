@@ -5,16 +5,11 @@
 #include "EligiblePlayerFinder.h"
 #include "GameStats.h"
 
-#include <random>
 #include <algorithm>
 
 QVector<PlayerInfo>
-EligiblePlayerFinder::findEligiblePlayers(
-        const QVector<BasePlayerInfo> &members,
-        unsigned playerPerCourt,
-        unsigned numCourt,
-        const GameStats *stats,
-        int randomSeed) {
+EligiblePlayerFinder::findEligiblePlayers(const QVector<BasePlayerInfo> &members, unsigned playerPerCourt,
+                                          unsigned numCourt, const GameStats *stats) {
     QVector<PlayerInfo> players;
 
     if (members.empty() || playerPerCourt == 0 || numCourt == 0) return players;
@@ -43,11 +38,8 @@ EligiblePlayerFinder::findEligiblePlayers(
         memberInfo.append(MemberInfo{&member, stats->numGamesOff(member.memberId) * 2000 - stats->numGamesFor(member.memberId)});
     }
 
-    // Shuffle the list so we don't end up using the same order withing same level.
-    std::shuffle(memberInfo.begin(), memberInfo.end(), std::default_random_engine(randomSeed));
-
     // Sort by number of games off
-    std::stable_sort(memberInfo.begin(), memberInfo.end());
+    std::sort(memberInfo.begin(), memberInfo.end());
 
     if (memberInfo.size() > numMembersOn) {
         // If we don't have enough seats for all players, we will have two groups of people
