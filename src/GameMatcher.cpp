@@ -32,7 +32,7 @@ GameMatcher::match(const QVector<GameAllocation> &pastAllocations,
     if (pastAllocations.isEmpty()) {
         finder = std::make_unique<SortingLevelCombinationFinder>(playerPerCourt, seed);
     } else {
-        stats = std::make_unique<GameStats>(pastAllocations);
+        stats = std::make_unique<GameStatsImpl>(pastAllocations);
         finder = std::make_unique<BFCombinationFinder>(playerPerCourt, *stats);
     }
 

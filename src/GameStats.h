@@ -9,17 +9,24 @@
 #include <map>
 
 #include "models.h"
-#include "span.h"
 #include "PlayerInfo.h"
 
-
 class GameStats {
+public:
+    virtual ~GameStats() = default;
+    virtual int numGamesFor(MemberId) const = 0;
+    virtual int numGamesOff(MemberId) const = 0;
+    virtual int numGames() const = 0;
+    virtual int similarityScore(const QVector<MemberId> &) const = 0;
+};
+
+class GameStatsImpl : public GameStats {
     std::map<GameId, std::map<CourtId, QSet<MemberId>>> games;
     int numTotalGames = 0;
 
 public:
 
-    explicit GameStats(const QVector<GameAllocation> &pastAllocation) {
+    explicit GameStatsImpl(const QVector<GameAllocation> &pastAllocation) {
         for (const auto &allocation : pastAllocation) {
             games[allocation.gameId][allocation.courtId].insert(allocation.memberId);
         }
@@ -27,7 +34,7 @@ public:
         numTotalGames = games.size();
     }
 
-    auto numGamesFor(MemberId memberId) const {
+    int numGamesFor(MemberId memberId) const override {
         int rc = 0;
         for (const auto &[id, courts] : games) {
             for (const auto &[courtId, members] : courts) {
@@ -39,7 +46,7 @@ public:
         return rc;
     }
 
-    auto numGamesOff(MemberId memberId) const {
+    int numGamesOff(MemberId memberId) const override {
         int i = 0;
         for (auto iter = games.rbegin(); iter != games.rend(); ++iter) {
             for (const auto &court : iter->second) {
@@ -53,10 +60,9 @@ public:
         return i;
     }
 
-    auto numGames() const { return this->numTotalGames; }
+    int numGames() const override { return this->numTotalGames; }
 
-    template<typename PlayerInfoList>
-    int similarityScore(const PlayerInfoList &players) const {
+    int similarityScore(const QVector<MemberId> &players) const override {
         if (games.empty()) return 0;
 
         int totalSeats = 0;
@@ -65,13 +71,13 @@ public:
             for (const auto &[courtId, court] : game) {
                 int numPlayedHere = 0;
                 for (const auto &p : players) {
-                    if (court.contains(p->memberId)) {
+                    if (court.contains(p)) {
                         numPlayedHere++;
                     }
                 }
 
                 if (numPlayedHere >= 2) {
-                    totalSeats += std::min(static_cast<size_t>(court.size()), players.size());
+                    totalSeats += std::min(static_cast<int>(court.size()), players.size());
                     sum += numPlayedHere;
                 }
             }

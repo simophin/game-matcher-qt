@@ -149,6 +149,8 @@ public:
     DECLARE_PROPERTY(int, quality, = 0);
 
     GameAllocation() = default;
+    GameAllocation(const GameAllocation&) = default;
+    GameAllocation &operator=(const GameAllocation&) = default;
 
     GameAllocation(GameId gameId, CourtId courtId, MemberId memberId, int quality)
             : gameId(gameId), courtId(courtId), memberId(memberId), quality(quality) {}
