@@ -134,12 +134,13 @@ add_library(GameMatcher_archive
         src/SessionSelectionDialog.cpp
         src/MemberListDialog.cpp
         src/EligiblePlayerFinder.cpp
+        src/SortingLevelCombinationFinder.cpp
         src/models.cpp
         )
 
 target_compile_definitions(GameMatcher_archive PRIVATE -DQT_NO_CAST_FROM_ASCII=1 -DAPP_VERSION_MAJOR=1 -DAPP_VERSION_MINOR=0)
 target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
-target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg QtSQLx)
+target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg QtSQLx range-v3)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL Windows)
     target_compile_options(GameMatcher_archive PUBLIC -mwindows -static)
@@ -160,7 +161,7 @@ if (BUILD_TESTS)
             src/test/TestUtils.h
             src/test/ClubRepositoryTest.cpp
             src/test/main.cpp
-            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h)
-    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test range-v3)
+            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h src/test/SortingLevelCombinationFinderTest.cpp)
+    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
 endif ()
