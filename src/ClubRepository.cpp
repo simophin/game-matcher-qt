@@ -114,7 +114,7 @@ ClubRepository *ClubRepository::open(QObject *parent, const QString &path) {
         }
     }
 
-    if (currSchemaVersion != schemas[sizeof(schemas)/sizeof(schemas[0]) - 1].schemaVersion) {
+    if (currSchemaVersion != schemas[sizeof(schemas) / sizeof(schemas[0]) - 1].schemaVersion) {
         qWarning() << "Unable to migrate to target schema version";
         return nullptr;
     }
@@ -303,42 +303,58 @@ ClubRepository::createMember(QString firstName,
     return getMember(*memberId);
 }
 
-static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const MemberSearchFilter &filter) {
+static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const MemberSearchFilter &filter,
+                                                                     const QString &extraWhere = QString(),
+                                                                     const QVector<QVariant> &extraWhereArgs = {}) {
     QString sql;
     QVector<QVariant> args;
     if (std::get_if<AllMembers>(&filter)) {
-        sql += QStringLiteral("select * from normalized_members where 1");
+        sql += QStringLiteral("select * from normalized_members where 1 %1 order by firstName, lastName").arg(
+                extraWhere);
+        args += extraWhereArgs;
     } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
         if (checkedIn->paused == true) {
-            sql += QStringLiteral("select * from paused_members where sessionId = ?");
+            sql += QStringLiteral(
+                    "select * from paused_members where sessionId = ? %1 order by firstName, lastName").arg(extraWhere);
         } else if (checkedIn->paused == false) {
-            sql += QStringLiteral("select * from checked_in_non_paused_members where sessionId = ?");
+            sql += QStringLiteral(
+                    "select * from checked_in_non_paused_members where sessionId = ? %1 order by firstName, lastName").arg(
+                    extraWhere);
         } else {
-            sql += QStringLiteral("select * from session_members where status != ? and sessionId = ?");
+            sql += QStringLiteral(
+                    "select * from session_members where status != ? and sessionId = ? %1 order by firstName, lastName").arg(
+                    extraWhere);
             args.push_back(enumToString(Member::CheckedOut));
         }
 
-        args.push_back(checkedIn->sessionId);
+        args += checkedIn->sessionId;
     } else if (auto nonCheckedIn = std::get_if<NonCheckedIn>(&filter)) {
-        sql += QStringLiteral("select * from unchecked_in_members where sessionId = ?");
-        args.push_back(nonCheckedIn->sessionId);
+        sql += QStringLiteral(
+                "select * from unchecked_in_members where sessionId = ? %1 order by firstName, lastName").arg(
+                extraWhere);
+        args += nonCheckedIn->sessionId;
     } else if (auto allSession = std::get_if<AllSession>(&filter)) {
-        sql += QStringLiteral("select * from session_members where sessionId = ?");
-        args.push_back(allSession->sessionId);
+        sql += QStringLiteral("select * from session_members where sessionId = ? %1 order by firstName, lastName").arg(
+                extraWhere);
+        args += allSession->sessionId;
     }
+
+    args += extraWhereArgs;
 
     return std::make_pair(sql, args);
 }
 
 QVector<Member> ClubRepository::findMember(MemberSearchFilter filter, const QString &needle) const {
-    auto[sql, args] = constructFindMembersSql(filter);
-    auto trimmed = needle;
+    QString extraWhere;
+    QVector<QVariant> extraWhereArgs;
+
+    auto trimmed = needle.trimmed();
     if (!trimmed.isEmpty()) {
-        sql += QStringLiteral(" and (firstName like ?)");
-        auto realNeedle = QStringLiteral("%1%%").arg(trimmed);
-        args.push_back(realNeedle);
+        extraWhere = QStringLiteral(" and (firstName like ?)");
+        extraWhereArgs += QStringLiteral("%1%%").arg(trimmed);
     }
 
+    auto[sql, args] = constructFindMembersSql(filter, extraWhere, extraWhereArgs);
     return DbUtils::queryList<Member>(d->db, sql, args).orDefault();
 }
 
@@ -445,9 +461,9 @@ bool ClubRepository::removeSetting(const SettingKey &key) {
 }
 
 std::optional<BaseMember> ClubRepository::getMember(MemberId id) const {
-    auto[sql, args] = constructFindMembersSql(AllMembers{});
-    sql += QStringLiteral(" and id = ?");
-    args.push_back(id);
+    auto[sql, args] = constructFindMembersSql(AllMembers{},
+                                              QStringLiteral(" and id = ?"),
+                                              {id});
 
     return DbUtils::queryFirst<BaseMember>(d->db, sql, args).toOptional();
 }

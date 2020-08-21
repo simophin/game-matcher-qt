@@ -8,7 +8,6 @@
 #include "models.h"
 #include "TypeUtils.h"
 
-#include <QtTest/QtTest>
 #include <algorithm>
 #include <type_traits>
 #include <QtDebug>
@@ -82,36 +81,6 @@ inline Member createMemberFrom(const BaseMember &base, Member::Status status, st
         m.paid = *paid;
     }
     return m;
-}
-
-inline void verifyMember(const BaseMember &testSubject, const BaseMember &expected, const char *name) {
-    QCOMPARE(testSubject.firstName, expected.firstName);
-    QCOMPARE(testSubject.lastName, expected.lastName);
-    QCOMPARE(testSubject.gender, expected.gender);
-    QCOMPARE(testSubject.level, expected.level);
-    QVERIFY2(testSubject.id > 0, name);
-//    QVERIFY2(testSubject.registerDate.isValid(), name);
-}
-
-template <typename MemberList>
-inline void sortMembers(MemberList &members) {
-    std::sort(members.begin(), members.end(), [](const BaseMember &lhs, const BaseMember &rhs) {
-        return lhs.id < rhs.id;
-    });
-}
-
-template <typename List1, typename List2>
-inline void compareMembers(List1 actual, List2 expected, const char *testName) {
-    QVERIFY2(actual.size() == expected.size(), testName);
-    sortMembers(actual);
-    sortMembers(expected);
-    auto actualIter = actual.begin();
-    auto expectedIter = expected.begin();
-    while (actualIter != actual.end() && expectedIter != expected.end()) {
-        verifyMember(*actualIter, *expectedIter, testName);
-        actualIter++;
-        expectedIter++;
-    }
 }
 
 #endif //GAMEMATCHER_TESTUTILS_H
