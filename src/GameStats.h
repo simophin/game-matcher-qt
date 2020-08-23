@@ -7,16 +7,23 @@
 
 #include <QSet>
 #include <map>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include "models.h"
 #include "PlayerInfo.h"
 
+
 class GameStats {
 public:
     virtual ~GameStats() = default;
+
     virtual int numGamesFor(MemberId) const = 0;
+
     virtual int numGamesOff(MemberId) const = 0;
+
     virtual int numGames() const = 0;
+
     virtual int similarityScore(const QVector<MemberId> &) const = 0;
 };
 
@@ -32,6 +39,47 @@ public:
         }
 
         numTotalGames = games.size();
+    }
+
+    explicit GameStatsImpl(const QJsonObject &obj) {
+        numTotalGames = obj[QStringLiteral("numTotalGames")].toInt();
+        auto gameObj = obj[QStringLiteral("games")].toObject();
+        for (auto iter = gameObj.begin(); iter != gameObj.end(); ++iter) {
+            bool ok;
+            if (auto gameId = iter.key().toLongLong(&ok); ok) {
+                auto &game = games[gameId];
+                auto courtsObj = iter.value().toObject();
+                for (auto courtIter = courtsObj.begin(); courtIter != courtsObj.end(); ++courtIter) {
+                    if (auto courtId = courtIter.key().toLongLong(&ok); ok) {
+                        auto &courtPlayers = game[courtId];
+                        for (auto v : courtIter.value().toArray()) {
+                            courtPlayers.insert(v.toInt());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    QJsonObject toJson() const {
+        QJsonObject gamesObj;
+        for (const auto &[id, game]: games) {
+            QJsonObject courtObj;
+            for (const auto &[courtId, players] : game) {
+                QJsonArray memberArray;
+                for (auto p : players) {
+                    memberArray += p;
+                }
+
+                courtObj[QString::number(courtId)] = memberArray;
+            }
+            gamesObj[QString::number(id)] = courtObj;
+        }
+
+        return {
+                {QStringLiteral("numTotalGames"), numTotalGames,},
+                {QStringLiteral("games"),         gamesObj},
+        };
     }
 
     int numGamesFor(MemberId memberId) const override {

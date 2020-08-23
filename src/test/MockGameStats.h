@@ -14,7 +14,7 @@ struct MockGameStats : public GameStats {
     std::map<MemberId, int> numGamesByMember;
     std::map<MemberId, int> numGamesOffByMember;
     int totalGame = 0;
-    std::function<bool(const QVector<MemberId>&)> scorer;
+    std::function<int(const QVector<MemberId>&)> scorer;
 
     int numGamesFor(MemberId id) const override {
         auto found = numGamesByMember.find(id);

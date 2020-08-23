@@ -123,14 +123,14 @@ BFCombinationFinder::doFind(const QVector<PlayerInfo> &span, unsigned numCourtAv
             break;
         }
 
-        result.push_back(CourtAllocation());
-        auto &allocation = *result.rbegin();
+        CourtAllocation allocation;
         for (const auto &player : finder.best->players) {
             allocation.players.push_back(*player);
             players.erase(player);
         }
         allocation.quality = finder.best->score;
         numMandatoryRequired -= finder.best->numMandatory;
+        result.push_back(allocation);
     }
 
     return result;
