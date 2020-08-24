@@ -187,7 +187,7 @@ MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId 
                     "inner join games G on G.id = GA.gameId "
                     "inner join players P on P.id = GA.playerId "
                     "inner join courts C on C.id = GA.courtId "
-                    "inner join members M on M.id = P.memberId "
+                    "inner join normalized_members M on M.id = P.memberId "
                     "where P.sessionId = ? "
                     "order by G.startTime desc, G.id, C.id, M.firstName, M.lastName"),
             {sessionId},

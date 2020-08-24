@@ -62,9 +62,7 @@ static const ColumnDeclaration COLUMNS[] = {
                 QObject::tr("Phone"),
                 [](const BaseMember &m) { return m.phone; },
                 [](BaseMember &m, QString value) {
-                    value = value.trimmed();
-                    if (value.isEmpty()) return false;
-                    m.phone = value;
+                    m.phone = value.trimmed();
                     return true;
                 },
         },
@@ -72,9 +70,7 @@ static const ColumnDeclaration COLUMNS[] = {
                 QObject::tr("Email"),
                 [](const BaseMember &m) { return m.email; },
                 [](BaseMember &m, QString value) {
-                    value = value.trimmed();
-                    if (value.isEmpty()) return false;
-                    m.email = value;
+                    m.email = value.trimmed();
                     return true;
                 },
         },
