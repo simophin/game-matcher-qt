@@ -149,5 +149,6 @@ void MemberListDialog::reload() {
         }
     }
 
+    d->ui.memberWidget->resizeColumnsToContents();
     d->isUpdatingList = oldUpdating;
 }

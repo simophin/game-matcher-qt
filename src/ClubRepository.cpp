@@ -22,6 +22,7 @@ static struct {
         {2, QStringLiteral(":/sql/db_v2.sql")},
         {3, QStringLiteral(":/sql/db_v3.sql")},
         {4, QStringLiteral(":/sql/db_v4.sql")},
+        {5, QStringLiteral(":/sql/db_v5.sql")},
 };
 
 static const SettingKey skClubName = QStringLiteral("club_name");

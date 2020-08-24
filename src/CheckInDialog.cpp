@@ -19,8 +19,6 @@ struct CheckInDialog::Impl {
     ClubRepository *repo;
     SessionData session;
     Ui::CheckInDialog ui;
-
-    QLineEdit *phoneInput = nullptr, *emailInput = nullptr;
 };
 
 CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *repo, QWidget *parent)
@@ -53,10 +51,8 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
         d->ui.unpaidButton->hide();
     }
 
-    if (member->phone.trimmed().isEmpty() && member->email.trimmed().isEmpty()) {
-        d->ui.formLayout->addRow(tr("Phone"),  d->phoneInput = new QLineEdit(this));
-        d->ui.formLayout->addRow(tr("Email"),  d->emailInput = new QLineEdit(this));
-    }
+    d->ui.phoneNumberLineEdit->setText(member->phone.trimmed());
+    d->ui.emailLineEdit->setText(member->email.trimmed());
 
     connect(d->ui.paidButton, &QPushButton::clicked, [=] {
         doCheckIn(true);
@@ -77,25 +73,24 @@ void CheckInDialog::doCheckIn(bool paid) {
     auto member = d->repo->getMember(d->id);
     if (!member) return;
 
-    if (d->phoneInput && d->emailInput) {
-        auto phone = d->phoneInput->text().trimmed();
-        auto email = d->emailInput->text().trimmed();
-        if (phone.isEmpty() && email.isEmpty()) {
-            QMessageBox::critical(this, tr("Information needed"),
-                                  tr("You need to fill in at least your phone or your email"));
-            return;
-        }
+    auto phone = d->ui.phoneNumberLineEdit->text().trimmed();
+    auto email = d->ui.emailLineEdit->text().trimmed();
+    if (phone.isEmpty() && email.isEmpty()) {
+        QMessageBox::critical(this, tr("Information needed"),
+                              tr("You need to fill in at least your phone or your email"));
+        return;
+    }
 
-        member->phone = phone;
-        member->email = email;
-        if (!d->repo->saveMember(*member)) {
-            QMessageBox::critical(this, tr("Error"), tr("Unable to save your information"));
-            return;
-        }
+    member->phone = phone;
+    member->email = email;
+    if (!d->repo->saveMember(*member)) {
+        QMessageBox::critical(this, tr("Error"), tr("Unable to save your information"));
+        return;
     }
 
     if (!d->repo->checkIn(d->session.session.id, d->id, paid)) {
-        QMessageBox::critical(this, tr("Error"), tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;
     }
 

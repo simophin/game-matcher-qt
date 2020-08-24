@@ -9,14 +9,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>313</width>
-    <height>183</height>
+    <width>429</width>
+    <height>291</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Check in</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <property name="styleSheet">
+   <string notr="true">.QLineEdit {
+ padding: 16pt;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0">
    <item>
     <widget class="QLabel" name="annoucement">
      <property name="font">
@@ -83,6 +88,33 @@ padding: 8pt;</string>
       <widget class="QLabel" name="feeValueLabel">
        <property name="text">
         <string notr="true">Fee  here</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="phoneNumberLabel">
+       <property name="text">
+        <string>Phone number</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="phoneNumberLineEdit"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="emailLabel">
+       <property name="text">
+        <string>Email</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="emailLineEdit">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
        </property>
       </widget>
      </item>

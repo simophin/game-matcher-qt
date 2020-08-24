@@ -1,6 +1,16 @@
 update settings
-set value = 4
+set value = 5
 where name = 'schema_version';
+---
+drop view normalized_members;
+---
+drop view session_members;
+---
+drop view checked_in_non_paused_members;
+---
+drop view paused_members;
+---
+drop view unchecked_in_members;
 ---
 create view normalized_members as
 select M.id,
@@ -8,6 +18,8 @@ select M.id,
        M.firstName,
        M.lastName,
        M.gender,
+       M.email,
+       M.phone,
        M.level from members M;
 ---
 create view session_members as
