@@ -70,3 +70,7 @@ ClubPage *ClubPage::create(const QString &dbPath, QWidget *parent) {
 
     return new ClubPage(repo.release(), parent);
 }
+
+ClubRepository *ClubPage::clubRepository() const {
+    return d->repo;
+}

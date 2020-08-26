@@ -16,6 +16,8 @@ Q_OBJECT
 public:
     static ClubPage *create(const QString &dbPath, QWidget *parent);
 
+    ClubRepository *clubRepository() const;
+
     ~ClubPage() override;
 
 signals:
