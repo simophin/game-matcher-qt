@@ -6,14 +6,13 @@
 #include "ui_EditMemberDialog.h"
 
 #include "ClubRepository.h"
-#include "TypeUtils.h"
 
 #include <optional>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTimer>
 
 #include "ToastDialog.h"
+#include "MessageBox.h"
 
 struct EditMemberDialog::Impl {
     ClubRepository *repo;
@@ -96,7 +95,7 @@ void EditMemberDialog::accept() {
     auto phone = d->ui.phoneLineEdit->text().trimmed();
     auto email = d->ui.emailLineEdit->text().trimmed();
     if (phone.isEmpty() && email.isEmpty()) {
-        QMessageBox::critical(
+        showCritical(
                 this, tr("Can not save your form"),
                 tr("You need to at least give us a phone number or the email address")
         );
@@ -111,7 +110,7 @@ void EditMemberDialog::accept() {
     auto existingMember = d->repo->findMemberBy(firstName, lastName);
     if ((d->editingMember && existingMember && d->editingMember != existingMember) ||
         (!d->editingMember && existingMember)) {
-        QMessageBox::critical(
+        showCritical(
                 this, tr("Can not save your form"),
                 tr("The name '%1 %2' is already taken. \nIf you have already registered, you just need to check in. \nOtherwise, you can put in your middle names.").arg(
                         firstName, lastName)
@@ -132,8 +131,8 @@ void EditMemberDialog::accept() {
         m.phone = phone;
         m.email = email;
         if (!d->repo->saveMember(m)) {
-            QMessageBox::warning(this, tr("Error"),
-                                 tr("Unable to save to database. Probably nothing you can do about this. You should try again."));
+            showCritical(this, tr("Error"),
+                         tr("Unable to save to database. Probably nothing you can do about this. You should try again."));
         } else {
             emit this->memberUpdated(*d->editingMember);
             ToastDialog::show(tr("Member %1 updated successfully").arg(m.fullName()));
@@ -144,8 +143,8 @@ void EditMemberDialog::accept() {
         ToastDialog::show(tr("Member %1 created successfully").arg(newMember->fullName()));
         QDialog::accept();
     } else {
-        QMessageBox::warning(this, tr("Unable to save to database"),
-                             tr("You can try to save the form again or change something in the form"));
+        showCritical(this, tr("Unable to save to database"),
+                     tr("You can try to save the form again or change something in the form"));
     }
 }
 

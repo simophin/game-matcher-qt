@@ -11,4 +11,8 @@ static inline void showCritical(QWidget *parent, const QString & title, const QS
     (new QMessageBox(QMessageBox::Critical, title, body, QMessageBox::Ok, parent))->show();
 }
 
+static inline void showInfo(QWidget *parent, const QString & title, const QString &body) {
+    (new QMessageBox(QMessageBox::Information, title, body, QMessageBox::Ok, parent))->show();
+}
+
 #endif //GAMEMATCHER_MESSAGEBOX_H
