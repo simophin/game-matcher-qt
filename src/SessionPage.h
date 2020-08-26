@@ -28,7 +28,7 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private slots:
-    void onCurrentGameChanged();
+    void reload();
     void updateElapseTime();
 
     void showMemberMenuAt(const Member &, const QPoint &);

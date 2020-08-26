@@ -12,7 +12,7 @@
 #include <QSettings>
 
 
-static void printAllocations(const QString &prefix, const QVector<GameAllocation> &allocations, const QHash<MemberId, Member> &members) {
+static void printAllocations(const QString &prefix, QVector<GameAllocation> allocations, const QHash<MemberId, Member> &members) {
     std::sort(allocations.begin(), allocations.end(), [](const GameAllocation &a, const GameAllocation &b) {
         if (a.courtId == b.courtId) return a.memberId < b.memberId;
         return a.courtId < b.courtId;

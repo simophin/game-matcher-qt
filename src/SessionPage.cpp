@@ -53,7 +53,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
 
     connect(d->repo, &ClubRepository::sessionChanged, [=](auto sessionId) {
         if (d->session.session.id == sessionId) {
-            onCurrentGameChanged();
+            reload();
         }
     });
 
@@ -61,7 +61,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     d->gameTimer.setSingleShot(true);
     connect(&d->gameTimer, &QTimer::timeout, this, &SessionPage::updateElapseTime);
 
-    onCurrentGameChanged();
+    reload();
 
     d->ui.benchList->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(d->ui.benchList, &QListWidget::customContextMenuRequested, [=](QPoint pos) {
@@ -101,7 +101,7 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
         }
 
         dialog->show();
-        connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::onCurrentGameChanged);
+        connect(dialog, &NewGameDialog::newGameMade, this, &SessionPage::reload);
     });
 
     connect(d->ui.optionsButton, &QPushButton::clicked, [=] {
@@ -149,6 +149,8 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
             d->sound.stop();
         }
     });
+
+    connect(d->repo, &ClubRepository::memberChanged, this, &SessionPage::reload);
 }
 
 SessionPage::~SessionPage() {
@@ -156,7 +158,7 @@ SessionPage::~SessionPage() {
     delete d;
 }
 
-void SessionPage::onCurrentGameChanged() {
+void SessionPage::reload() {
     d->lastGame = d->repo->getLastGameInfo(d->session.session.id);
     updateElapseTime();
 

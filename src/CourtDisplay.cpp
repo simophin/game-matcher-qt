@@ -69,6 +69,7 @@ void CourtDisplay::applyData() {
                     return label; },
                 [=](MemberLabel *label, const Member &player) {
                     label->setText(player.displayName.isEmpty() ? player.fullName() : player.displayName);
+
                     auto palette = label->palette();
                     auto color = MemberPainter::colorForMember(player);
                     palette.setColor(QPalette::Text, color);
@@ -79,6 +80,7 @@ void CourtDisplay::applyData() {
                     if (player.paid == false) {
                         d->nameFont.setUnderline(true);
                     }
+                    d->nameFont.setStrikeOut(player.status == Member::CheckedOut || player.status == Member::CheckedInPaused);
                     label->setFont(d->nameFont);
                     d->nameFont.setUnderline(false);
                 });
