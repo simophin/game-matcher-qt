@@ -11,8 +11,6 @@
 #include <QSignalSpy>
 
 TEST_CASE("ClubRepository") {
-    registerModels();
-
     std::unique_ptr<ClubRepository> repo(ClubRepository::open(nullptr, ":memory:"));
     REQUIRE(repo);
 

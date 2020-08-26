@@ -51,7 +51,7 @@ public:
 
     std::optional<BaseMember> createMember(
             QString firstName, QString lastName,
-            const Member::Gender &gender, int level,
+            Member::Gender gender, int level,
             QString phone, QString email);
 
     bool saveMember(const BaseMember &);

@@ -7,10 +7,11 @@
 #include "ClubRepository.h"
 #include "ToastDialog.h"
 
+#include "MessageBox.h"
+
 #include <QMessageBox>
 #include <QLocale>
 #include <QPushButton>
-#include <QLineEdit>
 #include <set>
 
 
@@ -28,14 +29,14 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
     if (auto session = repo->getSession(sessionId); session) {
         d->session = *session;
     } else {
-        QMessageBox::critical(this, tr("Unable to find current session"), tr("Please try again"));
+        QMessageBox::critical(this, tr("Error"), tr("Unable to find current session"));
         close();
         return;
     }
 
     auto member = repo->getMember(id);
     if (!member) {
-        QMessageBox::critical(this, tr("Unable to find this member"), tr("Please try again"));
+        QMessageBox::critical(this, tr("Error"), tr("Unable to find this member"));
         close();
         return;
     }
@@ -43,8 +44,8 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
     d->ui.nameValueLabel->setText(member->fullName());
     auto sessionFee = d->session.session.fee;
     d->ui.feeValueLabel->setText(QLocale::c().toCurrencyString(sessionFee / 100.0));
-    d->ui.annoucement->setText(tr("<u>Club announcement</u><br />%1").arg(d->session.session.announcement));
-    d->ui.annoucement->setVisible(!d->session.session.announcement.isEmpty());
+    d->ui.announcement->setText(tr("<u>Club announcement</u><br />%1").arg(d->session.session.announcement));
+    d->ui.announcement->setVisible(!d->session.session.announcement.isEmpty());
 
     if (sessionFee == 0) {
         d->ui.paidButton->setText(tr("OK"));
@@ -76,7 +77,7 @@ void CheckInDialog::doCheckIn(bool paid) {
     auto phone = d->ui.phoneNumberLineEdit->text().trimmed();
     auto email = d->ui.emailLineEdit->text().trimmed();
     if (phone.isEmpty() && email.isEmpty()) {
-        QMessageBox::critical(this, tr("Information needed"),
+        showCritical(this, tr("Information needed"),
                               tr("You need to fill in at least your phone or your email"));
         return;
     }
@@ -84,12 +85,12 @@ void CheckInDialog::doCheckIn(bool paid) {
     member->phone = phone;
     member->email = email;
     if (!d->repo->saveMember(*member)) {
-        QMessageBox::critical(this, tr("Error"), tr("Unable to save your information"));
+        showCritical(this, tr("Error"), tr("Unable to save your information"));
         return;
     }
 
     if (!d->repo->checkIn(d->session.session.id, d->id, paid)) {
-        QMessageBox::critical(this, tr("Error"),
+        showCritical(this, tr("Error"),
                               tr("Unable to check in. \nYou probably have already checked in. Check the board!"));
         return;
     }

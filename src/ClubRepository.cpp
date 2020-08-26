@@ -277,7 +277,7 @@ static void sanitizeMemberNames(QString &firstName, QString &lastName) {
 std::optional<BaseMember>
 ClubRepository::createMember(QString firstName,
                              QString lastName,
-                             const Member::Gender &gender,
+                             Member::Gender gender,
                              int level,
                              QString phone,
                              QString email) {

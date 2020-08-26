@@ -11,8 +11,6 @@ auto playerInfo(MemberId id, int level) {
 }
 
 TEST_CASE("SortingLevelCombinationFinder") {
-    registerModels();
-
     auto[players, courts, sorting, numPerCourt, expect] = GENERATE(
             table<QVector<PlayerInfo>, QVector<CourtId>, Sorting, int, QVector<GameAllocation>>(
                     {
