@@ -235,7 +235,7 @@ MemberGameStats ClubRepository::getMemberGameStats(MemberId memberId, SessionId 
 
 
 std::optional<GameId> ClubRepository::createGame(SessionId sessionId,
-                                                 nonstd::span<const GameAllocation> allocations,
+                                                 const QVector<GameAllocation> &allocations,
                                                  qlonglong durationSeconds) {
     if (allocations.empty()) return std::nullopt;
 

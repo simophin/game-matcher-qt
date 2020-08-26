@@ -9,7 +9,6 @@
 #include <QWidget>
 
 #include "models.h"
-#include "span.h"
 
 
 class CourtPlayers;

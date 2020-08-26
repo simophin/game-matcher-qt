@@ -6,14 +6,13 @@
 #include "ClubRepository.h"
 
 #include "CollectionUtils.h"
-#include "span.h"
 #include "MainWindow.h"
 #include "GameMatcher.h"
 
 #include <QSettings>
 
 
-static void printAllocations(const QString &prefix, nonstd::span<GameAllocation> allocations, const QHash<MemberId, Member> &members) {
+static void printAllocations(const QString &prefix, const QVector<GameAllocation> &allocations, const QHash<MemberId, Member> &members) {
     std::sort(allocations.begin(), allocations.end(), [](const GameAllocation &a, const GameAllocation &b) {
         if (a.courtId == b.courtId) return a.memberId < b.memberId;
         return a.courtId < b.courtId;

@@ -7,7 +7,6 @@
 
 #include "models.h"
 #include "MemberFilter.h"
-#include "span.h"
 
 #include "ClubRepositoryModels.h"
 
@@ -85,7 +84,7 @@ public:
 
     MemberGameStats getMemberGameStats(MemberId, SessionId) const;
 
-    std::optional<GameId> createGame(SessionId, nonstd::span<const GameAllocation>, qlonglong durationSeconds);
+    std::optional<GameId> createGame(SessionId, const QVector<GameAllocation> &, qlonglong durationSeconds);
 
     QVector<PaymentRecord> getPaymentRecords(const QSet<SessionId> &) const;
 

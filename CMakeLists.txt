@@ -52,10 +52,8 @@ list(APPEND HEADERS
         src/GameStats.h
         src/FakeNames.h
         src/MemberFilter.h
-        src/span.h
         src/CollectionUtils.h
         src/NameFormatUtils.h
-        src/CombinationsFinder.h
         src/MatchingScore.h
         src/PlayerInfo.h
         src/CombinationFinder.h

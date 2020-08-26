@@ -6,7 +6,6 @@
 #define GAMEMATCHER_MATCHINGSCORE_H
 
 #include <cmath>
-#include "span.h"
 #include "models.h"
 
 #include "GameStats.h"

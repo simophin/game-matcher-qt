@@ -10,7 +10,6 @@
 
 #include <QtDebug>
 
-#include "span.h"
 
 template<typename Map, typename Col, typename ByFunc>
 static inline Map associateBy(const Col &collection, ByFunc keySelector) {
@@ -40,19 +39,5 @@ static inline T reduceCollection(const Col &col, T initialValue, Reducer reducer
 
 #define sumBy(collection, fieldName) \
     reduceCollection(collection, 0, [](int sum, const auto &ele) { return sum + ele.fieldName; })
-
-template <typename T>
-inline QDebug operator<<(QDebug debug, nonstd::span<T> c)
-{
-    QDebugStateSaver saver(debug);
-
-    debug.noquote().nospace() << '[';
-    for (size_t i = 0, size = c.size(); i < size; i++) {
-        debug << c[i];
-        if (i < size - 1) debug << ",";
-    }
-    debug << ']';
-    return debug;
-}
 
 #endif //GAMEMATCHER_COLLECTIONUTILS_H
