@@ -103,7 +103,13 @@ void EditMemberDialog::accept() {
     }
 
     auto names = d->splitNames(d->ui.fullNameValue->text());
-    if (!names) return;
+    if (!names) {
+        showCritical(
+                this, tr("Can not save your form"),
+                tr("You need to provide both first and last names")
+        );
+        return;
+    }
 
     auto[firstName, lastName] = *names;
 
