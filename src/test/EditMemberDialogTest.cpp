@@ -92,7 +92,7 @@ TEST_CASE("EditMemberDialog") {
                 fullNameInput->clear();
             }
 
-            SECTION("without email and hpone") {
+            SECTION("without email and phone") {
                 emailInput->clear();
                 phoneInput->clear();
             }

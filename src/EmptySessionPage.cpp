@@ -7,7 +7,6 @@
 
 #include "ClubRepository.h"
 #include "NewSessionDialog.h"
-#include "EditMemberDialog.h"
 #include "FakeNames.h"
 #include "MemberImportDialog.h"
 #include "ReportsDialog.h"
