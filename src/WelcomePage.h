@@ -22,10 +22,6 @@ public:
 protected:
     void changeEvent(QEvent *event) override;
 
-private slots:
-    void on_openButton_clicked();
-    void on_createButton_clicked();
-
 signals:
     void clubOpened(QString path);
 

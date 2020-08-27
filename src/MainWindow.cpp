@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     ToastDialog::registerMainWindow(this);
 
     auto lastOpened = QSettings().value(skLastOpened).toString();
-    if (!lastOpened.isNull() && QFile(lastOpened).exists() && openClub(lastOpened)) return;
+    if (!lastOpened.isNull() && openClub(lastOpened)) return;
 
     openWelcomePage();
 }

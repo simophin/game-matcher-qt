@@ -159,7 +159,7 @@ if (BUILD_TESTS)
             src/test/TestUtils.h
             src/test/ClubRepositoryTest.cpp
             src/test/main.cpp
-            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h src/test/SortingLevelCombinationFinderTest.cpp src/test/BFCombinationFinderTest.cpp src/test/CheckInDialogTest.cpp src/test/ClubPageTest.cpp src/test/CourtDisplayTest.cpp src/test/EditMemberDialogTest.cpp src/test/EmptySessionPageTest.cpp)
+            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h src/test/SortingLevelCombinationFinderTest.cpp src/test/BFCombinationFinderTest.cpp src/test/CheckInDialogTest.cpp src/test/ClubPageTest.cpp src/test/CourtDisplayTest.cpp src/test/EditMemberDialogTest.cpp src/test/EmptySessionPageTest.cpp src/test/MainWindowTest.cpp)
     target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
 endif ()

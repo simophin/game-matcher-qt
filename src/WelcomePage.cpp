@@ -11,26 +11,26 @@
 WelcomePage::WelcomePage(QWidget *parent)
         : QFrame(parent), ui(new Ui::WelcomePage()) {
     ui->setupUi(this);
-}
 
-void WelcomePage::on_openButton_clicked() {
-    auto path = QFileDialog::getOpenFileName(this);
-    if (path.isEmpty()) {
-        return;
-    }
-    
-    emit clubOpened(path);
-}
+    connect(ui->createButton, &QPushButton::clicked, [this] {
+        auto dialog = new NewClubDialog(this);
+        connect(dialog, &NewClubDialog::clubCreated, [=](QString path) {
+            emit clubOpened(path);
+        });
 
-void WelcomePage::on_createButton_clicked() {
-    auto dialog = new NewClubDialog(this);
-    connect(dialog, &NewClubDialog::clubCreated, [=](QString path) {
-        emit clubOpened(path);
+        connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
+
+        dialog->show();
     });
 
-    connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
+    connect(ui->openButton, &QPushButton::clicked, [this] {
+        auto path = QFileDialog::getOpenFileName(this);
+        if (path.isEmpty()) {
+            return;
+        }
 
-    dialog->show();
+        emit clubOpened(path);
+    });
 }
 
 void WelcomePage::changeEvent(QEvent *event) {
