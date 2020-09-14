@@ -136,7 +136,7 @@ add_library(GameMatcher_archive
         src/models.cpp
         )
 
-target_compile_definitions(GameMatcher_archive PRIVATE -DQT_NO_CAST_FROM_ASCII=1 -DAPP_VERSION_MAJOR=1 -DAPP_VERSION_MINOR=2)
+target_compile_definitions(GameMatcher_archive PRIVATE -DQT_NO_CAST_FROM_ASCII=1 -DAPP_VERSION_MAJOR=1 -DAPP_VERSION_MINOR=3)
 target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg QtSQLx range-v3)
 

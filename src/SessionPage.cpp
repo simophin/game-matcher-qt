@@ -94,6 +94,12 @@ SessionPage::SessionPage(Impl *d, QWidget *parent)
     connect(d->ui.fullScreenButton, &QPushButton::clicked, this, &SessionPage::toggleFullScreenRequested);
 
     connect(d->ui.newGameButton, &QPushButton::clicked, [=] {
+        if (d->lastGame && (d->lastGame->startDateTime().secsTo(QDateTime::currentDateTimeUtc()) < d->lastGame->durationSeconds / 2)) {
+            if (QMessageBox::question(this, tr("Confirm"), tr("This game was made just a moment ago, are you sure you want to start a new game?")) == QMessageBox::No) {
+                return;
+            }
+        }
+
         auto dialog = NewGameDialog::create(d->session.session.id, d->repo, this);
         if (!dialog) {
             QMessageBox::warning(this, tr("Error"), tr("Unable to open new game dialog"));
