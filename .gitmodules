@@ -7,3 +7,5 @@
 [submodule "third_party/range-v3"]
 	path = third_party/range-v3
 	url = https://github.com/ericniebler/range-v3.git
+[submodule "qtsqlx"]
+	url = https://github.com/simophin/qtsqlx.git
