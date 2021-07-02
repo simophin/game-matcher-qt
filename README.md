@@ -15,13 +15,15 @@ Given a number of courts and some players, it will arrange the game based on:
 3. Matching gender
 4. Opponent/companion uniqueness
 
-## What are the features?
+## Features
 
 - New member registration
 - Check in/out member
 - Basic fee management (mark paid/unpaid)
 - Pause/resume playing
 - Update player's level
+- Game timer
+- Bell
 
 ## Who's using this?
 
