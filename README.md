@@ -42,7 +42,7 @@ Yes. Community support only.
 
 ### I want to add X/Y/Z to the software
 Please open an issue. PR welcome. 
-If you want priority fix/issue, I can provide a paid service.
+If you want prioritised bug fix/new feature, I can provide a paid service.
 
 
 
