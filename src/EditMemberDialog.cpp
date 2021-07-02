@@ -34,8 +34,8 @@ EditMemberDialog::EditMemberDialog(ClubRepository *repo, QWidget *parent)
         : QDialog(parent), d(new Impl{repo}) {
     d->ui.setupUi(this);
 
-    d->ui.genderComboBox->addItem(tr("M", "gender"), Member::Male);
-    d->ui.genderComboBox->addItem(tr("F", "gender"), Member::Female);
+    d->ui.genderComboBox->addItem(tr("Male", "gender"), Member::Male);
+    d->ui.genderComboBox->addItem(tr("Female", "gender"), Member::Female);
 
     d->showNameErrorTimer.setSingleShot(false);
     d->showNameErrorTimer.setInterval(800);
@@ -94,15 +94,8 @@ void EditMemberDialog::setMember(MemberId id) {
 void EditMemberDialog::accept() {
     auto phone = d->ui.phoneLineEdit->text().trimmed();
     auto email = d->ui.emailLineEdit->text().trimmed();
-    if (phone.isEmpty() && email.isEmpty()) {
-        showCritical(
-                this, tr("Can not save your form"),
-                tr("You need to at least give us a phone number or the email address")
-        );
-        return;
-    }
 
-    auto names = d->splitNames(d->ui.fullNameValue->text());
+    auto names = EditMemberDialog::Impl::splitNames(d->ui.fullNameValue->text());
     if (!names) {
         showCritical(
                 this, tr("Can not save your form"),
@@ -157,7 +150,7 @@ void EditMemberDialog::accept() {
 void EditMemberDialog::validateForm() {
     auto fullName = d->ui.fullNameValue->text();
     bool isValid = true;
-    if (!fullName.isEmpty() && !d->splitNames(fullName)) {
+    if (!fullName.isEmpty() && !Impl::splitNames(fullName)) {
         d->showNameErrorTimer.start();
         isValid = false;
     } else {

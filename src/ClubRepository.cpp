@@ -30,7 +30,7 @@ static const SettingKey skLevelMin = QStringLiteral("level_min");
 static const SettingKey skLevelMax = QStringLiteral("level_max");
 
 static const unsigned defaultLevelMin = 1;
-static const unsigned defaultLevelMax = 4;
+static const unsigned defaultLevelMax = 5;
 
 class SQLTransaction {
     QSqlDatabase &db_;
@@ -312,7 +312,6 @@ static std::pair<QString, QVector<QVariant>> constructFindMembersSql(const Membe
     if (std::get_if<AllMembers>(&filter)) {
         sql += QStringLiteral("select * from normalized_members where 1 %1 order by firstName, lastName").arg(
                 extraWhere);
-        args += extraWhereArgs;
     } else if (auto checkedIn = std::get_if<CheckedIn>(&filter)) {
         if (checkedIn->paused == true) {
             sql += QStringLiteral(

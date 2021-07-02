@@ -52,9 +52,6 @@ CheckInDialog::CheckInDialog(MemberId id, SessionId sessionId, ClubRepository *r
         d->ui.unpaidButton->hide();
     }
 
-    d->ui.phoneNumberLineEdit->setText(member->phone.trimmed());
-    d->ui.emailLineEdit->setText(member->email.trimmed());
-
     connect(d->ui.paidButton, &QPushButton::clicked, [=] {
         doCheckIn(true);
     });
@@ -73,21 +70,6 @@ CheckInDialog::~CheckInDialog() {
 void CheckInDialog::doCheckIn(bool paid) {
     auto member = d->repo->getMember(d->id);
     if (!member) return;
-
-    auto phone = d->ui.phoneNumberLineEdit->text().trimmed();
-    auto email = d->ui.emailLineEdit->text().trimmed();
-    if (phone.isEmpty() && email.isEmpty()) {
-        showCritical(this, tr("Information needed"),
-                              tr("You need to fill in at least your phone or your email"));
-        return;
-    }
-
-    member->phone = phone;
-    member->email = email;
-    if (!d->repo->saveMember(*member)) {
-        showCritical(this, tr("Error"), tr("Unable to save your information"));
-        return;
-    }
 
     if (!d->repo->checkIn(d->session.session.id, d->id, paid)) {
         showCritical(this, tr("Error"),
