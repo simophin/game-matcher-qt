@@ -411,7 +411,7 @@ std::optional<GameInfo> ClubRepository::getLastGameInfo(SessionId sessionId) con
                            "inner join courts C on C.id = GA.courtId "
                            "where G.id = ? "
                            "order by C.sortOrder"),
-            {gameResult->id, sessionId});
+            {gameResult->id});
 
     if (!onMembers) return std::nullopt;
 
