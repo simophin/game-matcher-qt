@@ -45,9 +45,9 @@ TEST_CASE("EditMemberDialog") {
     }
 
     CHECK(genderBox->itemData(0) == Member::Male);
-    CHECK(genderBox->itemText(0) == "M");
+    CHECK(genderBox->itemText(0) == "Male");
     CHECK(genderBox->itemData(1) == Member::Female);
-    CHECK(genderBox->itemText(1) == "F");
+    CHECK(genderBox->itemText(1) == "Female");
 
     CHECK(dialog.findChild<QMessageBox *>() == nullptr);
 
@@ -90,11 +90,6 @@ TEST_CASE("EditMemberDialog") {
         SECTION("validation") {
             SECTION("without name") {
                 fullNameInput->clear();
-            }
-
-            SECTION("without email and phone") {
-                emailInput->clear();
-                phoneInput->clear();
             }
 
             SECTION("without full name") {
