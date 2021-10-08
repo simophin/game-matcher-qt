@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
+add_subdirectory(third_party/Catch2)
 add_subdirectory(third_party/qtsqlx)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -152,14 +153,24 @@ qt5_import_plugins(GameMatcher INCLUDE Qt5::QSvgPlugin)
 
 
 if (BUILD_TESTS)
-    find_package(Catch2 REQUIRED)
     find_package(Qt5 COMPONENTS Test REQUIRED)
 
     add_executable(GameMatcher_test
-            src/test/TestUtils.h
-            src/test/ClubRepositoryTest.cpp
-            src/test/main.cpp
-            src/test/EligiblePlayerFinderTest.cpp src/test/GameStatsImplTest.cpp src/test/MockGameStats.h src/test/SortingLevelCombinationFinderTest.cpp src/test/BFCombinationFinderTest.cpp src/test/CheckInDialogTest.cpp src/test/ClubPageTest.cpp src/test/CourtDisplayTest.cpp src/test/EditMemberDialogTest.cpp src/test/EmptySessionPageTest.cpp src/test/MainWindowTest.cpp)
+        src/test/TestUtils.h
+        src/test/ClubRepositoryTest.cpp
+        src/test/main.cpp
+        src/test/EligiblePlayerFinderTest.cpp 
+        src/test/GameStatsImplTest.cpp 
+        src/test/MockGameStats.h 
+        src/test/SortingLevelCombinationFinderTest.cpp 
+        src/test/BFCombinationFinderTest.cpp
+        src/test/CheckInDialogTest.cpp 
+        src/test/ClubPageTest.cpp 
+        src/test/CourtDisplayTest.cpp 
+        src/test/EditMemberDialogTest.cpp 
+        src/test/EmptySessionPageTest.cpp 
+        src/test/MainWindowTest.cpp
+        )
     target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
 endif ()
