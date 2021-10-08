@@ -10,7 +10,7 @@ add_subdirectory(third_party/range-v3)
 
 project(GameMatcher LANGUAGES CXX)
 
-option(BUILD_TESTS "Skip buildling tests" ON)
+option(BUILD_TESTS "Skip building tests" ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
