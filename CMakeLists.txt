@@ -1,12 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
-add_subdirectory(third_party/Catch2)
-add_subdirectory(third_party/qtsqlx)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_subdirectory(third_party/range-v3)
 
 project(GameMatcher LANGUAGES CXX)
 
@@ -15,6 +10,7 @@ option(BUILD_TESTS "Skip building tests" ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt5 COMPONENTS Core Sql Widgets Multimedia Svg REQUIRED)
+find_package(Boost 1.55.0 REQUIRED)
 
 set(HEADERS
         src/ClubRepository.h
@@ -43,7 +39,8 @@ set(HEADERS
         src/ClubRepositoryModels.h
         src/SessionSelectionDialog.h
         src/MemberListDialog.h
-        src/ClubRepositoryInternal.h src/MessageBox.h)
+        src/ClubRepositoryInternal.h
+        src/MessageBox.h)
 
 qt5_wrap_cpp(SOURCES ${HEADERS})
 
@@ -138,8 +135,13 @@ add_library(GameMatcher_archive
         )
 
 target_compile_definitions(GameMatcher_archive PRIVATE -DQT_NO_CAST_FROM_ASCII=1 -DAPP_VERSION_MAJOR=1 -DAPP_VERSION_MINOR=3)
-target_include_directories(GameMatcher_archive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
-target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg QtSQLx range-v3)
+target_include_directories(GameMatcher_archive PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/qtsqlx/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/range-v3/include
+        )
+target_link_libraries(GameMatcher_archive PUBLIC Qt5::Core Qt5::Sql Qt5::Widgets Qt5::Multimedia Qt5::Svg)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL Windows)
     target_compile_options(GameMatcher_archive PUBLIC -mwindows -static)
@@ -148,6 +150,8 @@ endif ()
 
 add_executable(GameMatcher WIN32 src/main.cpp)
 target_link_libraries(GameMatcher GameMatcher_archive)
+
+install(TARGETS GameMatcher RUNTIME DESTINATION bin)
 
 qt5_import_plugins(GameMatcher INCLUDE Qt5::QSvgPlugin)
 
@@ -171,6 +175,7 @@ if (BUILD_TESTS)
         src/test/EmptySessionPageTest.cpp 
         src/test/MainWindowTest.cpp
         )
-    target_link_libraries(GameMatcher_test GameMatcher_archive Catch2::Catch2 Qt5::Test)
+    target_link_libraries(GameMatcher_test GameMatcher_archive Qt5::Test)
     target_compile_definitions(GameMatcher_test PRIVATE CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS)
+    target_include_directories(GameMatcher_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/Catch2/single_include)
 endif ()
